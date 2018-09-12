@@ -1,0 +1,64 @@
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.log
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+
+#Other
+.deps
+COPYING
+INSTALL
+Makefile
+Makefile.in
+AUTHORS
+ChangeLog
+NEWS
+README
+aclocal.m4
+autom4te.cache
+config.h
+config.h.in
+config.log
+config.status
+config
+configure
+configure.ac
+sqlite3
+stamp-h1
+log
+traderExport
+traderStrategy
+
+#project tmp files
+*.con
+trader_mduser_test
+trader_trader_test
