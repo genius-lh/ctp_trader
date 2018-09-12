@@ -69,8 +69,20 @@ struct trader_cmd_update_req_def {
     int	PermitVol; // 腿二对手价的挂单数量
     int STG; // 策略0 - 股指 1 - 股指MM 2 - 商品
     int Used; //启用标致
+    int AutoType; //自动报单
+    double AutoKTOpen;
+    double AutoKTClose;
+    double AutoDTOpen;
+    double AutoDTClose;
+    
+    double T1Weight;
+    double T2Weight;
+    int T2Ratio;
+
     double PriceTick; // 一跳价格
     int IsSHFE; // 是否是上期
+    double T2PriceTick; // 一跳价格
+    int T2IsSHFE; // 是否是上期
   } stage[TRADER_CMD_UPDATE_NUM];
 };
 

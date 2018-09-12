@@ -37,6 +37,7 @@ static int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* upda
 static int client_aud_cnn_fill_rsp_update();
 static int client_aud_cnn_fill_rsp_query_instrument();
 static int client_aud_cnn_fill_rsp_query_position(char* position, int num, cJSON* item, cJSON* item1);
+static int client_aud_cnn_conv_which_grid(const char* grid);
 
 client_aud_cnn_method* client_aud_cnn_method_get()
 {
@@ -235,6 +236,13 @@ int client_aud_cnn_client_msg_proc(client_aud_cnn* self, unsigned char* buff, in
       oReq.body.update.num = i;
       nPkgSize = sizeof(oReq) + sizeof(oReq.body.update) - sizeof(oReq.body);
       nRet = cmn_util_bufferevent_send(self->BufTrader, pPkg, nPkgSize);
+    }else if(!strcmp(pCmd->valuestring, "inform")){
+      oReq.cmd = TRADER_CMD_TYPE_UPDATE;
+      nRet = client_aud_cnn_fill_req_update(&oReq.body.update, 0, pRequest);
+      oReq.body.update.num = 1;
+      // ×é°ü·¢ËÍ
+      nPkgSize = sizeof(oReq) + sizeof(oReq.body.update) - sizeof(oReq.body);
+      nRet = cmn_util_bufferevent_send(self->BufTrader, pPkg, nPkgSize);
     }else if(!strcmp(pCmd->valuestring, "update")){
       oReq.cmd = TRADER_CMD_TYPE_UPDATE;
       nRet = client_aud_cnn_fill_req_update(&oReq.body.update, 0, pRequest);
@@ -265,7 +273,7 @@ int client_aud_cnn_client_msg_proc(client_aud_cnn* self, unsigned char* buff, in
           continue;
         }
         if(!strcmp(pChild->string, "whichGrid")){
-          pReset->StageID = pChild->valuestring[4] - 'A';
+          pReset->StageID =  client_aud_cnn_conv_which_grid(pChild->valuestring);
         }else if(!strcmp(pChild->string, "Direction")){
           if(!strcmp(pChild->valuestring,"Buy")){
             pReset->Direction = TRADER_POSITION_BUY;
@@ -405,7 +413,8 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
   char* T2;
   for(pChild = pRequest->child; pChild != NULL; pChild = pChild->next){
     if(!strcmp(pChild->string, "whichGrid")){
-      update->stage[num].StageId = pChild->valuestring[4] - 'A';
+      //update->stage[num].StageId = pChild->valuestring[4] - 'A';
+      update->stage[num].StageId = client_aud_cnn_conv_which_grid(pChild->valuestring);
     }else if(!strcmp(pChild->string, "StageId")){
       T1 = pChild->valuestring;
       T2 = strchr(pChild->valuestring, '-');
@@ -441,6 +450,27 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
       update->stage[num].PermitVol = atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "cl")){
       update->stage[num].STG = atoi(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "autoCall")){
+      update->stage[num].AutoType = 0;
+      if(!strcmp(pChild->valuestring, "Time1")){
+        update->stage[num].AutoType = 1;
+      }else if (!strcmp(pChild->valuestring, "Time2")){
+        update->stage[num].AutoType = 2;
+      }
+    }else if(!strcmp(pChild->string, "jjkk")){
+      update->stage[num].AutoKTOpen = atof(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "jjkp")){
+      update->stage[num].AutoKTClose = atof(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "jjdk")){
+      update->stage[num].AutoDTOpen = atof(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "jjdp")){
+      update->stage[num].AutoDTClose = atof(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "t1Weight")){
+      update->stage[num].T1Weight = atof(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "t2Weight")){
+      update->stage[num].T2Weight = atof(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "t2Ratio")){
+      update->stage[num].T2Ratio = atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "IsActivate")){
       if(pChild->type == cJSON_False){
         update->stage[num].Used = 0;
@@ -495,6 +525,11 @@ int client_aud_cnn_fill_rsp_query_position(char* position, int num, cJSON* item,
   return 0;
 }
 
+int client_aud_cnn_conv_which_grid(const char* grid)
+{
+  int stageId = (grid[4] - '0') * 10 + (grid[5] - '0') - 1;
+  return stageId;
+}
 
 
 client_aud_cnn* client_aud_cnn_new()

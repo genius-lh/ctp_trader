@@ -24,7 +24,7 @@ static int trader_strategy_on_trade(trader_strategy* self, trader_trade* trade_d
 static int trader_strategy_tick_not_finished(trader_strategy* self);
 static int trader_strategy_tick_finished(trader_strategy* self);
 static int trader_strategy_tick_open(trader_strategy* self);
-static int trader_strategy_tick_auto(trader_strategy* self);
+static int trader_strategy_tick_auto(trader_strategy* self, int ms);
 
 
 // 重置仓位
@@ -33,7 +33,7 @@ static int trader_strategy_reset_position(trader_strategy* self, char buy_sell, 
 static int trader_strategy_query_position(trader_strategy* self, char buy_sell, trade_position* p_position);
 
 // 更新仓位
-static int trader_strategy_update_position(trader_strategy* self, char buy_sell, int volume, double real_price);
+static int trader_strategy_update_position(trader_strategy* self, char buy_sell, int volume, double t1_price, double t2_price);
 
 static int trader_strategy_order_update(trader_strategy* self,  trader_order* order_data);
 
@@ -189,6 +189,10 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
     return 0;
   }
 */
+  if(self->used){
+    CMN_INFO("SID[%02d]tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", self->idx, tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
+  }
+  
   if((self->oT1Tick.AskVolume1 + self->oT1Tick.BidVolume1) > (self->oT2Tick.AskVolume1 + self->oT2Tick.BidVolume1)){
     // T1 为主力合约
     if(!strcmp(self->T2, tick_data->InstrumentID)){
@@ -200,10 +204,9 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
       return 0;
     }
   }
-  CMN_INFO("tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
 
   // 开盘自动策略
-  trader_strategy_tick_auto(self);
+  trader_strategy_tick_auto(self, tick_data->UpdateMillisec);
   
   // 待成交队列处理
   trader_strategy_tick_not_finished(self);
@@ -405,7 +408,7 @@ int trader_strategy_query_position(trader_strategy* self, char buy_sell, trade_p
 
 
 // 更新仓位
-int trader_strategy_update_position(trader_strategy* self, char buy_sell, int volume, double real_price)
+int trader_strategy_update_position(trader_strategy* self, char buy_sell, int volume, double t1_price, double t2_price)
 {
   trade_position* pPosition;
   if(TRADER_POSITION_BUY == buy_sell){
@@ -416,6 +419,7 @@ int trader_strategy_update_position(trader_strategy* self, char buy_sell, int vo
     pPosition->ExpPrice = self->KTOpen;
   }
   
+  double real_price = t1_price * self->T1Weight - t2_price * self->T2Weight;
 
   if(volume > 0){
     pPosition->RealPrice = (pPosition->RealPrice * pPosition->Volume + real_price * volume) / (pPosition->Volume + volume);
@@ -426,23 +430,33 @@ int trader_strategy_update_position(trader_strategy* self, char buy_sell, int vo
 }
 
 // 开盘自动策略
-int trader_strategy_tick_auto(trader_strategy* self)
+int trader_strategy_tick_auto(trader_strategy* self, int ms)
 {
   if(AUTO_STRATEGY_TYPE_CLOSE == self->AutoType){
     return 0;
   }
 
   if(AUTO_STRATEGY_TYPE_1 == self->AutoType){
-    if(!AUTO_STRATEGY_IS_TYPE_1(self->oT1Tick.UpdateMillisec)){
+    if(!AUTO_STRATEGY_IS_TYPE_1(ms)){
       return 0;
     }
   }
 
   if(AUTO_STRATEGY_TYPE_2 == self->AutoType){
-    if(AUTO_STRATEGY_IS_TYPE_1(self->oT1Tick.UpdateMillisec)){
+    if(AUTO_STRATEGY_IS_TYPE_1(ms)){
       return 0;
     }
   }
+
+  // 待成交队列判断
+  if(!TAILQ_EMPTY(&self->listNotFinishedOrder)){
+    return 0;
+  }
+
+  // 成交队列判断
+  if((self->nPositionBuy > 0) || (self->nPositionSell > 0)){
+    return 0;
+  } 
 
   trader_strategy_auto_sell(self);
 
@@ -824,9 +838,9 @@ int trader_strategy_trade_t1_open(trader_strategy* self, trader_trade* trade_dat
   CMN_DEBUG("Enter!\n");
   trader_order* pOrder = NULL;
   char cBuySell;
-  int nVol = trade_data->TradeVolume;
   double lPrice;
   int nRet;
+  int nT2Vol;
   trader_strategy_plan* pStrategyPlan = NULL;
   
   // 获取下单计划
@@ -855,6 +869,9 @@ int trader_strategy_trade_t1_open(trader_strategy* self, trader_trade* trade_dat
   // 获取T2价格
   lPrice = trader_strategy_t2_price_opponent(self, cBuySell);
 
+  // 计算T2手数
+  nT2Vol = trade_data->TradeVolume * self->T2Ratio;
+
   nRet = trader_strategy_check_t2_price(self, lPrice);
   if(0 != nRet){
     CMN_ERROR("报单价格超过限制\n");
@@ -866,9 +883,11 @@ int trader_strategy_trade_t1_open(trader_strategy* self, trader_trade* trade_dat
   pStrategyTrade->cLongShort = pStrategyPlan->cLongShort;
   pStrategyTrade->T2Direction = cBuySell;
   pStrategyTrade->T2Offset = TRADER_POSITION_OPEN;
-  pStrategyTrade->TradeVolume = trade_data->TradeVolume;
+  pStrategyTrade->TradeVolume = nT2Vol;
   pStrategyTrade->T1Price = trade_data->TradePrice;
   pStrategyTrade->T2Price = lPrice;
+  pStrategyTrade->T1TradeVolume = trade_data->TradeVolume;
+  pStrategyTrade->T2TradeVolume = 0;
   
   trader_strategy_insert_t2_open(self, pStrategyTrade);
 
@@ -881,7 +900,6 @@ int trader_strategy_trade_t1_close(trader_strategy* self, trader_trade* trade_da
   trader_order* pOrder = NULL;
   trader_strategy_plan* pStrategyPlan = NULL;
   char cBuySell;
-  int nVol = trade_data->TradeVolume;
   double lPrice;
   int nRet;
 
@@ -933,6 +951,14 @@ int trader_strategy_trade_t2_open(trader_strategy* self, trader_trade* trade_dat
     CMN_WARN("trade_data->UserOrderLocalID=[%s]\n", trade_data->UserOrderLocalID);
     return -1;
   }
+  
+  // 更新成交队列
+  int tradedVolume;
+  tradedVolume = (pStrategyTrade->T2TradeVolume % self->T2Ratio + trade_data->TradeVolume) / self->T2Ratio;
+  
+  pStrategyTrade->TradeVolume -= trade_data->TradeVolume;
+  pStrategyTrade->T2TradeVolume += trade_data->TradeVolume;
+
 
   // 更新持仓信息
   if(TRADER_POSITION_LONG == pStrategyTrade->cLongShort){
@@ -941,18 +967,16 @@ int trader_strategy_trade_t2_open(trader_strategy* self, trader_trade* trade_dat
     CMN_DEBUG("self->nPositionBuy=[%d]!\n", self->nPositionBuy);
     CMN_DEBUG("self->nOrderBuy=[%d]!\n", self->nOrderBuy);
     trader_strategy_update_position(self, TRADER_POSITION_BUY, 
-      trade_data->TradeVolume, pStrategyTrade->T1Price - trade_data->TradePrice); 
+      tradedVolume, pStrategyTrade->T1Price, trade_data->TradePrice); 
   }else{
     self->nPositionSell += trade_data->TradeVolume;
     self->nOrderSell -= trade_data->TradeVolume;
     CMN_DEBUG("self->nPositionSell=[%d]!\n", self->nPositionSell);
     CMN_DEBUG("self->nOrderSell=[%d]!\n", self->nOrderSell);
     trader_strategy_update_position(self, TRADER_POSITION_SELL, 
-      trade_data->TradeVolume, pStrategyTrade->T1Price - trade_data->TradePrice); 
+      tradedVolume, pStrategyTrade->T1Price, trade_data->TradePrice); 
   }
 
-  // 更新成交队列
-  pStrategyTrade->TradeVolume -= trade_data->TradeVolume;
   if(0 == pStrategyTrade->TradeVolume){
     trader_strategy_release_order(self, trade_data->UserOrderLocalID);
     // 全部成交，清理
@@ -976,6 +1000,13 @@ int trader_strategy_trade_t2_close(trader_strategy* self, trader_trade* trade_da
     CMN_WARN("trade_data->UserOrderLocalID=[%s]\n", trade_data->UserOrderLocalID);
     return -1;
   }
+  
+  // 更新T1成交队列
+  int tradedVolume;
+  tradedVolume = (pStrategyTrade->T2TradeVolume % self->T2Ratio + trade_data->TradeVolume) / self->T2Ratio;
+  
+  pStrategyTrade->TradeVolume -= trade_data->TradeVolume;
+  pStrategyTrade->T2TradeVolume += trade_data->TradeVolume;
 
   // 更新持仓信息
   if(TRADER_POSITION_LONG == pStrategyTrade->cLongShort){
@@ -984,18 +1015,16 @@ int trader_strategy_trade_t2_close(trader_strategy* self, trader_trade* trade_da
     CMN_DEBUG("self->nPositionBuy=[%d]!\n", self->nPositionBuy);
     CMN_DEBUG("self->nFronzeBuy=[%d]!\n", self->nFronzeBuy);
     trader_strategy_update_position(self, TRADER_POSITION_BUY, 
-      -trade_data->TradeVolume, 0.0f); 
+      -tradedVolume, 0.0f, 0.0f); 
   }else{
     self->nPositionSell -= trade_data->TradeVolume;
     self->nFronzeSell -= trade_data->TradeVolume;
     CMN_DEBUG("self->nPositionSell=[%d]!\n", self->nPositionSell);
     CMN_DEBUG("self->nFronzeSell=[%d]!\n", self->nFronzeSell);
     trader_strategy_update_position(self, TRADER_POSITION_SELL, 
-      -trade_data->TradeVolume, 0.0f); 
+      -tradedVolume, 0.0f, 0.0f); 
   }
   
-  // 更新T1成交队列
-  pStrategyTrade->TradeVolume -= trade_data->TradeVolume;
   if(0 == pStrategyTrade->TradeVolume){
     trader_strategy_release_order(self, trade_data->UserOrderLocalID);
     // 全部成交，清理
@@ -1006,12 +1035,12 @@ int trader_strategy_trade_t2_close(trader_strategy* self, trader_trade* trade_da
 
 int trader_strategy_insert_t1_open(trader_strategy* self, char long_short)
 {
+  CMN_DEBUG("sid[%02d]T1[%s]T2[%s]Enter!\n", self->idx, self->T1, self->T2);
+
   // 打印当前行情
   trader_strategy_print_tick(self);
 
-  CMN_DEBUG("Enter!\n");
-  char sLocalUserId[21];
-  
+  char sLocalUserId[21];  
   // 策略方向
   char cLongShort = long_short;
 
@@ -1110,10 +1139,10 @@ int trader_strategy_insert_t1_open(trader_strategy* self, char long_short)
 
 int trader_strategy_insert_t1_close(trader_strategy* self, char long_short)
 {
+  CMN_DEBUG("sid[%02d]T1[%s]T2[%s]Enter!\n", self->idx, self->T1, self->T2);
   // 打印当前行情
   trader_strategy_print_tick(self);
 
-  CMN_DEBUG("Enter!\n");
   char cLongShort = long_short;
 
   int nSize1 = 0;
@@ -1139,10 +1168,7 @@ int trader_strategy_insert_t1_close(trader_strategy* self, char long_short)
   nSize2 = pTraderStrategyLimit->pMethod->xGetAvailable(pTraderStrategyLimit, 
     self->T1, cT1Direction, &nSize3);
 
-  CMN_DEBUG("isSHFE[%d]\n"
-    "Plan[%d]\n"
-    "Available[%d]\n"
-    "YdPosition[%d]\n",
+  CMN_INFO("isSHFE[%d]Plan[%d]Available[%d]YdPosition[%d]\n",
     self->IsSHFE,
     nSize1,
     nSize2,
@@ -1187,7 +1213,7 @@ int trader_strategy_insert_t1_close(trader_strategy* self, char long_short)
 
 int trader_strategy_insert_t2_open(trader_strategy* self, trader_strategy_trade* strategy_trade)
 {
-  CMN_DEBUG("Enter!\n");
+  CMN_DEBUG("sid[%02d]T1[%s]T2[%s]Enter!\n", self->idx, self->T1, self->T2);
   char sLocalUserId[21];
 
   // 获取订单号
@@ -1236,11 +1262,13 @@ int trader_strategy_insert_t2_open(trader_strategy* self, trader_strategy_trade*
 
 int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int vol, double t1price, double t2price)
 {
-  int nSize1 = vol;
+  CMN_DEBUG("sid[%02d]T1[%s]T2[%s]Enter!\n", self->idx, self->T1, self->T2);
+  int nSize1 = vol * self->T2Ratio;
   int nSize2 = 0;
   int nSize3 = 0;
   char cLongShort = long_short;
   char cT2Direction = trader_strategy_t2_direction(self, cLongShort, TRADER_POSITION_CLOSE);
+  int nT1TradeVolume = vol;
   
   trader_strategy_trade* pStrategyTrade;
 
@@ -1248,11 +1276,8 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
   nSize2 = pTraderStrategyLimit->pMethod->xGetAvailable(pTraderStrategyLimit, 
     self->T2, cT2Direction, &nSize3);
 
-  CMN_DEBUG("isSHFE[%d]\n"
-    "Plan[%d]\n"
-    "Available[%d]\n"
-    "YdPosition[%d]\n",
-    self->IsSHFE,
+  CMN_INFO("isSHFE[%d]Plan[%d]Available[%d]YdPosition[%d]\n",
+    self->T2IsSHFE,
     nSize1,
     nSize2,
     nSize3);
@@ -1264,7 +1289,7 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
       "Available[%d]\n"
       "YdPosition[%d]\n"
       "TdPosition[%d]\n",
-      self->IsSHFE,
+      self->T2IsSHFE,
       nSize1,
       nSize2,
       nSize3);
@@ -1272,7 +1297,7 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
   }
 
   // 下单
-  if(self->IsSHFE){
+  if(self->T2IsSHFE){
     if(nSize1 <= nSize3){
       // 全部平昨
       CMN_DEBUG("全部平昨\n");
@@ -1283,7 +1308,8 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
       pStrategyTrade->TradeVolume = nSize1;
       pStrategyTrade->T1Price = t1price;
       pStrategyTrade->T2Price = t2price;
-      
+      pStrategyTrade->T1TradeVolume = nT1TradeVolume;
+      pStrategyTrade->T2TradeVolume = 0;
       trader_strategy_t2_close_imp(self, pStrategyTrade);
     }else{
       if(nSize3 > 0){
@@ -1296,7 +1322,8 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
         pStrategyTrade->TradeVolume = nSize3;
         pStrategyTrade->T1Price = t1price;
         pStrategyTrade->T2Price = t2price;
-        
+        pStrategyTrade->T1TradeVolume = nSize3 / self->T2Ratio;
+        pStrategyTrade->T2TradeVolume = 0;
         trader_strategy_t2_close_imp(self, pStrategyTrade);
       }
         
@@ -1309,7 +1336,8 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
       pStrategyTrade->TradeVolume = nSize1 - nSize3;
       pStrategyTrade->T1Price = t1price;
       pStrategyTrade->T2Price = t2price;
-      
+      pStrategyTrade->T1TradeVolume = nT1TradeVolume - nSize3 / self->T2Ratio;
+      pStrategyTrade->T2TradeVolume = 0;
       trader_strategy_t2_close_imp(self, pStrategyTrade);
     }
   }else{
@@ -1320,7 +1348,8 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
     pStrategyTrade->TradeVolume = nSize1;
     pStrategyTrade->T1Price = t1price;
     pStrategyTrade->T2Price = t2price;
-    
+    pStrategyTrade->T1TradeVolume = nT1TradeVolume;
+    pStrategyTrade->T2TradeVolume = 0;
     trader_strategy_t2_close_imp(self, pStrategyTrade);
   }
 
@@ -1443,7 +1472,7 @@ int trader_strategy_t2_close_imp(trader_strategy* self, trader_strategy_trade* s
   memset(&pOrder->UpdateTime, 0, sizeof(pOrder->UpdateTime));
   
   trader_strategy_limit* pTraderStrategyLimit = self->pEngine->pTraderStrategyLimit;
-  pTraderStrategyLimit->pMethod->xOnOrder(pTraderStrategyLimit, pOrder, self->IsSHFE);
+  pTraderStrategyLimit->pMethod->xOnOrder(pTraderStrategyLimit, pOrder, self->T2IsSHFE);
   
   // 加入到订单列表
   self->mapOrder->pMethod->xPut(self->mapOrder, sLocalUserId, pOrder);

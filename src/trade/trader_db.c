@@ -645,12 +645,33 @@ int trader_db_init(trader_db* self, char* date)
 
 int trader_db_fini(trader_db* self)
 {
-  sqlite3_finalize(self->stmtMduserInsert);
-  sqlite3_finalize(self->stmtMduserSelect);
-  sqlite3_finalize(self->stmtOrderInsert);
-  sqlite3_finalize(self->stmtOrderSelect);
-  sqlite3_finalize(self->stmtTradeInsert);
-  sqlite3_finalize(self->stmtTradeSelect);
+  if(!self->db){
+    return -1;
+  }
+
+  if(self->stmtMduserInsert){
+    sqlite3_finalize(self->stmtMduserInsert);
+  }
+
+  if(self->stmtMduserSelect){
+    sqlite3_finalize(self->stmtMduserSelect);
+  }
+  
+  if(self->stmtOrderInsert){
+    sqlite3_finalize(self->stmtOrderInsert);
+  }
+  
+  if(self->stmtOrderSelect){
+    sqlite3_finalize(self->stmtOrderSelect);
+  }
+  
+  if(self->stmtTradeInsert){
+    sqlite3_finalize(self->stmtTradeInsert);
+  }
+  
+  if(self->stmtTradeSelect){
+    sqlite3_finalize(self->stmtTradeSelect);
+  }
   sqlite3_close(self->db);
   return 0;
 }
@@ -686,6 +707,15 @@ trader_db_method* trader_db_method_get()
 trader_db* trader_db_new(char* db_path)
 {
   trader_db* self = (trader_db*)malloc(sizeof(trader_db));
+
+  self->db = (sqlite3*)NULL;
+  self->stmtMduserInsert = (sqlite3_stmt*)NULL;
+  self->stmtMduserSelect = (sqlite3_stmt*)NULL;
+  self->stmtTradeInsert = (sqlite3_stmt*)NULL;
+  self->stmtTradeSelect = (sqlite3_stmt*)NULL;
+  self->stmtOrderInsert = (sqlite3_stmt*)NULL;
+  self->stmtOrderSelect = (sqlite3_stmt*)NULL;
+  self->stmtTradeView = (sqlite3_stmt*)NULL;
 
   self->pDbName = db_path;
 

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
 #include <signal.h>
 
 #include <event2/bufferevent.h>
@@ -12,6 +13,8 @@
 
 #include "hiredis.h"
 
+#include "glbProfile.h"
+
 #include "cmn_log.h"
 
 #include "trader_mduser_api.h"
@@ -20,26 +23,11 @@
 
 #include "trader_mduser_svr.h"
 
-#define MDUSER_BOARDCAST_IP "MDUSER.BOARDCAST.IP"
-#define MDUSER_BOARDCAST_PORT "MDUSER.BOARDCAST.PORT"
-
-#define MDUSER_CNN_MAIN_BROKER_ID "MDUSER.CNN.MAIN.BROKER.ID"
-#define MDUSER_CNN_MAIN_USER "MDUSER.CNN.MAIN.USER"
-#define MDUSER_CNN_MAIN_PASSWD "MDUSER.CNN.MAIN.PASSWD"
-#define MDUSER_CNN_MAIN_ADDR "MDUSER.CNN.MAIN.ADDR"
-
-#define MDUSER_CNN_BACKUP_BROKER_ID "MDUSER.CNN.BACKUP.BROKER.ID"
-#define MDUSER_CNN_BACKUP_USER "MDUSER.CNN.BACKUP.USER"
-#define MDUSER_CNN_BACKUP_PASSWD "MDUSER.CNN.BACKUP.PASSWD"
-#define MDUSER_CNN_BACKUP_ADDR "MDUSER.CNN.BACKUP.ADDR"
-
 #define MDUSER_INSTRUMENTS "MDUSER.INSTRUMENTS"
 
-
-static int trader_mduser_svr_init(trader_mduser_svr* self);
+static int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[]);
 static int trader_mduser_svr_run(trader_mduser_svr* self);
 static int trader_mduser_svr_proc(trader_mduser_svr* self, trader_mduser_evt* evt);
-static int trader_mduser_svr_set_addr(trader_mduser_svr* self, char* addr);
 
 static trader_mduser_svr_method* trader_mduser_svr_method_get();
 
@@ -48,11 +36,8 @@ static void trader_mduser_svr_signal_cb(evutil_socket_t fd, short event, void *a
 static void trader_mduser_svr_tick_cb(void* arg, trader_mduser_evt* evt);
 
 static int trader_mduser_svr_init_cnn(trader_mduser_svr* self);
-static int trader_mduser_svr_init_boardcast(trader_mduser_svr* self);
+static int trader_mduser_svr_init_boardcast(trader_mduser_svr* self, char* ip, int port);
 static int trader_mduser_svr_init_instruments(trader_mduser_svr* self);
-
-
-static int trader_mduser_svr_redis_get(trader_mduser_svr* self, const char* key, char* val, int size);
 
 static int trader_mduser_svr_instrument_sort(trader_mduser_svr* self);
 
@@ -63,8 +48,7 @@ trader_mduser_svr_method* trader_mduser_svr_method_get()
   static trader_mduser_svr_method st_trader_mduser_svr_method = {
     trader_mduser_svr_init,
     trader_mduser_svr_run,
-    trader_mduser_svr_proc,
-    trader_mduser_svr_set_addr
+    trader_mduser_svr_proc
   };
 
   return &st_trader_mduser_svr_method;
@@ -72,11 +56,6 @@ trader_mduser_svr_method* trader_mduser_svr_method_get()
 
 int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
 {
-  char brokerid[16];
-  char user[16];
-  char passwd[16];
-  char addr[64];
-  char workspace[64];
   trader_mduser_api_method* api_imp = NULL;
   int nRet = 0;
   #ifdef LTS
@@ -97,22 +76,14 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
   api_imp = trader_mduser_api_femas_method_get();
 #endif
   
-  nRet = trader_mduser_svr_redis_get(self, MDUSER_CNN_MAIN_BROKER_ID, brokerid, sizeof(brokerid));
-  nRet = trader_mduser_svr_redis_get(self, MDUSER_CNN_MAIN_USER, user, sizeof(user));
-  nRet = trader_mduser_svr_redis_get(self, MDUSER_CNN_MAIN_PASSWD, passwd, sizeof(passwd));
-  nRet = trader_mduser_svr_redis_get(self, MDUSER_CNN_MAIN_ADDR, addr, sizeof(addr));
   self->pCnnMain->pMethod->xInit(self->pCnnMain, self->pBase,
-    brokerid, user, passwd, addr, "./main/",
+    self->mainBrokerId, self->mainUser, self->mainPasswd, self->mainAddr, "./main/",
     trader_mduser_svr_tick_cb, self,
     self->instruments, self->instrumentNumber,
     api_imp);
 
-  nRet = trader_mduser_svr_redis_get(self, MDUSER_CNN_BACKUP_BROKER_ID, brokerid, sizeof(brokerid));
-  nRet = trader_mduser_svr_redis_get(self, MDUSER_CNN_BACKUP_USER, user, sizeof(user));
-  nRet = trader_mduser_svr_redis_get(self, MDUSER_CNN_BACKUP_PASSWD, passwd, sizeof(passwd));
-  nRet = trader_mduser_svr_redis_get(self, MDUSER_CNN_BACKUP_ADDR, addr, sizeof(addr));
   self->pCnnBackup->pMethod->xInit(self->pCnnBackup, self->pBase,
-    brokerid, user, passwd, addr, "./backup/",
+    self->backupBrokerId, self->backupUser, self->backupPasswd, self->backupAddr, "./backup/",
     trader_mduser_svr_tick_cb, self,
     self->instruments, self->instrumentNumber,
     api_imp);
@@ -120,28 +91,15 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
   return 0;
 }
 
-int trader_mduser_svr_init_boardcast(trader_mduser_svr* self)
+int trader_mduser_svr_init_boardcast(trader_mduser_svr* self, char* ip, int port)
 {
-  char ip[32];
-  char port[6];
-  int nRet = 0;
-  if(NULL == self->pAddr){
-    nRet = trader_mduser_svr_redis_get(self, MDUSER_BOARDCAST_IP, ip, sizeof(ip));
-    nRet = trader_mduser_svr_redis_get(self, MDUSER_BOARDCAST_PORT, port, sizeof(port));
+  if(0 != port){
+    self->pBoardcast->method->xInit(self->pBoardcast, self->pBase,
+      ip, port);
   }else{
-    char* q = strstr(self->pAddr, ":");
-    if(NULL == q){
-      strcpy(ip, "localhost");
-      strncpy(port, self->pAddr, sizeof(port));
-    }else{
-      memcpy(ip, self->pAddr, q - self->pAddr);
-      ip[q - self->pAddr] = '\0';
-      strncpy(port, q + 1, sizeof(port));
-    }
+    self->pBoardcast->method->xInitUnix(self->pBoardcast, self->pBase,
+      ip);
   }
-
-  self->pBoardcast->method->xInit(self->pBoardcast, self->pBase,
-    ip, atoi(port));
   
   return 0;
 }
@@ -150,7 +108,7 @@ int trader_mduser_svr_init_instruments(trader_mduser_svr* self)
 {
   int nRet = -1;
   int i;
-  redisReply* reply = (redisReply*)redisCommand(self->pRedisCtx, "SMEMBERS %s", MDUSER_INSTRUMENTS);
+  redisReply* reply = (redisReply*)redisCommand(self->pRedisCtx, "SMEMBERS %s", self->redisInstrumentKey);
   redisReply* r;
   do {
     if(REDIS_REPLY_ARRAY == reply->type){
@@ -219,27 +177,34 @@ void* trader_mduser_svr_instrument_bsearch(trader_mduser_svr* self, char* key)
   return (void*)NULL;
 }
 
-
-int trader_mduser_svr_redis_get(trader_mduser_svr* self, const char* key, char* val, int size)
-{
-  int nRet = -1;
-  redisReply* reply = (redisReply*)redisCommand(self->pRedisCtx, "GET %s", key);
-  do {
-    if(REDIS_REPLY_STRING == reply->type){
-      nRet = 0;
-      strncpy(val, reply->str, size);
-      break;
-    }
-  }while(0);
-  freeReplyObject(reply);
-
-  return nRet;
-}
-
-int trader_mduser_svr_init(trader_mduser_svr* self)
+int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
 {
   int nRet;
-  evutil_socket_t pair[2];
+  char pRedisIp[14+1];
+  int nRedisPort = 0;
+  char pBoardcastAddr[14+1];
+  int nBoardcastPort = 0;
+
+  // 读取参数
+  nRet = glbPflGetString("RUN_CONFIG", "REDIS_ADDR", argv[1], pRedisIp);
+  nRet = glbPflGetInt("RUN_CONFIG", "REDIS_PORT", argv[1], &nRedisPort);
+  nRet = glbPflGetString("RUN_CONFIG", "REDIS_INST_KEY", argv[1], self->redisInstrumentKey);
+  if(nRet < 0){
+    strncpy(self->redisInstrumentKey, MDUSER_INSTRUMENTS, sizeof(self->redisInstrumentKey));
+  }
+  
+  nRet = glbPflGetString("RUN_CONFIG", "BOARDCAST_ADDR", argv[1], pBoardcastAddr);
+  nRet = glbPflGetInt("RUN_CONFIG", "BOARDCAST_PORT", argv[1], &nBoardcastPort);
+  
+  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_BROKER_ID", argv[1], self->mainBrokerId);
+  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_USER", argv[1], self->mainUser);
+  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_PASSWD", argv[1], self->mainPasswd);
+  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_ADDR", argv[1], self->mainAddr);
+  
+  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_BROKER_ID", argv[1], self->backupBrokerId);
+  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_USER", argv[1], self->backupUser);
+  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_PASSWD", argv[1], self->backupPasswd);
+  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_ADDR", argv[1], self->backupAddr);
 
   // 各种初始化
   CMN_DEBUG("self->pBase\n");
@@ -267,12 +232,11 @@ int trader_mduser_svr_init(trader_mduser_svr* self)
   self->pBoardcast = trader_mduser_boardcast_new();
   CMN_ASSERT(self->pBoardcast);
 
-
   CMN_DEBUG("self->pRedisCtx\n");
   struct timeval tv = {
     5, 0
   };
-  self->pRedisCtx = redisConnectWithTimeout("localhost", 6379, tv);
+  self->pRedisCtx = redisConnectWithTimeout(pRedisIp, nRedisPort, tv);
   CMN_ASSERT(self->pRedisCtx);
 
   CMN_ASSERT(0 == self->pRedisCtx->err);
@@ -283,7 +247,7 @@ int trader_mduser_svr_init(trader_mduser_svr* self)
   nRet = trader_mduser_svr_init_cnn(self);
   CMN_ASSERT(0 == nRet);
   
-  nRet = trader_mduser_svr_init_boardcast(self);
+  nRet = trader_mduser_svr_init_boardcast(self, pBoardcastAddr, nBoardcastPort);
   CMN_ASSERT(0 == nRet);
   
   return 0;
@@ -333,24 +297,6 @@ int  trader_mduser_svr_proc(trader_mduser_svr* self, trader_mduser_evt* evt)
   return 0;
 }
 
-int trader_mduser_svr_set_addr(trader_mduser_svr* self, char* addr)
-{
-
-  if(!addr){
-    self->pAddr = (char*)NULL;
-    return 0;
-  }
-  
-  int len = strlen(addr);
-  
-  self->pAddr = (char*)malloc((len + 1) * sizeof(char));
-
-  strncpy(self->pAddr, addr, len + 1);
-  
-  return 0;
-}
-
-
 void trader_mduser_svr_signal_cb(evutil_socket_t fd, short event, void *arg)
 {
   trader_mduser_svr* self = (trader_mduser_svr*)arg;
@@ -380,10 +326,6 @@ trader_mduser_svr* trader_mduser_svr_new()
 void trader_mduser_svr_free(trader_mduser_svr* self)
 {
   if(self) {
-
-    if(self->pAddr){
-      free(self->pAddr);
-    }
     
     if(self->pCnnMain){
       trader_mduser_cnn_free(self->pCnnMain);
@@ -418,14 +360,7 @@ int main(int argc, char* argv[])
 {
   trader_mduser_svr* svc = trader_mduser_svr_new();
 
-  char* addr = (char*)NULL;
-  if(argc >= 2){
-    addr = argv[1];
-  }
-  
-  svc->pMethod->xSetAddr(svc, addr);
-
-  svc->pMethod->xInit(svc);
+  svc->pMethod->xInit(svc, argc, argv);
 
   svc->pMethod->xRun(svc);
 

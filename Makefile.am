@@ -35,8 +35,8 @@ traderMduserSvr_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserSvr_CFLAGS=-DCTP -D MDUSER_BOARDCAST_PORT="MDUSER.BOARDCAST.PORT2"\
-	-Isrc/svc -Isrc/api -Isrc/util -Isrc/log\
+traderMduserSvr_CFLAGS=-DCTP\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
 traderMduserSvr_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
@@ -61,7 +61,7 @@ traderStrategy_SOURCES=\
 	src/client/client_aud_svr.c \
 	src/client/client_aud_pool.c
 
-traderStrategy_CFLAGS=-DMDUSER_BOARDCAST_PORT=MDUSER.BOARDCAST.PORT2 -Isrc/api \
+traderStrategy_CFLAGS=-Isrc/api \
 	-Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
@@ -75,7 +75,6 @@ traderStrategy_LDADD=\
 	-Lctp -lthosttraderapi
 
 testMduser_SOURCES=\
-	src/trade/trader_db.c\
 	src/test/trader_mduser_client_test.c\
 	src/trade/trader_mduser_client.c
 

@@ -2,6 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>  
+
 
 #include <event2/bufferevent.h>
 #include <event2/listener.h>
@@ -19,6 +29,7 @@ static int trader_mduser_boardcast_accept(trader_mduser_boardcast* self, evutil_
 static int trader_mduser_boardcast_on_cnn_event(trader_mduser_boardcast* self, trader_mduser_boardcast_cnn* cnn);
 static int trader_mduser_boardcast_boardcase(trader_mduser_boardcast* self, char* buff, int len);
 static int trader_mduser_boardcast_exit(trader_mduser_boardcast* self);
+static int trader_mduser_boardcast_init_unix(trader_mduser_boardcast* self, struct event_base* base, char* unixsocket);
 
 static void trader_mduser_boardcast_read_cb(struct bufferevent *bev, void *arg);
 static void trader_mduser_boardcast_write_cb(struct bufferevent *bev, void *arg);
@@ -34,7 +45,8 @@ trader_mduser_boardcast_method* trader_mduser_boardcast_method_get()
     trader_mduser_boardcast_accept,
     trader_mduser_boardcast_on_cnn_event,
     trader_mduser_boardcast_boardcase,
-    trader_mduser_boardcast_exit
+    trader_mduser_boardcast_exit,
+    trader_mduser_boardcast_init_unix
   };
 
   return &trader_mduser_boardcast_method_st;
@@ -43,8 +55,6 @@ trader_mduser_boardcast_method* trader_mduser_boardcast_method_get()
 int trader_mduser_boardcast_init(trader_mduser_boardcast* self, struct event_base* base, char* ip, int port)
 {
   self->base = base;
-  strcpy(self->ip, ip);
-  self->port = port;
   
   TAILQ_INIT(&self->cnnList);
   
@@ -52,8 +62,8 @@ int trader_mduser_boardcast_init(trader_mduser_boardcast* self, struct event_bas
   //listen
   memset(&sin, 0, sizeof(sin));
   sin.sin_family = AF_INET;
-  sin.sin_addr.s_addr = inet_addr(self->ip);
-  sin.sin_port = htons(self->port);
+  sin.sin_addr.s_addr = inet_addr(ip);
+  sin.sin_port = htons(port);
 
   self->listener = evconnlistener_new_bind(self->base, trader_mduser_boardcast_listener_cb, (void *)self,
     LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
@@ -62,6 +72,52 @@ int trader_mduser_boardcast_init(trader_mduser_boardcast* self, struct event_bas
   
   return 0;
 }
+
+int trader_mduser_boardcast_init_unix(trader_mduser_boardcast* self, struct event_base* base, char* unixsocket)
+{
+  self->base = base;
+
+  TAILQ_INIT(&self->cnnList);
+
+  evutil_socket_t fd;
+  struct sockaddr_un sun;
+
+	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+	if (fd < 0) {
+		return -1;
+  }
+
+  if(evutil_make_socket_nonblocking(fd) < 0){
+		evutil_closesocket(fd);
+    return -2;
+  }
+
+  if(evutil_make_listen_socket_reuseable(fd) < 0){
+		evutil_closesocket(fd);
+    return -3;
+  }
+
+  memset(&sun, 0, sizeof(sun));
+  sun.sun_family = AF_LOCAL;
+  strncpy(sun.sun_path, unixsocket, sizeof(sun.sun_path)-1);
+
+  if (bind(fd, (struct sockaddr*)&sun, sizeof(sun)) < 0) {
+		evutil_closesocket(fd);
+    return -4;
+  }
+  
+  if (listen(fd, -1) < 0) {
+		evutil_closesocket(fd);
+    return -5;
+  }
+
+  self->listener = evconnlistener_new(self->base, trader_mduser_boardcast_listener_cb, (void *)self,
+    LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
+    fd);
+  
+  return 0;
+}
+
 
 int trader_mduser_boardcast_accept(trader_mduser_boardcast* self, evutil_socket_t fd)
 {

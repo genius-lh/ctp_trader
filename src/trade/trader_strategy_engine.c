@@ -80,6 +80,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
   int i;
   int idx;
   trader_strategy* pStrategy;
+  CMN_INFO("UID[%s]\n", self->pCtpTraderApi->UserId);
   
   for(i = 0; i < pUpdate->num; i++){
     idx = pUpdate->stage[i].StageId;
@@ -102,7 +103,18 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
   	CMN_INFO("PermitVol[%d]\n", pUpdate->stage[i].PermitVol);
   	CMN_INFO("STG[%d]\n", pUpdate->stage[i].STG);
   	CMN_INFO("Used[%d]\n", pUpdate->stage[i].Used);
-
+  	CMN_INFO("AutoType[%d]\n", pUpdate->stage[i].AutoType);
+  	CMN_INFO("AutoKTOpen[%lf]\n", pUpdate->stage[i].AutoKTOpen);
+  	CMN_INFO("AutoKTClose[%lf]\n", pUpdate->stage[i].AutoKTClose);
+  	CMN_INFO("AutoDTOpen[%lf]\n", pUpdate->stage[i].AutoDTOpen);
+  	CMN_INFO("AutoDTClose[%lf]\n", pUpdate->stage[i].AutoDTClose);
+  	CMN_INFO("T1Weight[%lf]\n", pUpdate->stage[i].T1Weight);
+  	CMN_INFO("T2Weight[%lf]\n", pUpdate->stage[i].T2Weight);
+  	CMN_INFO("T2Ratio[%d]\n", pUpdate->stage[i].T2Ratio);
+  	CMN_INFO("PriceTick[%lf]\n", pUpdate->stage[i].PriceTick);
+  	CMN_INFO("IsSHFE[%d]\n", pUpdate->stage[i].IsSHFE);
+  	CMN_INFO("T2PriceTick[%lf]\n", pUpdate->stage[i].T2PriceTick);
+  	CMN_INFO("T2IsSHFE[%d]\n", pUpdate->stage[i].T2IsSHFE);
     
     pStrategy->idx = pUpdate->stage[i].StageId;
     strcpy(pStrategy->T1, pUpdate->stage[i].T1);
@@ -121,8 +133,18 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->PermitVol = pUpdate->stage[i].PermitVol;
     pStrategy->STG = pUpdate->stage[i].STG;
     pStrategy->used = pUpdate->stage[i].Used; 
+    pStrategy->AutoType = pUpdate->stage[i].AutoType; 
+    pStrategy->AutoKTOpen = pUpdate->stage[i].AutoKTOpen; 
+    pStrategy->AutoKTClose = pUpdate->stage[i].AutoKTClose; 
+    pStrategy->AutoDTOpen = pUpdate->stage[i].AutoDTOpen; 
+    pStrategy->AutoDTClose = pUpdate->stage[i].AutoDTClose; 
+    pStrategy->T1Weight = pUpdate->stage[i].T1Weight; 
+    pStrategy->T2Weight = pUpdate->stage[i].T2Weight; 
+    pStrategy->T2Ratio = pUpdate->stage[i].T2Ratio; 
     pStrategy->PriceTick = pUpdate->stage[i].PriceTick;
     pStrategy->IsSHFE = pUpdate->stage[i].IsSHFE;
+    pStrategy->T2PriceTick = pUpdate->stage[i].T2PriceTick;
+    pStrategy->T2IsSHFE = pUpdate->stage[i].T2IsSHFE;
 
     strcpy(pStrategy->oBuyPosition.T1, pStrategy->T1);
     strcpy(pStrategy->oBuyPosition.T2, pStrategy->T2);
@@ -153,9 +175,8 @@ int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick
   oTick.UpperLimitPrice = tick_data->UpperLimitPrice;
   oTick.LowerLimitPrice = tick_data->LowerLimitPrice;
 
-  CMN_DEBUG("推送Tick数据\n");
-  
-  CMN_INFO("tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
+  //CMN_DEBUG("推送Tick数据\n");
+  //CMN_INFO("tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
 
   for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
     pStrategy = self->trader_strategys[i];
@@ -177,9 +198,14 @@ int trader_strategy_engine_update_trade(trader_strategy_engine* self, trader_tra
     return -1;
   }
 
-    // 更新总限仓
+  int isSHFE = pStrategy->IsSHFE;
+  if(!strcmp(pStrategy->T2, trade_data->InstrumentID)){
+    isSHFE = pStrategy->T2IsSHFE;
+  }
+  
+  // 更新总限仓
   self->pTraderStrategyLimit->pMethod->xOnTrade(self->pTraderStrategyLimit,
-    trade_data, pStrategy->IsSHFE);
+    trade_data, isSHFE);
 
   trader_trade oTrade;
   trader_trade* pTrade = &oTrade;
@@ -212,9 +238,14 @@ int trader_strategy_engine_update_order(trader_strategy_engine* self, trader_ord
     return -1;
   }
 
+  int isSHFE = pStrategy->IsSHFE;
+  if(!strcmp(pStrategy->T2, order_data->InstrumentID)){
+    isSHFE = pStrategy->T2IsSHFE;
+  }
+
   // 更新总限仓
   self->pTraderStrategyLimit->pMethod->xOnOrder(self->pTraderStrategyLimit,
-    order_data, pStrategy->IsSHFE);
+    order_data, isSHFE);
 
   trader_order oOrder;
   trader_order* pOrder = &oOrder;  
@@ -320,12 +351,12 @@ int trader_strategy_engine_local_user_id_set(trader_strategy_engine* self, char*
     memcpy(sSequence, &user_id[0], 7);
     sSequence[7] ='\0';
     nSeq = atoi(sSequence);
-
-    if(self->nSequence > nSeq){
-      nSeq = self->nSequence;
-    }
-    self->nSequence = nSeq + 1;
   }
+
+  if(self->nSequence > nSeq){
+    nSeq = self->nSequence;
+  }
+  self->nSequence = nSeq + 1;
 
   return 0;
 }
@@ -377,7 +408,7 @@ int trader_strategy_engine_reset_position(trader_strategy_engine* self, int stag
 
 int trader_strategy_engine_query_position(trader_strategy_engine* self, int stage_id, char buy_sell, trade_position* p_position)
 {
-  CMN_DEBUG("Enter!\n");
+  //CMN_DEBUG("Enter!\n");
   int nRet = 0;
   trader_strategy* pTraderStrategy;
   pTraderStrategy = self->trader_strategys[stage_id];
@@ -472,6 +503,7 @@ trader_strategy_engine* trader_strategy_engine_new()
   trader_strategy_engine* self = (trader_strategy_engine*)malloc(sizeof(trader_strategy_engine));
 
   self->orderStrategyMap = cmn_util_map_new();
+  self->nSequence = 1;
   
   //trader_strategys
   int i;

@@ -2,6 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>  
 
 #include <event2/bufferevent.h>
 #include <event2/util.h>
@@ -56,13 +65,10 @@ int trader_mduser_client_init(trader_mduser_client* self, struct event_base* bas
 
 int trader_mduser_client_connect(trader_mduser_client* self)
 {
-
-  struct sockaddr_in sin;
-  memset(&sin, 0, sizeof(sin));
-  sin.sin_family = AF_INET;
-  sin.sin_addr.s_addr = inet_addr(self->ip);
-  sin.sin_port = htons(self->port);
   
+  struct sockaddr_in sin;
+  struct sockaddr_un sun;
+    
   self->bev = bufferevent_socket_new(self->base, -1,
 		BEV_OPT_CLOSE_ON_FREE | BEV_OPT_DEFER_CALLBACKS);
 
@@ -70,7 +76,19 @@ int trader_mduser_client_connect(trader_mduser_client* self)
   
   bufferevent_enable(self->bev, EV_READ);
 
-  bufferevent_socket_connect(self->bev, (struct sockaddr*)&sin, sizeof(sin));
+  if(0 == self->port){
+    memset(&sun, 0, sizeof(sun));
+    sun.sun_family = AF_LOCAL;
+    strncpy(sun.sun_path, self->ip, sizeof(sun.sun_path)-1);
+    
+    bufferevent_socket_connect(self->bev, (struct sockaddr*)&sun, sizeof(sun));
+  }else{
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = inet_addr(self->ip);
+    sin.sin_port = htons(self->port);
+    bufferevent_socket_connect(self->bev, (struct sockaddr*)&sin, sizeof(sin));
+  }
 
   return 0;
 

@@ -29,19 +29,29 @@ struct trader_mduser_svr_def {
   
   trader_instrument_id_type* instruments;
   int instrumentNumber;
+  
   trader_tick* ticks;
 
-  char* pAddr;
+  char mainBrokerId[8];
+  char mainUser[16];
+  char mainPasswd[16];
+  char mainAddr[64];
+
+  char backupBrokerId[8];
+  char backupUser[16];
+  char backupPasswd[16];
+  char backupAddr[64];
+
+  char redisInstrumentKey[32];
   
   trader_mduser_svr_method* pMethod;
 
 };
 
 struct trader_mduser_svr_method_def {
-  int (*xInit)(trader_mduser_svr* self);
+  int (*xInit)(trader_mduser_svr* self, int argc, char* argv[]);
   int (*xRun)(trader_mduser_svr* self);
   int (*xProc)(trader_mduser_svr* self, trader_mduser_evt* evt);
-  int (*xSetAddr)(trader_mduser_svr* self, char* addr);
 };
 
 

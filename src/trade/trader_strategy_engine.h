@@ -35,7 +35,7 @@ struct trader_strategy_engine_def {
   int nPositionSize;
   
   char TradingDay[9];
-  long nSequence;
+  int nSequence;
   
   // ½»Ò×API
   ctp_trader_api* pCtpTraderApi;

@@ -12,8 +12,6 @@
 #define AUTO_STRATEGY_TYPE_1 1
 #define AUTO_STRATEGY_TYPE_2 2
 
-#define AUTO_STRATEGY_TICK_1 "09:00:00"
-#define AUTO_STRATEGY_TICK_2 "09:00:01"
 #define AUTO_STRATEGY_IS_TYPE_1(__msec) ((__msec) < 500)
 
 
@@ -37,6 +35,8 @@ struct trader_strategy_trade_def{
   int TradeVolume;
   double T1Price;
   double T2Price;
+  int T1TradeVolume;
+  int T2TradeVolume;
 };
 
 
@@ -92,12 +92,18 @@ struct trader_strategy_def{
 
   double PriceTick;
   int IsSHFE;
-
+  double T2PriceTick;
+  int T2IsSHFE;
+  
   int AutoType;
   double AutoKTOpen;
   double AutoKTClose;
   double AutoDTOpen;
   double AutoDTClose;
+
+  double T1Weight;
+  double T2Weight;
+  int T2Ratio;
 
   // T1 ÐÐÇé
   trader_tick oT1Tick;

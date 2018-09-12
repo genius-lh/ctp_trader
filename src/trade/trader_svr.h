@@ -13,6 +13,8 @@
 
 #include "trader_strategy_engine.h"
 
+#include "trader_mduser_api.h"
+
 #include "trader_mduser_client.h"
 
 #include "hiredis.h"
@@ -39,6 +41,8 @@ struct trader_svr_def {
   struct event* pSigTermEvt;
 
   trader_mduser_client* pMduserClt;
+  char cache[sizeof(trader_mduser_evt)];
+  int cacheLen;
   
   // 对客户端进程
   struct bufferevent *BufClient;
@@ -85,6 +89,9 @@ struct trader_svr_def {
   int nStoreMduser;
   // 下单方式
   char cHedgeFlag;
+  // 行情接收地址端口
+  char boardcastAddr[14+1];
+  int boardcastPort;
 
   // 登录信息
   int bProcessing;

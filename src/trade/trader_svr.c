@@ -24,6 +24,7 @@
 #include "cmn_log.h"
 
 #include "cmn_cfg.h"
+#include "glbProfile.h"
 
 #include "ctp_trader_api.h"
 #include "trader_mduser_api.h"
@@ -38,8 +39,6 @@
 #include "trader_mduser_client.h"
 
 #include "hiredis.h"
-
-#define MDUSER_BOARDCAST_PORT "MDUSER.BOARDCAST.PORT"
 
 static int trader_svr_init(trader_svr* self, evutil_socket_t sock);
 static int trader_svr_param_ini(trader_svr* self, char* cfg_file);
@@ -76,7 +75,6 @@ static int trader_svr_client_notify_login(trader_svr* self, int err_cd, char* er
 static int trader_svr_chdir(trader_svr* self, char* user_id);
 
 static int trader_svr_check_instrument(trader_svr* self, char* inst);
-static int trader_svr_redis_get(trader_svr* self, const char* key, char* val, int size);
 
 static int trader_svr_redis_init(trader_svr* self);
 static int trader_svr_redis_fini(trader_svr* self);
@@ -160,14 +158,15 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
 
   nRet = trader_svr_redis_init(self);
   CMN_ASSERT(nRet == 0);
-  
-  char port[6];
-  nRet = trader_svr_redis_get(self, MDUSER_BOARDCAST_PORT, port, sizeof(port));
 
   CMN_DEBUG("self->pMduserClt\n");
   self->pMduserClt = trader_mduser_client_new();
+  
+  CMN_DEBUG("boardcastAddr[%s]\n", self->boardcastAddr);
+  CMN_DEBUG("boardcastPort[%d]\n", self->boardcastPort);
 
-  self->pMduserClt->method->xInit(self->pMduserClt, self->pBase, "0.0.0.0", atoi(port),
+  self->pMduserClt->method->xInit(self->pMduserClt, self->pBase,
+    self->boardcastAddr, self->boardcastPort,
     trader_svr_mduser_client_connect_callback,
     trader_svr_mduser_client_disconnect_callback,
     trader_svr_mduser_client_recv_callback,
@@ -285,8 +284,11 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
   self->nStoreMduser = pCfg->pMethod->xGetStoreMduser(pCfg);
 
   self->cHedgeFlag = pCfg->pMethod->xGetHedgeFlag(pCfg);
-
+  
   cmn_cfg_free(pCfg);
+  
+  nRet = glbPflGetString("MDUSER", "BOARDCAST_ADDR", cfg_file, self->boardcastAddr);
+  nRet = glbPflGetInt("MDUSER", "BOARDCAST_PORT", cfg_file, &self->boardcastPort);
 
   return 0;
 }
@@ -526,10 +528,25 @@ int trader_svr_proc_trader(trader_svr* self, trader_msg_trader_struct* msg)
         break;
       }
     }
-    CMN_DEBUG("pInvestorPosition->InstrumentID[%s]"
-      "pInvestorPosition->IsSHFE[%d]\n",
+
+    CMN_INFO("pInvestorPosition->InstrumentID[%s]\n"
+      "pInvestorPosition->PosiDirection[%c]\n"
+      "pInvestorPosition->IsSHFE[%d]\n"
+      "pInvestorPosition->PositionDate[%c]\n"
+      "pInvestorPosition->YdPosition[%d]\n"
+      "pInvestorPosition->TodayPosition[%d]\n"
+      "pInvestorPosition->Position[%d]\n"
+      "pInvestorPosition->LongFrozen[%d]\n"
+      "pInvestorPosition->ShortFrozen[%d]\n",
       pInvestorPosition->InstrumentID,
-      pInvestorPosition->IsSHFE
+      pInvestorPosition->PosiDirection,
+      pInvestorPosition->IsSHFE,
+      pInvestorPosition->PositionDate,
+      pInvestorPosition->YdPosition,
+      pInvestorPosition->TodayPosition,
+      pInvestorPosition->Position,
+      pInvestorPosition->LongFrozen,
+      pInvestorPosition->ShortFrozen
     );
     
     self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, &pMsg->oPosition);
@@ -558,7 +575,8 @@ int trader_svr_proc_trader(trader_svr* self, trader_msg_trader_struct* msg)
         pTraderContract->PriceTick =  pMsg->PriceTick;
         pTraderContract->nCancelNum = 0;
         pTraderContract->isSHFE = 0;
-        if(!strcmp(pMsg->ExchangeID, "SHFE")){
+        if(!strcmp(pMsg->ExchangeID, "SHFE")
+        ||!strcmp(pMsg->ExchangeID, "INE")){
           pTraderContract->isSHFE = 1;
         }        
         self->nContractNum++;
@@ -685,14 +703,16 @@ int trader_svr_proc_client_update(trader_svr* self, trader_msg_req_struct* req)
   int i;
   struct trader_cmd_update_req_def *pUpdate = &(req->body.update);
 
-  //查询T1的信息
+  //查询T1/T2的信息
   for(i = 0; i < pUpdate->num; i++){
     trader_contract* iter;
     TAILQ_FOREACH(iter, &self->listTraderContract, next){
       if(!strcmp(pUpdate->stage[i].T1, iter->contract)){
         pUpdate->stage[i].PriceTick = iter->PriceTick;
         pUpdate->stage[i].IsSHFE = iter->isSHFE;
-        break;
+      }else if(!strcmp(pUpdate->stage[i].T2, iter->contract)){
+        pUpdate->stage[i].T2PriceTick = iter->PriceTick;
+        pUpdate->stage[i].T2IsSHFE = iter->isSHFE;
       }
     }
   }
@@ -1056,31 +1076,50 @@ void trader_svr_mduser_client_disconnect_callback(void* user_data)
 void trader_svr_mduser_client_recv_callback(void* user_data, void* data, int len)
 {
   trader_svr* self = (trader_svr*)user_data;
-  trader_mduser_evt* pEvt = (trader_mduser_evt*)data;
+  trader_mduser_evt* pEvt = (trader_mduser_evt*)NULL;
+  int nPos = 0;
+  char pBuff[sizeof(trader_mduser_evt)];
+  trader_tick* tick_data = (trader_tick*)NULL;
+  char* pData = (char*)data;
+  
+  if((self->cacheLen + len) < sizeof(trader_mduser_evt)){
+    memcpy(&self->cache[self->cacheLen], pData, len);
+    self->cacheLen += len;
+    return ;
+  }
 
-  trader_tick* tick_data = &pEvt->Tick;
+  if(self->cacheLen > 0){
+    nPos = sizeof(trader_mduser_evt) - self->cacheLen;
+    memcpy(pBuff, self->cache, self->cacheLen);
+    memcpy(&pBuff[self->cacheLen], pData, nPos);
+    self->cacheLen = 0;
+    
+    pEvt = (trader_mduser_evt*)pBuff;
+    tick_data = &pEvt->Tick;
+    self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
+  }
+
+  while(nPos < len){
+    if((nPos + sizeof(trader_mduser_evt)) > len){
+      self->cacheLen = len - nPos;
+      memcpy(&self->cache[0], &pData[nPos], self->cacheLen);
+      break;
+    }
+
+    pEvt = (trader_mduser_evt*)&pData[nPos];
+    tick_data = &pEvt->Tick;
+    self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
+
+    nPos += sizeof(trader_mduser_evt);
+  }
+
+  //trader_tick* tick_data = &pEvt->Tick;
   
   //printf("tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
 
-  CMN_DEBUG("通知策略引擎行情更新!\n");
-  self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
+  //CMN_DEBUG("通知策略引擎行情更新!\n");
+  //self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
 
-}
-
-int trader_svr_redis_get(trader_svr* self, const char* key, char* val, int size)
-{
-  int nRet = -1;
-  redisReply* reply = (redisReply*)redisCommand(self->pRedis, "GET %s", key);
-  do {
-    if(REDIS_REPLY_STRING == reply->type){
-      nRet = 0;
-      strncpy(val, reply->str, size);
-      break;
-    }
-  }while(0);
-  freeReplyObject(reply);
-
-  return nRet;
 }
 
 int trader_svr_redis_init(trader_svr* self)

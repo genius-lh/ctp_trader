@@ -40,6 +40,7 @@ struct trader_mduser_boardcast_method_def {
   int (*xOnCnnEvent)(trader_mduser_boardcast* self, trader_mduser_boardcast_cnn* cnn);
   int (*xBoardcase)(trader_mduser_boardcast* self, char* buff, int len);
   int (*xExit)(trader_mduser_boardcast* self);
+  int (*xInitUnix)(trader_mduser_boardcast* self, struct event_base* base, char* unixsocket);
 };
 
 extern trader_mduser_boardcast* trader_mduser_boardcast_new();

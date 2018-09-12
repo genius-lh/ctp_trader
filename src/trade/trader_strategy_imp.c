@@ -16,6 +16,10 @@
 #include "trader_strategy_limit.h"
 
 static int trader_strategy_double_to_int(double val);
+static double trader_strategy_t1_buy_price(trader_strategy* self, double diff);
+static double trader_strategy_t2_buy_price(trader_strategy* self);
+static double trader_strategy_t1_sell_price(trader_strategy* self, double diff);
+static double trader_strategy_t2_sell_price(trader_strategy* self);
 
 int trader_strategy_double_to_int(double val)
 {
@@ -31,7 +35,7 @@ int trader_strategy_double_to_int(double val)
 
 int trader_strategy_judge_t1_wait(trader_strategy* self,  trader_order* order_data)
 {
-  CMN_DEBUG("Enter!\n");
+  CMN_DEBUG("sid[%02d]Enter!\n", self->idx);
   trader_order* pOrder = order_data;
   int t1wait = 0;
   int diffPrice;
@@ -79,21 +83,18 @@ int trader_strategy_judge_t1_wait(trader_strategy* self,  trader_order* order_da
     pStrategyPlan->fT2Price);
   
   //1.  判断T1是否发生变化
-  if(TRADER_POSITION_BUY == pOrder->Direction){
-    diffPrice = trader_strategy_double_to_int((t1Price - pStrategyPlan->fT1Price) / self->PriceTick);
-    if(diffPrice > t1wait){
-      return 1;
-    }
-  }else{
-    diffPrice = trader_strategy_double_to_int((pStrategyPlan->fT1Price - t1Price) / self->PriceTick);
-    if(diffPrice > t1wait){
-      return 1;
-    }
+  diffPrice = trader_strategy_double_to_int((t1Price - pStrategyPlan->fT1Price) / self->PriceTick);
+  if(diffPrice < 0){
+    diffPrice = -diffPrice;
+  }
+  
+  if(diffPrice > t1wait){
+    return 1;
   }
   
   //2.  判断T2是否发生变化
-  diffPrice = trader_strategy_double_to_int((t2Price - pStrategyPlan->fT2Price) / self->PriceTick);
-  if(0  == diffPrice){
+  diffPrice = trader_strategy_double_to_int((t2Price - pStrategyPlan->fT2Price) / self->T2PriceTick);
+  if(0 == diffPrice){
     return 0;
   }
   
@@ -102,37 +103,12 @@ int trader_strategy_judge_t1_wait(trader_strategy* self,  trader_order* order_da
 
 int trader_strategy_judge_t2_wait(trader_strategy* self,  trader_order* order_data)
 {
-  CMN_DEBUG("Enter!\n");
-  int bCancel = 0;
-  trader_order* pOrder = order_data;
-  
-  double planPrice;
-  double currentPrice;
-
   if(0 == self->T2Wait){
     return 1;
   }
   
-  planPrice = pOrder->LimitPrice;
-  if(TRADER_POSITION_BUY == pOrder->Direction){
-    currentPrice = self->oT2Tick.BidPrice1;
-    currentPrice += self->PriceTick * self->T2Over;
-    planPrice += self->PriceTick * self->T2Wait;
-    if(planPrice < currentPrice){
-      bCancel = 1;
-    }
-    
-  }else{
-    currentPrice = self->oT2Tick.AskPrice1;
-    currentPrice -= self->PriceTick * self->T2Over;
-    planPrice -= self->PriceTick * self->T2Wait;
-    if(planPrice > currentPrice){
-      bCancel = 1;
-    }
-  }
-
-  return bCancel;
-
+  CMN_DEBUG("sid[%02d]Enter!\n", self->idx);
+  return 1;
 }
 
 int trader_strategy_judge_buy_open(trader_strategy* self)
@@ -159,8 +135,9 @@ int trader_strategy_judge_buy_open(trader_strategy* self)
   diff = trader_strategy_buy_price_diff(self);
   th = self->DTOpen;
 
-  nRet = trader_strategy_double_to_int((diff - th) / self->PriceTick);
-  CMN_INFO("DIFF[%.1lf]DTOPen[%.1lf]nRet[%d]\n", diff, th, nRet);
+  nRet = trader_strategy_double_to_int((diff - th) / self->T1Weight / self->PriceTick);
+  CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]DTOpen[%.1lf]nRet[%d]\n", 
+    self->idx, self->T1, self->T2, diff, th, nRet);
   if(nRet <= 0){
     return 1;
   }
@@ -176,8 +153,9 @@ int trader_strategy_judge_buy_close(trader_strategy* self)
   diff = trader_strategy_sell_price_diff(self);
   th = self->DTClose;
 
-  nRet = trader_strategy_double_to_int((diff - th) / self->PriceTick);
-  CMN_INFO("DIFF[%.1lf]DTClose[%.1lf]nRet[%d]\n", diff, th, nRet);
+  nRet = trader_strategy_double_to_int((diff - th) / self->T1Weight / self->PriceTick);
+  CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]DTClose[%.1lf]nRet[%d]\n", 
+    self->idx, self->T1, self->T2, diff, th, nRet);
   if(nRet >= 0){
     return 1;
   }
@@ -210,8 +188,9 @@ int trader_strategy_judge_sell_open(trader_strategy* self)
   diff = trader_strategy_sell_price_diff(self);
   th = self->KTOpen;
 
-  nRet = trader_strategy_double_to_int((diff - th) / self->PriceTick);
-  CMN_INFO("DIFF[%.1lf]KTOpen[%.1lf]nRet[%d]\n", diff, th, nRet);
+  nRet = trader_strategy_double_to_int((diff - th) / self->T1Weight / self->PriceTick);
+  CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]KTOPen[%.1lf]nRet[%d]\n", 
+    self->idx, self->T1, self->T2, diff, th, nRet);
   if(nRet >= 0){
     return 1;
   }
@@ -227,8 +206,9 @@ int trader_strategy_judge_sell_close(trader_strategy* self)
   diff = trader_strategy_buy_price_diff(self);
   th = self->KTClose;
 
-  nRet = trader_strategy_double_to_int((diff - th) / self->PriceTick);
-  CMN_INFO("DIFF[%.1lf]KTClose[%.1lf]nRet[%d]\n", diff, th, nRet);
+  nRet = trader_strategy_double_to_int((diff - th) / self->T1Weight / self->PriceTick);
+  CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]KTClose[%.1lf]nRet[%d]\n", 
+    self->idx, self->T1, self->T2, diff, th, nRet);
   if(nRet <= 0){
     return 1;
   }
@@ -238,20 +218,15 @@ int trader_strategy_judge_sell_close(trader_strategy* self)
 double trader_strategy_buy_price_diff(trader_strategy* self)
 {
   trader_tick* t1 = &self->oT1Tick;
-  trader_tick* t2 = &self->oT2Tick;
   
-  int nRet = 0;
   double t1set = t1->BidPrice1;
-  double t2set = t2->BidPrice1;
+  double t2set = trader_strategy_t2_sell_price(self);
 
-  if(IS_STG_MM(self->STG)){
-    long t2l = 1;
-    t2l += (long)(t2->BidPrice1 / self->PriceTick);
-    t2l += (long)(t2->AskPrice1 / self->PriceTick);
-    t2l = t2l / 2;
+  //配比
+  t1set *= self->T1Weight;
+  t2set *= self->T2Weight;
 
-    t2set = self->PriceTick * t2l;
-  }
+  CMN_INFO("T1SET[%.4lf]T2SET[%.4lf]\n", t1set, t2set);
 
   if(IS_STG_OPTION(self->STG)){
     return t1set + t2set;
@@ -263,19 +238,15 @@ double trader_strategy_buy_price_diff(trader_strategy* self)
 double trader_strategy_sell_price_diff(trader_strategy* self)
 {
   trader_tick* t1 = &self->oT1Tick;
-  trader_tick* t2 = &self->oT2Tick;
-  int nRet = 0;
+
   double t1set = t1->AskPrice1;
-  double t2set = t2->AskPrice1;
+  double t2set = trader_strategy_t2_buy_price(self);
 
-  if(IS_STG_MM(self->STG)){
-    long t2l = -1;
-    t2l += (long)(t2->BidPrice1 / self->PriceTick);
-    t2l += (long)(t2->AskPrice1 / self->PriceTick);
-    t2l = t2l / 2;
-
-    t2set = self->PriceTick * t2l;
-  }
+  // 配比
+  t1set *= self->T1Weight;
+  t2set *= self->T2Weight;
+  
+  CMN_INFO("T1SET[%.4lf]T2SET[%.4lf]\n", t1set, t2set);
 
   if(IS_STG_OPTION(self->STG)){
     return t1set + t2set;
@@ -337,8 +308,6 @@ double trader_strategy_t1_price(trader_strategy* self, char long_short, char ope
 {
   trader_tick* t1 = &self->oT1Tick;
   double t1set;
-  double t2set;
-  double diff;
   double setVal;
   char cBuySell = TRADER_POSITION_BUY;
   
@@ -362,40 +331,37 @@ double trader_strategy_t1_price(trader_strategy* self, char long_short, char ope
 
   if(TRADER_POSITION_BUY == cBuySell) {
     // 买入
-    diff = trader_strategy_buy_price_diff(self);
-    if(IS_STG_OPTION(self->STG)){
-      t2set = diff - t1->BidPrice1;
-      t1set = setVal - t2set + self->PriceTick * self->T1Over;
-    }else{
-      t2set = t1->BidPrice1 - diff;
-      t1set = t2set + setVal + self->PriceTick * self->T1Over;
+    t1set = trader_strategy_t1_buy_price(self, setVal);
+
+    // 对手价
+    if(t1set > t1->AskPrice1){
+      t1set = t1->AskPrice1;
     }
 
+    // 超价
+    t1set += self->PriceTick * self->T1Over;
+
+    // 涨停判断
     if(t1set > t1->UpperLimitPrice){
-      t1set = t1->AskPrice1 + self->PriceTick * self->T1Over;
-      if(t1set > t1->UpperLimitPrice){
-        t1set = t1->UpperLimitPrice;
-      }
+      t1set = t1->UpperLimitPrice;
     } 
 
   }else{
     // 卖出
-    diff = trader_strategy_sell_price_diff(self);
-    if(IS_STG_OPTION(self->STG)){
-      t2set = diff - t1->AskPrice1;
-      t1set = setVal - t2set - self->PriceTick * self->T1Over;
-    }else{
-      t2set = t1->AskPrice1 - diff;
-      t1set = t2set + setVal - self->PriceTick * self->T1Over;
-    }
-    
-    if(t1set < t1->LowerLimitPrice){
-      t1set = t1->BidPrice1 - self->PriceTick * self->T1Over;
-      if(t1set < t1->LowerLimitPrice){
-        t1set = t1->LowerLimitPrice;
-      }
-    } 
+    t1set = trader_strategy_t1_sell_price(self, setVal);
 
+    // 对手价
+    if(t1set < t1->BidPrice1){
+      t1set = t1->BidPrice1;
+    }
+
+    // 超价
+    t1set -= self->PriceTick * self->T1Over;
+
+    // 跌停判断
+    if(t1set < t1->LowerLimitPrice){
+      t1set = t1->LowerLimitPrice;
+    }
   }
 
   return t1set;
@@ -403,9 +369,8 @@ double trader_strategy_t1_price(trader_strategy* self, char long_short, char ope
 
 double trader_strategy_t2_price(trader_strategy* self, char long_short, char open_close)
 {
-  trader_tick* t1 = &self->oT1Tick;
+  trader_tick* t2 = &self->oT2Tick;
   double t2set;
-  double diff;
 
   char cBuySell = TRADER_POSITION_BUY;
   if(IS_STG_OPTION(self->STG)){
@@ -422,18 +387,6 @@ double trader_strategy_t2_price(trader_strategy* self, char long_short, char ope
         cBuySell = TRADER_POSITION_BUY;
       }
     }
-
-    if(TRADER_POSITION_BUY == cBuySell){
-      // 买
-      // 多开 空平
-      diff = trader_strategy_buy_price_diff(self);
-      t2set = diff - t1->BidPrice1 + self->PriceTick * self->T2Over;
-    }else{
-      // 卖
-      // 空开 多平
-      diff = trader_strategy_sell_price_diff(self);
-      t2set = diff - t1->AskPrice1 - self->PriceTick * self->T2Over;
-    }
   }else{
     if(TRADER_POSITION_LONG == long_short){
       if(TRADER_POSITION_OPEN == open_close) {
@@ -448,17 +401,26 @@ double trader_strategy_t2_price(trader_strategy* self, char long_short, char ope
         cBuySell = TRADER_POSITION_SELL;
       }
     }
+  }
+  if(TRADER_POSITION_BUY == cBuySell){
+    // 买
+    // 多开 空平
+    t2set = trader_strategy_t2_buy_price(self);
+    t2set += self->PriceTick * self->T2Over;
 
-    if(TRADER_POSITION_BUY == cBuySell){
-      // 买
-      // 空开 多平
-      diff = trader_strategy_sell_price_diff(self);
-      t2set = t1->AskPrice1 - diff + self->PriceTick * self->T2Over;
-    }else{
-      // 卖
-      // 多开 空平
-      diff = trader_strategy_buy_price_diff(self);
-      t2set = t1->BidPrice1 - diff - self->PriceTick * self->T2Over;
+    // 涨停判断
+    if(t2set > t2->UpperLimitPrice){
+      t2set = t2->UpperLimitPrice;
+    } 
+  }else{
+    // 卖
+    // 空开 多平
+    t2set = trader_strategy_t2_sell_price(self);
+    t2set -= self->PriceTick * self->T2Over;
+
+    // 跌停判断
+    if(t2set < t2->LowerLimitPrice){
+      t2set = t2->LowerLimitPrice;
     }
   }
   return t2set;
@@ -471,10 +433,19 @@ double trader_strategy_t2_price_opponent(trader_strategy* self, char buy_sell)
   
   double t2set;
 
-  if(TRADER_POSITION_SELL == cBuySell){
-    t2set = t2->BidPrice1 - self->T2Over * self->PriceTick;
-  }else{
+  if(TRADER_POSITION_BUY == cBuySell){
     t2set = t2->AskPrice1 + self->T2Over * self->PriceTick;
+    // 涨停判断
+    if(t2set > t2->UpperLimitPrice){
+      t2set = t2->UpperLimitPrice;
+    } 
+
+  }else{
+    t2set = t2->BidPrice1 - self->T2Over * self->PriceTick;
+    // 跌停判断
+    if(t2set < t2->LowerLimitPrice){
+      t2set = t2->LowerLimitPrice;
+    }
   }
     
   return t2set;
@@ -490,7 +461,7 @@ int trader_strategy_check_t1_price(trader_strategy* self, double price)
   }
 
   if(price >= t1->UpperLimitPrice){
-    CMN_ERROR("price[%lf] >= LowerLimitPrice[%lf]\n", price, t1->UpperLimitPrice); 
+    CMN_ERROR("price[%lf] >= UpperLimitPrice[%lf]\n", price, t1->UpperLimitPrice); 
     return -1;
   }
 
@@ -507,7 +478,7 @@ int trader_strategy_check_t2_price(trader_strategy* self, double price)
   }
 
   if(price > t2->UpperLimitPrice){
-    CMN_ERROR("price[%lf] > LowerLimitPrice[%lf]\n", price, t2->UpperLimitPrice); 
+    CMN_ERROR("price[%lf] > UpperLimitPrice[%lf]\n", price, t2->UpperLimitPrice); 
     return -1;
   }
 
@@ -526,7 +497,8 @@ int trader_strategy_auto_sell(trader_strategy* self)
   // 空平价差
   self->KTClose = diff + self->AutoKTOpen - self->AutoKTClose;
   
-  CMN_INFO("diff[%.3f]KTOpen[%.3f]KTClose[%.3f]\n", diff, self->KTOpen, self->KTClose);
+  CMN_INFO("SID[%02d]T1[%s]T2[%s]diff[%.3f]diff[%.3f]KTOpen[%.3f]KTClose[%.3f]\n", 
+    self->idx, self->T1, self->T2, diff, self->KTOpen, self->KTClose);
 
   return 0;
 }
@@ -542,10 +514,77 @@ int trader_strategy_auto_buy(trader_strategy* self)
   // 多平价差
   self->DTClose = diff - self->AutoDTOpen + self->AutoDTClose;
   
-  CMN_INFO("diff[%.3f]DTOpen[%.3f]DTClose[%.3f]\n", diff, self->DTOpen, self->DTClose);
+  CMN_INFO("SID[%02d]T1[%s]T2[%s]diff[%.3f]DTOpen[%.3f]DTClose[%.3f]\n", 
+    self->idx, self->T1, self->T2, diff, self->DTOpen, self->DTClose);
   
   return 0;
 }
 
+double trader_strategy_t1_buy_price(trader_strategy* self, double diff)
+{
+  double t2set = trader_strategy_t2_sell_price(self);
+  double t1set;
+  if(IS_STG_OPTION(self->STG)){
+    t1set = (diff - t2set * self->T2Weight) / self->T1Weight;
+  }else{
+    t1set = (diff + t2set * self->T2Weight) / self->T1Weight;
+  }
+  
+  CMN_INFO("t1set[%.4lf]diff[%.4lf]t2set[%.4lf]T2Weight[%.4lf]T1Weight[%.4lf]\n", 
+    t1set, diff, t2set, self->T2Weight, self->T1Weight);
+  
+  return t1set;
+}
 
+double trader_strategy_t2_buy_price(trader_strategy* self)
+{
+  trader_tick* t2 = &self->oT2Tick;
+
+  double t2set = t2->AskPrice1;
+
+  if(IS_STG_MM(self->STG)){
+    long t2l = -1;
+    t2l += (long)(t2->BidPrice1 / self->T2PriceTick);
+    t2l += (long)(t2->AskPrice1 / self->T2PriceTick);
+    t2l = t2l / 2;
+
+    t2set = self->T2PriceTick * t2l;
+  }
+
+  return t2set;
+}
+
+double trader_strategy_t1_sell_price(trader_strategy* self, double diff)
+{
+  double t2set = trader_strategy_t2_buy_price(self);
+  double t1set; 
+  if(IS_STG_OPTION(self->STG)){
+    t1set = (diff - t2set * self->T2Weight) / self->T1Weight;
+  }else{
+    t1set = (diff + t2set * self->T2Weight) / self->T1Weight;
+  }
+  
+  CMN_INFO("t1set[%.4lf]diff[%.4lf]t2set[%.4lf]T2Weight[%.4lf]T1Weight[%.4lf]\n", 
+    t1set, diff, t2set, self->T2Weight, self->T1Weight);
+
+  return t1set;
+}
+
+double trader_strategy_t2_sell_price(trader_strategy* self)
+{
+  trader_tick* t2 = &self->oT2Tick;
+  
+  double t2set = t2->BidPrice1;
+
+  if(IS_STG_MM(self->STG)){
+    long t2l = 1;
+    t2l += (long)(t2->BidPrice1 / self->T2PriceTick);
+    t2l += (long)(t2->AskPrice1 / self->T2PriceTick);
+    t2l = t2l / 2;
+
+    t2set = self->T2PriceTick * t2l;
+  }
+
+  return t2set;
+}
 
