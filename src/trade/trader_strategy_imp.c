@@ -492,12 +492,12 @@ int trader_strategy_auto_sell(trader_strategy* self)
   double diff = trader_strategy_sell_price_diff(self);
 
   // 空开价差
-  self->KTOpen = diff + self->AutoKTOpen;
+  self->KTOpen = diff + self->AutoKTOpen * self->PriceTick * self->T1Weight;
 
   // 空平价差
-  self->KTClose = diff + self->AutoKTOpen - self->AutoKTClose;
+  self->KTClose = diff + ((self->AutoKTOpen - self->AutoKTClose) * self->PriceTick * self->T1Weight);
   
-  CMN_INFO("SID[%02d]T1[%s]T2[%s]diff[%.3f]diff[%.3f]KTOpen[%.3f]KTClose[%.3f]\n", 
+  CMN_INFO("SID[%02d]T1[%s]T2[%s]diff[%.3f]KTOpen[%.3f]KTClose[%.3f]\n", 
     self->idx, self->T1, self->T2, diff, self->KTOpen, self->KTClose);
 
   return 0;
@@ -509,10 +509,10 @@ int trader_strategy_auto_buy(trader_strategy* self)
   double diff = trader_strategy_buy_price_diff(self);
   
   // 多开价差
-  self->DTOpen = diff - self->AutoDTOpen;
+  self->DTOpen = diff - self->AutoDTOpen * self->PriceTick * self->T1Weight;
   
   // 多平价差
-  self->DTClose = diff - self->AutoDTOpen + self->AutoDTClose;
+  self->DTClose = diff - ((self->AutoDTOpen - self->AutoDTClose) * self->PriceTick * self->T1Weight);
   
   CMN_INFO("SID[%02d]T1[%s]T2[%s]diff[%.3f]DTOpen[%.3f]DTClose[%.3f]\n", 
     self->idx, self->T1, self->T2, diff, self->DTOpen, self->DTClose);
