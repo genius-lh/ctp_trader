@@ -411,6 +411,18 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
 
   char* T1;
   char* T2;
+
+  // 新版本默认参数
+  update->stage[num].AutoType = 0;
+  update->stage[num].AutoKTOpen = 0;
+  update->stage[num].AutoKTClose = 0;
+  update->stage[num].AutoDTOpen = 0;
+  update->stage[num].AutoDTClose = 0;
+  update->stage[num].T1Weight = 1;
+  update->stage[num].T2Weight = 1;
+  update->stage[num].T2Ratio = 1;
+  update->stage[num].NightClosingTime = 0;
+
   for(pChild = pRequest->child; pChild != NULL; pChild = pChild->next){
     if(!strcmp(pChild->string, "whichGrid")){
       //update->stage[num].StageId = pChild->valuestring[4] - 'A';
@@ -471,6 +483,8 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
       update->stage[num].T2Weight = atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t2Ratio")){
       update->stage[num].T2Ratio = atoi(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "nightClosingTime")){
+        update->stage[num].NightClosingTime = atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "IsActivate")){
       if(pChild->type == cJSON_False){
         update->stage[num].Used = 0;
@@ -527,7 +541,13 @@ int client_aud_cnn_fill_rsp_query_position(char* position, int num, cJSON* item,
 
 int client_aud_cnn_conv_which_grid(const char* grid)
 {
-  int stageId = (grid[4] - '0') * 10 + (grid[5] - '0') - 1;
+  int stageId = 0;
+  if(grid[4] >= 'A' && grid[4] <= 'F'){
+    stageId = grid[4] - 'A';
+  }else{
+    stageId = (grid[4] - '0') * 10 + (grid[5] - '0') - 1;
+  }
+  
   return stageId;
 }
 

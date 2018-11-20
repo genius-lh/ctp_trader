@@ -65,7 +65,7 @@ static int trader_strategy_release_order(trader_strategy* self, char* user_order
 
 static int trader_strategy_print_tick(trader_strategy* self);
 
-
+static int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data);
 
 static trader_strategy_method* trader_strategy_method_get();
 
@@ -150,6 +150,7 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   }
   
   // 不报单时段
+  /*
   if((0 == memcmp(tick_data->UpdateTime, "11:29:57", 8))
   ||(0 == memcmp(tick_data->UpdateTime, "11:29:58", 8))
   ||(0 == memcmp(tick_data->UpdateTime, "11:29:59", 8))
@@ -177,7 +178,7 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   ){
     return 0;
   }
-
+  */
   
 
 /*
@@ -192,6 +193,9 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   if(self->used){
     CMN_INFO("SID[%02d]tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", self->idx, tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
   }
+
+  // 收盘判断
+  trader_strategy_check_closing(self, tick_data);
   
   if((self->oT1Tick.AskVolume1 + self->oT1Tick.BidVolume1) > (self->oT2Tick.AskVolume1 + self->oT2Tick.BidVolume1)){
     // T1 为主力合约
@@ -1632,6 +1636,90 @@ int trader_strategy_print_tick(trader_strategy* self)
   CMN_INFO("BidVolume1[%d]\n", t2->BidVolume1);
   CMN_INFO("AskPrice1[%lf]\n", t2->AskPrice1);
   CMN_INFO("AskVolume1[%d]\n", t2->AskVolume1);
+
+  return 0;
+}
+
+int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
+{
+  if(!self->used){
+    return 0;
+  }
+
+  do{
+    //中午收盘判断
+    if((0 == memcmp(tick_data->UpdateTime, "11:29:57", 8))
+    ||(0 == memcmp(tick_data->UpdateTime, "11:29:58", 8))
+    ||(0 == memcmp(tick_data->UpdateTime, "11:29:59", 8))){
+      CMN_INFO("中午收盘\n");
+      self->used = 0;
+      break;
+    }
+
+    // 下午收盘判断
+    if((0 == memcmp(tick_data->UpdateTime, "14:59:57", 8))
+    ||(0 == memcmp(tick_data->UpdateTime, "14:59:58", 8))
+    ||(0 == memcmp(tick_data->UpdateTime, "14:59:59", 8))){
+      CMN_INFO("下午收盘\n");
+      self->used = 0;
+      break;
+    }
+
+    // 夜盘收盘判断
+    if(CLOSING_TIME_NONE == self->NightClosingTime){
+      break;
+    }
+
+    if(CLOSING_TIME_23_00 == self->NightClosingTime){
+      if((0 == memcmp(tick_data->UpdateTime, "22:59:57", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "22:59:58", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "22:59:59", 8))){
+        CMN_INFO("23点收盘\n");
+        self->used = 0;
+        break;
+      }
+    }
+
+    if(CLOSING_TIME_23_30 == self->NightClosingTime){
+      if((0 == memcmp(tick_data->UpdateTime, "23:29:57", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "23:29:58", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "23:29:59", 8))){
+        CMN_INFO("23点30分收盘\n");
+        self->used = 0;
+        break;
+      }
+    }
+
+    if(CLOSING_TIME_01_00 == self->NightClosingTime){
+      if((0 == memcmp(tick_data->UpdateTime, "00:59:57", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "00:59:58", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "00:59:59", 8))){
+        CMN_INFO("1点收盘\n");
+        self->used = 0;
+        break;
+      }
+    }
+
+    if(CLOSING_TIME_02_00 == self->NightClosingTime){
+      if((0 == memcmp(tick_data->UpdateTime, "01:59:57", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "01:59:58", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "01:59:59", 8))){
+        CMN_INFO("2点收盘\n");
+        self->used = 0;
+        break;
+      }
+    }
+
+    if(CLOSING_TIME_02_30 == self->NightClosingTime){
+      if((0 == memcmp(tick_data->UpdateTime, "02:29:57", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "02:29:58", 8))
+      ||(0 == memcmp(tick_data->UpdateTime, "02:29:59", 8))){
+        CMN_INFO("2点30分收盘\n");
+        self->used = 0;
+        break;
+      }
+    }
+  }while(0);
 
   return 0;
 }

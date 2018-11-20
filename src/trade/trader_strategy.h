@@ -14,6 +14,12 @@
 
 #define AUTO_STRATEGY_IS_TYPE_1(__msec) ((__msec) < 500)
 
+#define CLOSING_TIME_NONE 0
+#define CLOSING_TIME_23_00 1
+#define CLOSING_TIME_23_30 2
+#define CLOSING_TIME_01_00 3
+#define CLOSING_TIME_02_00 4
+#define CLOSING_TIME_02_30 5
 
 typedef struct trader_strategy_order_def trader_strategy_order;
 typedef struct trader_strategy_trade_def trader_strategy_trade;
@@ -104,6 +110,8 @@ struct trader_strategy_def{
   double T1Weight;
   double T2Weight;
   int T2Ratio;
+  // 夜盘收盘时间
+  int NightClosingTime;
 
   // T1 行情
   trader_tick oT1Tick;
