@@ -161,6 +161,7 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
 
   CMN_DEBUG("self->pMduserClt\n");
   self->pMduserClt = trader_mduser_client_new();
+  self->cacheLen = 0;
   
   CMN_DEBUG("boardcastAddr[%s]\n", self->boardcastAddr);
   CMN_DEBUG("boardcastPort[%d]\n", self->boardcastPort);
