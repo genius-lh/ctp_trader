@@ -14,9 +14,9 @@ typedef struct ctp_trader_api_cb_def ctp_trader_api_cb;
 struct ctp_trader_api_cb_def{
   void (*xOnFrontConnected)(void* arg);
   void (*xOnFrontDisconnected)(void* arg, int nReason);
-  void (*xOnRspUserLogin)(void* arg, CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) ;
+  void (*xOnRspUserLogin)(void* arg, CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
   void (*xOnRspUserLogout)(void* arg, CThostFtdcUserLogoutField *pRspUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
-  void (*xOnRspError)(void* arg, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) ;
+  void (*xOnRspError)(void* arg, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
   void (*xOnRspOrderInsert)(void* arg, CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
   void (*xOnRspOrderAction)(void* arg, CThostFtdcInputOrderActionField *pOrderAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
   void (*xOnRtnOrder)(void* arg, CThostFtdcOrderField *pOrder);
@@ -40,9 +40,10 @@ class CCtpTraderHandler : public  CThostFtdcTraderSpi
 public:
   CCtpTraderHandler(ctp_trader_api_cb* cb, void* arg);
   
+public:
   ///当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
   void OnFrontConnected();
-
+  
   ///当客户端与交易后台通信连接断开时，该方法被调用。当发生这个情况后，API会自动重新连接，客户端可不做处理。
   ///@param nReason 错误原因
   ///        0x1001 网络读失败
@@ -51,20 +52,20 @@ public:
   ///        0x2002 发送心跳失败
   ///        0x2003 收到错误报文
   void OnFrontDisconnected(int nReason);
-  	
+    
   ///心跳超时警告。当长时间未收到报文时，该方法被调用。
   ///@param nTimeLapse 距离上次接收报文的时间
   virtual void OnHeartBeatWarning(int nTimeLapse){};
-
+  
   ///客户端认证响应
   virtual void OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
-
+  
 
   ///登录请求响应
-  void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) ;
+  void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
   ///登出请求响应
-  void OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) ;
+  void OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
   ///用户口令更新请求响应
   virtual void OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
@@ -110,6 +111,18 @@ public:
 
   ///报价操作请求响应
   virtual void OnRspQuoteAction(CThostFtdcInputQuoteActionField *pInputQuoteAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///批量报单操作请求响应
+  virtual void OnRspBatchOrderAction(CThostFtdcInputBatchOrderActionField *pInputBatchOrderAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///期权自对冲录入请求响应
+  virtual void OnRspOptionSelfCloseInsert(CThostFtdcInputOptionSelfCloseField *pInputOptionSelfClose, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///期权自对冲操作请求响应
+  virtual void OnRspOptionSelfCloseAction(CThostFtdcInputOptionSelfCloseActionField *pInputOptionSelfCloseAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///申请组合录入请求响应
+  virtual void OnRspCombActionInsert(CThostFtdcInputCombActionField *pInputCombAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
 
   ///请求查询报单响应
   virtual void OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
@@ -186,6 +199,27 @@ public:
   ///请求查询二级代理操作员银期权限响应
   virtual void OnRspQrySecAgentACIDMap(CThostFtdcSecAgentACIDMapField *pSecAgentACIDMap, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
 
+  ///请求查询产品报价汇率
+  virtual void OnRspQryProductExchRate(CThostFtdcProductExchRateField *pProductExchRate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询产品组
+  virtual void OnRspQryProductGroup(CThostFtdcProductGroupField *pProductGroup, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询做市商合约手续费率响应
+  virtual void OnRspQryMMInstrumentCommissionRate(CThostFtdcMMInstrumentCommissionRateField *pMMInstrumentCommissionRate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询做市商期权合约手续费响应
+  virtual void OnRspQryMMOptionInstrCommRate(CThostFtdcMMOptionInstrCommRateField *pMMOptionInstrCommRate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询报单手续费响应
+  virtual void OnRspQryInstrumentOrderCommRate(CThostFtdcInstrumentOrderCommRateField *pInstrumentOrderCommRate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询资金账户响应
+  virtual void OnRspQrySecAgentTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询二级代理商资金校验模式响应
+  virtual void OnRspQrySecAgentCheckMode(CThostFtdcSecAgentCheckModeField *pSecAgentCheckMode, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
   ///请求查询期权交易成本响应
   virtual void OnRspQryOptionInstrTradeCost(CThostFtdcOptionInstrTradeCostField *pOptionInstrTradeCost, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
 
@@ -200,6 +234,18 @@ public:
 
   ///请求查询报价响应
   virtual void OnRspQryQuote(CThostFtdcQuoteField *pQuote, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询期权自对冲响应
+  virtual void OnRspQryOptionSelfClose(CThostFtdcOptionSelfCloseField *pOptionSelfClose, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询投资单元响应
+  virtual void OnRspQryInvestUnit(CThostFtdcInvestUnitField *pInvestUnit, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询组合合约安全系数响应
+  virtual void OnRspQryCombInstrumentGuard(CThostFtdcCombInstrumentGuardField *pCombInstrumentGuard, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+  ///请求查询申请组合响应
+  virtual void OnRspQryCombAction(CThostFtdcCombActionField *pCombAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
 
   ///请求查询转帐流水响应
   virtual void OnRspQryTransferSerial(CThostFtdcTransferSerialField *pTransferSerial, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
@@ -224,6 +270,9 @@ public:
 
   ///合约交易状态通知
   void OnRtnInstrumentStatus(CThostFtdcInstrumentStatusField *pInstrumentStatus);
+
+  ///交易所公告通知
+  virtual void OnRtnBulletin(CThostFtdcBulletinField *pBulletin) {};
 
   ///交易通知
   virtual void OnRtnTradingNotice(CThostFtdcTradingNoticeInfoField *pTradingNoticeInfo) {};
@@ -257,6 +306,24 @@ public:
 
   ///保证金监控中心用户令牌
   virtual void OnRtnCFMMCTradingAccountToken(CThostFtdcCFMMCTradingAccountTokenField *pCFMMCTradingAccountToken) {};
+
+  ///批量报单操作错误回报
+  virtual void OnErrRtnBatchOrderAction(CThostFtdcBatchOrderActionField *pBatchOrderAction, CThostFtdcRspInfoField *pRspInfo) {};
+
+  ///期权自对冲通知
+  virtual void OnRtnOptionSelfClose(CThostFtdcOptionSelfCloseField *pOptionSelfClose) {};
+
+  ///期权自对冲录入错误回报
+  virtual void OnErrRtnOptionSelfCloseInsert(CThostFtdcInputOptionSelfCloseField *pInputOptionSelfClose, CThostFtdcRspInfoField *pRspInfo) {};
+
+  ///期权自对冲操作错误回报
+  virtual void OnErrRtnOptionSelfCloseAction(CThostFtdcOptionSelfCloseActionField *pOptionSelfCloseAction, CThostFtdcRspInfoField *pRspInfo) {};
+
+  ///申请组合通知
+  virtual void OnRtnCombAction(CThostFtdcCombActionField *pCombAction) {};
+
+  ///申请组合录入错误回报
+  virtual void OnErrRtnCombActionInsert(CThostFtdcInputCombActionField *pInputCombAction, CThostFtdcRspInfoField *pRspInfo) {};
 
   ///请求查询签约银行响应
   virtual void OnRspQryContractBank(CThostFtdcContractBankField *pContractBank, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
@@ -344,7 +411,6 @@ public:
 
   ///银行发起变更银行账号通知
   virtual void OnRtnChangeAccountByBank(CThostFtdcChangeAccountField *pChangeAccount) {};
-
 
 private:
   ctp_trader_api_cb* m_TraderCb;
