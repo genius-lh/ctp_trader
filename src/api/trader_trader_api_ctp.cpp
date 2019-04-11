@@ -23,7 +23,7 @@ static void trader_trader_api_ctp_login(trader_trader_api* self);
 static void trader_trader_api_ctp_logout(trader_trader_api* self);
   
 static int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol);
-static int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* order_sys_id);
+static int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id);
  
 static int trader_trader_api_ctp_qry_instrument(trader_trader_api* self);
 static int trader_trader_api_ctp_qry_user_investor(trader_trader_api* self);
@@ -200,7 +200,7 @@ int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char
   
 }
 
-int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* order_sys_id)
+int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
 {
   trader_trader_api_ctp* pImp = (trader_trader_api_ctp*)self->pUserApi;
   CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)pImp->pTraderApi;
@@ -222,7 +222,7 @@ int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char
 	///会话编号
 	//inputOrderActionField.SessionID = session_id;
 	///交易所代码
-	strcpy(inputOrderActionField.ExchangeID, "SSE");
+	strcpy(inputOrderActionField.ExchangeID, exchange_id);
 	///操作标志
 	inputOrderActionField.ActionFlag = THOST_FTDC_AF_Delete;
 	///用户代码

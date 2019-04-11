@@ -5,7 +5,9 @@
 #include "trader_data.h"
 #include "trader_db.h"
 #include "trader_msg_struct.h"
-#include "ctp_trader_api.h"
+//#include "ctp_trader_api.h"
+#include "trader_trader_api.h"
+
 #include "trader_strategy_limit.h"
 
 #include <event2/util.h>
@@ -38,7 +40,7 @@ struct trader_strategy_engine_def {
   int nSequence;
   
   // 交易API
-  ctp_trader_api* pCtpTraderApi;
+  trader_trader_api* pCtpTraderApi;
 
   // 数据库API
   trader_db* pTraderDb;

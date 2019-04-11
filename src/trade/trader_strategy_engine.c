@@ -80,7 +80,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
   int i;
   int idx;
   trader_strategy* pStrategy;
-  CMN_INFO("UID[%s]\n", self->pCtpTraderApi->UserId);
+  CMN_INFO("UID[%s]\n", self->pCtpTraderApi->pUser);
   
   for(i = 0; i < pUpdate->num; i++){
     idx = pUpdate->stage[i].StageId;

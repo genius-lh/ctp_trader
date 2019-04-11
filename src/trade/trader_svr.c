@@ -128,13 +128,35 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   bufferevent_enable(self->BufTrader, EV_READ|EV_PERSIST);
 
   CMN_DEBUG("self->pCtpTraderApi\n");
+  /*
   self->pCtpTraderApi = ctp_trader_api_new(pair[1]);
   self->pCtpTraderApi->BrokenId = self->BrokerId;
   self->pCtpTraderApi->FrontAddress = self->TrFrontAdd;
   self->pCtpTraderApi->HedgeFlag= self->cHedgeFlag;
-  CMN_DEBUG("BrokenId[%s]\n", self->pCtpTraderApi->BrokenId);
-  CMN_DEBUG("FrontAddress[%s]\n", self->pCtpTraderApi->FrontAddress);
+  */
+  CMN_DEBUG("BrokenId[%s]\n", self->pCtpTraderApi->pBrokerID);
+  CMN_DEBUG("FrontAddress[%s]\n", self->pCtpTraderApi->pAddress);
   
+  CMN_DEBUG("self->pCtpTraderApi\n");
+#ifdef LTS
+  //LTS
+#include "trader_trader_api_lts.h"
+  self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_lts_method_get());
+#endif
+  
+#ifdef CTP
+    //CTP
+#include "trader_trader_api_ctp.h"
+  self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_ctp_method_get());
+#endif
+  
+#ifdef FEMAS
+    //FEMAS
+#include "trader_mduser_api_femas_method_get.h"
+  self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_femas_method_get());
+#endif
+  self->pCtpTraderApi->pMethod->xSetFrontAddr(self->pCtpTraderApi, self->TrFrontAdd);
+
   //self->BufMduser
   /*
   CMN_DEBUG("self->BufMduser\n");
@@ -225,7 +247,8 @@ int trader_svr_exit(trader_svr* self)
   trader_svr_redis_fini(self);
   
   if(self->pCtpTraderApi) {
-    ctp_trader_api_free(self->pCtpTraderApi);
+    //ctp_trader_api_free(self->pCtpTraderApi);
+    trader_trader_api_free(self->pCtpTraderApi);
   }
 
   if(self->pStrategyEngine){
@@ -674,9 +697,16 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
   self->pTraderDB->pMethod->xInit(self->pTraderDB, sDate);
 
   // ½»Ò×µÇÂ¼
-  self->pCtpTraderApi->pMethod->xStart(self->pCtpTraderApi,
+  
+  self->pCtpTraderApi->pMethod->xSetWorkspace(self->pCtpTraderApi, ".");
+  self->pCtpTraderApi->pMethod->xSetUser(self->pCtpTraderApi, self->BrokerId, 
     &self->UserId[0], &self->Passwd[0]);
   
+  self->pCtpTraderApi->pMethod->xStart(self->pCtpTraderApi);
+  /*
+  self->pCtpTraderApi->pMethod->xStart(self->pCtpTraderApi,
+    &self->UserId[0], &self->Passwd[0]);
+  */
   return 0;
 }
 

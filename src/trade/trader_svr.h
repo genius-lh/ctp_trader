@@ -9,7 +9,8 @@
 
 #include "trader_msg_struct.h"
 #include "trader_db.h"
-#include "ctp_trader_api.h"
+//#include "ctp_trader_api.h"
+#include "trader_trader_api.h"
 
 #include "trader_strategy_engine.h"
 
@@ -57,7 +58,8 @@ struct trader_svr_def {
   //ctp_mduser_api* pCtpMduserApi;
 
   // 交易API
-  ctp_trader_api* pCtpTraderApi;
+  //ctp_trader_api* pCtpTraderApi;
+  trader_trader_api* pCtpTraderApi;
   
   //内置数据库
   trader_db* pTraderDB;

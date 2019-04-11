@@ -44,8 +44,6 @@ traderMduserSvr_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
 	-Lctp -lctpmduser -lthostmduserapi
 
 traderStrategy_SOURCES=\
-	src/api/ctp_trader_api.cpp\
-	src/api/CtpTraderHandler.cpp\
 	src/log/cmn_log_catalog.c\
 	src/log/cmn_log_appender.c\
 	src/log/cmn_log_svr.c\
@@ -61,7 +59,7 @@ traderStrategy_SOURCES=\
 	src/client/client_aud_svr.c \
 	src/client/client_aud_pool.c
 
-traderStrategy_CFLAGS=-Isrc/api \
+traderStrategy_CFLAGS=-DCTP -Isrc/api \
 	-Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
@@ -71,8 +69,8 @@ traderStrategy_CPPFLAGS=-Ictp -Ilibevent -Ilibevent/compat/sys\
 traderStrategy_LDADD=\
 	-lc -lstdc++ -lm -lpthread -lresolv -ldl\
 	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
-	-L. -ltradercmn\
-	-Lctp -lthosttraderapi
+	-L. -ltradercmn -ltraderapi\
+	-Lctp -lctptrader -lthosttraderapi
 
 testMduser_SOURCES=\
 	src/test/trader_mduser_client_test.c\
