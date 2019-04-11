@@ -54,7 +54,7 @@ configure
 configure.ac
 sqlite3
 stamp-h1
-log
+*.log
 traderExport
 traderStrategy
 
