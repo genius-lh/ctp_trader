@@ -62,7 +62,7 @@ int trader_trader_api_get_max_order_local_id(trader_trader_api* self, char* loca
 void trader_trader_api_on_front_connected(trader_trader_api* self)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONFRONTCONNECTED;
+  oEvent.Type = TRADERONFRONTCONNECTED;
   oEvent.ErrorCd = 0;
   oEvent.ErrorMsg[0] = '\0';
 
@@ -72,7 +72,7 @@ void trader_trader_api_on_front_connected(trader_trader_api* self)
 void trader_trader_api_on_front_disconnected(trader_trader_api* self, int nReason)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONFRONTDISCONNECTED;
+  oEvent.Type = TRADERONFRONTDISCONNECTED;
   oEvent.ErrorCd = nReason;
   oEvent.ErrorMsg[0] = '\0';
 
@@ -82,7 +82,7 @@ void trader_trader_api_on_front_disconnected(trader_trader_api* self, int nReaso
 void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, char* err_msg)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPERROR;
+  oEvent.Type = TRADERONRSPERROR;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -95,7 +95,7 @@ void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, char* e
 void trader_trader_api_on_rsp_user_login(trader_trader_api* self, int err_cd, char* err_msg)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPUSERLOGIN;
+  oEvent.Type = TRADERONRSPUSERLOGIN;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -107,7 +107,7 @@ void trader_trader_api_on_rsp_user_login(trader_trader_api* self, int err_cd, ch
 void trader_trader_api_on_rsp_user_logout(trader_trader_api* self, int err_cd, char* err_msg)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPUSERLOGOUT;
+  oEvent.Type = TRADERONRSPUSERLOGOUT;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -119,7 +119,7 @@ void trader_trader_api_on_rsp_user_logout(trader_trader_api* self, int err_cd, c
 void trader_trader_api_on_rsp_order_insert(trader_trader_api* self, int err_cd, char* err_msg)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPORDERINSERT;
+  oEvent.Type = TRADERONRSPORDERINSERT;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -131,7 +131,7 @@ void trader_trader_api_on_rsp_order_insert(trader_trader_api* self, int err_cd, 
 void trader_trader_api_on_rsp_order_action(trader_trader_api* self, int err_cd, char* err_msg)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPORDERACTION;
+  oEvent.Type = TRADERONRSPORDERACTION;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -143,7 +143,7 @@ void trader_trader_api_on_rsp_order_action(trader_trader_api* self, int err_cd, 
 void trader_trader_api_on_rtn_trade(trader_trader_api* self, trader_trade* trade)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRTNTRADE;
+  oEvent.Type = TRADERONRTNTRADE;
   oEvent.ErrorCd = 0;
   memcpy(&(oEvent.Body.TradeRsp), trade, sizeof(oEvent.Body.TradeRsp));
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
@@ -152,7 +152,7 @@ void trader_trader_api_on_rtn_trade(trader_trader_api* self, trader_trade* trade
 void trader_trader_api_on_rtn_order(trader_trader_api* self, trader_order* order)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRTNORDER;
+  oEvent.Type = TRADERONRTNORDER;
   oEvent.ErrorCd = 0;
   memcpy(&(oEvent.Body.OrderRsp), order, sizeof(oEvent.Body.OrderRsp));
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
@@ -162,7 +162,7 @@ void trader_trader_api_on_rtn_order(trader_trader_api* self, trader_order* order
 void trader_trader_api_on_err_rtn_order_insert(trader_trader_api* self, int err_cd, char* err_msg)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONERRRTNORDERINSERT;
+  oEvent.Type = TRADERONERRRTNORDERINSERT;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -174,7 +174,7 @@ void trader_trader_api_on_err_rtn_order_insert(trader_trader_api* self, int err_
 void trader_trader_api_on_err_rtn_order_action(trader_trader_api* self, int err_cd, char* err_msg)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONERRRTNORDERACTION;
+  oEvent.Type = TRADERONERRRTNORDERACTION;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -187,7 +187,7 @@ void trader_trader_api_on_err_rtn_order_action(trader_trader_api* self, int err_
 void trader_trader_api_on_rsp_qry_user_investor(trader_trader_api* self, char* investor_id, int err_cd, char* err_msg)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPQRYINVESTOR;
+  oEvent.Type = TRADERONRSPQRYINVESTOR;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -200,7 +200,7 @@ void trader_trader_api_on_rsp_qry_user_investor(trader_trader_api* self, char* i
 void trader_trader_api_on_rsp_qry_instrument(trader_trader_api* self, trader_instrument *pRspInstrument, int err_cd, char* err_msg, int is_last)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPQRYINSTRUMENT;
+  oEvent.Type = TRADERONRSPQRYINSTRUMENT;
   oEvent.IsLast = is_last;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
@@ -215,7 +215,7 @@ void trader_trader_api_on_rsp_qry_instrument(trader_trader_api* self, trader_ins
 void trader_trader_api_on_rsp_qry_investor_position(trader_trader_api* self, trader_position *pInvestorPosition, int err_cd, char* err_msg, int is_last)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPQRYINVESTORPOSITION;
+  oEvent.Type = TRADERONRSPQRYINVESTORPOSITION;
   oEvent.IsLast = is_last;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
@@ -230,7 +230,7 @@ void trader_trader_api_on_rsp_qry_investor_position(trader_trader_api* self, tra
 void trader_trader_api_on_rsp_qry_trading_account(trader_trader_api* self, trader_account *pTradingAcount, int err_cd, char* err_msg, int is_last)
 {
   trader_trader_evt oEvent;
-  oEvent.Type = ONRSPQRYTRADINGACCOUNT;
+  oEvent.Type = TRADERONRSPQRYTRADINGACCOUNT;
   oEvent.IsLast = is_last;
   oEvent.ErrorCd = err_cd;
   if(err_msg){

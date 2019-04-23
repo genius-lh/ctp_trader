@@ -16,6 +16,7 @@ extern "C" {
 #include "trader_data.h"
 #include "trader_trader_api.h"
 #include "trader_trader_api_femas.h"
+#include "cmn_log.h"
 
 static void trader_trader_api_femas_start(trader_trader_api* self);
 static void trader_trader_api_femas_stop(trader_trader_api* self);
@@ -23,7 +24,7 @@ static void trader_trader_api_femas_login(trader_trader_api* self);
 static void trader_trader_api_femas_logout(trader_trader_api* self);
   
 static int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol);
-static int trader_trader_api_femas_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* order_sys_id);
+static int trader_trader_api_femas_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id);
  
 static int trader_trader_api_femas_qry_instrument(trader_trader_api* self);
 static int trader_trader_api_femas_qry_user_investor(trader_trader_api* self);
@@ -181,13 +182,13 @@ int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, ch
 	///组合开平标志
 	inputOrderField.OffsetFlag = open_close;
 	///组合投机套保标志
-	inputOrderField.HedgeFlag = USTP_FTDC_CHF_Speculation;
+	inputOrderField.HedgeFlag = USTP_FTDC_CHF_Speculation; //TODO
 	///价格
 	inputOrderField.LimitPrice = price;
 	///数量
 	inputOrderField.Volume= vol;
 	///有效期类型
-	inputOrderField.TimeCondition = USTP_FTDC_TC_GFD;
+	inputOrderField.TimeCondition = USTP_FTDC_TC_GFD; //TODO
 	///成交量类型
 	inputOrderField.VolumeCondition = USTP_FTDC_VC_AV;
 	///最小成交量
@@ -202,7 +203,7 @@ int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, ch
   
 }
 
-int trader_trader_api_femas_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* order_sys_id)
+int trader_trader_api_femas_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
 {
   trader_trader_api_femas* pImp = (trader_trader_api_femas*)self->pUserApi;
   CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
@@ -335,7 +336,7 @@ void femas_trader_on_rsp_user_login(void* arg, CUstpFtdcRspUserLoginField *pRspU
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
   }
-    
+  
   trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
 }
 
@@ -536,10 +537,73 @@ void femas_query_on_rsp_qry_instrument(void* arg, CUstpFtdcRspInstrumentField *p
 
   if(pInstrument) {
     strcpy(traderInstrument.InstrumentID, pInstrument->InstrumentID);
-    //TODO
     traderInstrument.PriceTick = pInstrument->PriceTick;
     traderInstrument.VolumeMultiple = pInstrument->VolumeMultiple;
-    
+
+    CMN_DEBUG(
+      "pInstrument->ExchangeID[%s]\n"
+      "pInstrument->ProductID[%s]\n"
+      "pInstrument->ProductName[%s]\n"
+      "pInstrument->InstrumentID[%s]\n"
+      "pInstrument->InstrumentName[%s]\n"
+      "pInstrument->DeliveryYear[%d]\n"
+      "pInstrument->DeliveryMonth[%d]\n"
+      "pInstrument->MaxLimitOrderVolume[%d]\n"
+      "pInstrument->MinLimitOrderVolume[%d]\n"
+      "pInstrument->MaxMarketOrderVolume[%d]\n"
+      "pInstrument->MinMarketOrderVolume[%d]\n"
+      "pInstrument->VolumeMultiple[%d]\n"
+      "pInstrument->PriceTick[%lf]\n"
+      "pInstrument->Currency[%s]\n"
+      "pInstrument->LongPosLimit[%d]\n"
+      "pInstrument->ShortPosLimit[%d]\n"
+      "pInstrument->LowerLimitPrice[%lf]\n"
+      "pInstrument->UpperLimitPrice[%lf]\n"
+      "pInstrument->PreSettlementPrice[%lf]\n"
+      "pInstrument->InstrumentStatus[%s]\n"
+      "pInstrument->CreateDate[%s]\n"
+      "pInstrument->OpenDate[%s]\n"
+      "pInstrument->StartDelivDate[%s]\n"
+      "pInstrument->EndDelivDate[%s]\n"
+      "pInstrument->BasisPrice[%lf]\n"
+      "pInstrument->IsTrading[%d]\n"
+      "pInstrument->UnderlyingInstrID[%s]\n"
+      "pInstrument->UnderlyingMultiple[%d]\n"
+      "pInstrument->PositionType[%c]\n"
+      "pInstrument->StrikePrice[%lf]\n"
+      "pInstrument->OptionsType[%c]\n",
+      pInstrument->ExchangeID,
+      pInstrument->ProductID,
+      pInstrument->ProductName,
+      pInstrument->InstrumentID,
+      pInstrument->InstrumentName,
+      pInstrument->DeliveryYear,
+      pInstrument->DeliveryMonth,
+      pInstrument->MaxLimitOrderVolume,
+      pInstrument->MinLimitOrderVolume,
+      pInstrument->MaxMarketOrderVolume,
+      pInstrument->MinMarketOrderVolume,
+      pInstrument->VolumeMultiple,
+      pInstrument->PriceTick,
+      pInstrument->Currency,
+      pInstrument->LongPosLimit,
+      pInstrument->ShortPosLimit,
+      pInstrument->LowerLimitPrice,
+      pInstrument->UpperLimitPrice,
+      pInstrument->PreSettlementPrice,
+      pInstrument->InstrumentStatus,
+      pInstrument->CreateDate,
+      pInstrument->OpenDate,
+      pInstrument->StartDelivDate,
+      pInstrument->EndDelivDate,
+      pInstrument->BasisPrice,
+      pInstrument->IsTrading,
+      pInstrument->UnderlyingInstrID,
+      pInstrument->UnderlyingMultiple,
+      pInstrument->PositionType,
+      pInstrument->StrikePrice,
+      pInstrument->OptionsType
+    );
   }
 
   trader_trader_api_on_rsp_qry_instrument(self, &traderInstrument, errNo, errMsg, bIsLast);
@@ -562,7 +626,54 @@ void femas_query_on_rsp_qry_trading_account(void* arg, CUstpFtdcRspInvestorAccou
 
   if(pTradingAccount) {
     strcpy(traderAccount.AccountID, pTradingAccount->AccountID);
-    //TODO
+    CMN_DEBUG(
+      "pTradingAccount->BrokerID[%s]\n"
+      "pTradingAccount->InvestorID[%s]\n"
+      "pTradingAccount->AccountID[%s]\n"
+      "pTradingAccount->PreBalance[%lf]\n"
+      "pTradingAccount->Deposit[%lf]\n"
+      "pTradingAccount->Withdraw[%lf]\n"
+      "pTradingAccount->FrozenMargin[%lf]\n"
+      "pTradingAccount->FrozenFee[%lf]\n"
+      "pTradingAccount->FrozenPremium[%lf]\n"
+      "pTradingAccount->Fee[%lf]\n"
+      "pTradingAccount->CloseProfit[%lf]\n"
+      "pTradingAccount->PositionProfit[%lf]\n"
+      "pTradingAccount->Available[%lf]\n"
+      "pTradingAccount->LongFrozenMargin[%lf]\n"
+      "pTradingAccount->ShortFrozenMargin[%lf]\n"
+      "pTradingAccount->LongMargin[%lf]\n"
+      "pTradingAccount->ShortMargin[%lf]\n"
+      "pTradingAccount->ReleaseMargin[%lf]\n"
+      "pTradingAccount->DynamicRights[%lf]\n"
+      "pTradingAccount->TodayInOut[%lf]\n"
+      "pTradingAccount->Margin[%lf]\n"
+      "pTradingAccount->Premium[%lf]\n"
+      "pTradingAccount->Risk[%lf]\n",
+      pTradingAccount->BrokerID,
+      pTradingAccount->InvestorID,
+      pTradingAccount->AccountID,
+      pTradingAccount->PreBalance,
+      pTradingAccount->Deposit,
+      pTradingAccount->Withdraw,
+      pTradingAccount->FrozenMargin,
+      pTradingAccount->FrozenFee,
+      pTradingAccount->FrozenPremium,
+      pTradingAccount->Fee,
+      pTradingAccount->CloseProfit,
+      pTradingAccount->PositionProfit,
+      pTradingAccount->Available,
+      pTradingAccount->LongFrozenMargin,
+      pTradingAccount->ShortFrozenMargin,
+      pTradingAccount->LongMargin,
+      pTradingAccount->ShortMargin,
+      pTradingAccount->ReleaseMargin,
+      pTradingAccount->DynamicRights,
+      pTradingAccount->TodayInOut,
+      pTradingAccount->Margin,
+      pTradingAccount->Premium,
+      pTradingAccount->Risk
+    );
   }
 
   trader_trader_api_on_rsp_qry_trading_account(self, &traderAccount, errNo, errMsg, bIsLast);
@@ -582,6 +693,46 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
   }
 
   if(pInvestorPosition) {
+    CMN_DEBUG(
+      "pInvestorPosition->InvestorID[%s]\n"
+      "pInvestorPosition->BrokerID[%s]\n"
+      "pInvestorPosition->ExchangeID[%s]\n"
+      "pInvestorPosition->ClientID[%s]\n"
+      "pInvestorPosition->InstrumentID[%s]\n"
+      "pInvestorPosition->Direction[%c]\n"
+      "pInvestorPosition->HedgeFlag[%c]\n"
+      "pInvestorPosition->UsedMargin[%lf]\n"
+      "pInvestorPosition->Position[%d]\n"
+      "pInvestorPosition->PositionCost[%lf]\n"
+      "pInvestorPosition->YdPosition[%d]\n"
+      "pInvestorPosition->YdPositionCost[%lf]\n"
+      "pInvestorPosition->FrozenMargin[%lf]\n"
+      "pInvestorPosition->FrozenPosition[%d]\n"
+      "pInvestorPosition->FrozenClosing[%d]\n"
+      "pInvestorPosition->FrozenPremium[%lf]\n"
+      "pInvestorPosition->LastTradeID[%s]\n"
+      "pInvestorPosition->LastOrderLocalID[%s]\n"
+      "pInvestorPosition->Currency[%s]\n",
+      pInvestorPosition->InvestorID,
+      pInvestorPosition->BrokerID,
+      pInvestorPosition->ExchangeID,
+      pInvestorPosition->ClientID,
+      pInvestorPosition->InstrumentID,
+      pInvestorPosition->Direction,
+      pInvestorPosition->HedgeFlag,
+      pInvestorPosition->UsedMargin,
+      pInvestorPosition->Position,
+      pInvestorPosition->PositionCost,
+      pInvestorPosition->YdPosition,
+      pInvestorPosition->YdPositionCost,
+      pInvestorPosition->FrozenMargin,
+      pInvestorPosition->FrozenPosition,
+      pInvestorPosition->FrozenClosing,
+      pInvestorPosition->FrozenPremium,
+      pInvestorPosition->LastTradeID,
+      pInvestorPosition->LastOrderLocalID,
+      pInvestorPosition->Currency
+    );
     strcpy(traderPosition.InstrumentID, pInvestorPosition->InstrumentID);
     //TODO
   }
@@ -591,21 +742,75 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
 
 void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusField *pInstrumentStatus)
 {
-  //TODO
-/*
-  CMN_INFO("\n"
-    "pInstrumentStatus->InstrumentID=[%s]\n"
-    "pInstrumentStatus->InstrumentStatus=[%c]\n"
-    "pInstrumentStatus->TradingSegmentSN=[%d]\n"
-    "pInstrumentStatus->EnterTime=[%s]\n"
-    "pInstrumentStatus->EnterReason=[%c]\n",
-    pInstrumentStatus->InstrumentID,
-    pInstrumentStatus->InstrumentStatus,
-    pInstrumentStatus->TradingSegmentSN,
-    pInstrumentStatus->EnterTime,
-    pInstrumentStatus->EnterReason
-  );
-  */
+  if(pInstrumentStatus){
+    CMN_DEBUG(
+      "pInstrumentStatus->ExchangeID[%s]\n"
+      "pInstrumentStatus->ProductID[%s]\n"
+      "pInstrumentStatus->ProductName[%s]\n"
+      "pInstrumentStatus->InstrumentID[%s]\n"
+      "pInstrumentStatus->InstrumentName[%s]\n"
+      "pInstrumentStatus->DeliveryYear[%d]\n"
+      "pInstrumentStatus->DeliveryMonth[%d]\n"
+      "pInstrumentStatus->MaxLimitOrderVolume[%d]\n"
+      "pInstrumentStatus->MinLimitOrderVolume[%d]\n"
+      "pInstrumentStatus->MaxMarketOrderVolume[%d]\n"
+      "pInstrumentStatus->MinMarketOrderVolume[%d]\n"
+      "pInstrumentStatus->VolumeMultiple[%d]\n"
+      "pInstrumentStatus->PriceTick[%lf]\n"
+      "pInstrumentStatus->Currency[%s]\n"
+      "pInstrumentStatus->LongPosLimit[%d]\n"
+      "pInstrumentStatus->ShortPosLimit[%d]\n"
+      "pInstrumentStatus->LowerLimitPrice[%lf]\n"
+      "pInstrumentStatus->UpperLimitPrice[%lf]\n"
+      "pInstrumentStatus->PreSettlementPrice[%lf]\n"
+      "pInstrumentStatus->InstrumentStatus[%s]\n"
+      "pInstrumentStatus->CreateDate[%s]\n"
+      "pInstrumentStatus->OpenDate[%s]\n"
+      "pInstrumentStatus->ExpireDate[%s]\n"
+      "pInstrumentStatus->StartDelivDate[%s]\n"
+      "pInstrumentStatus->EndDelivDate[%s]\n"
+      "pInstrumentStatus->BasisPrice[%lf]\n"
+      "pInstrumentStatus->IsTrading[%d]\n"
+      "pInstrumentStatus->UnderlyingInstrID[%s]\n"
+      "pInstrumentStatus->UnderlyingMultiple[%d]\n"
+      "pInstrumentStatus->PositionType[%c]\n"
+      "pInstrumentStatus->StrikePrice[%lf]\n"
+      "pInstrumentStatus->OptionsType[%c]\n",
+      pInstrumentStatus->ExchangeID,
+      pInstrumentStatus->ProductID,
+      pInstrumentStatus->ProductName,
+      pInstrumentStatus->InstrumentID,
+      pInstrumentStatus->InstrumentName,
+      pInstrumentStatus->DeliveryYear,
+      pInstrumentStatus->DeliveryMonth,
+      pInstrumentStatus->MaxLimitOrderVolume,
+      pInstrumentStatus->MinLimitOrderVolume,
+      pInstrumentStatus->MaxMarketOrderVolume,
+      pInstrumentStatus->MinMarketOrderVolume,
+      pInstrumentStatus->VolumeMultiple,
+      pInstrumentStatus->PriceTick,
+      pInstrumentStatus->Currency,
+      pInstrumentStatus->LongPosLimit,
+      pInstrumentStatus->ShortPosLimit,
+      pInstrumentStatus->LowerLimitPrice,
+      pInstrumentStatus->UpperLimitPrice,
+      pInstrumentStatus->PreSettlementPrice,
+      pInstrumentStatus->InstrumentStatus,
+      pInstrumentStatus->CreateDate,
+      pInstrumentStatus->OpenDate,
+      pInstrumentStatus->ExpireDate,
+      pInstrumentStatus->StartDelivDate,
+      pInstrumentStatus->EndDelivDate,
+      pInstrumentStatus->BasisPrice,
+      pInstrumentStatus->IsTrading,
+      pInstrumentStatus->UnderlyingInstrID,
+      pInstrumentStatus->UnderlyingMultiple,
+      pInstrumentStatus->PositionType,
+      pInstrumentStatus->StrikePrice,
+      pInstrumentStatus->OptionsType
+    );
+
+  }
 }
 
 

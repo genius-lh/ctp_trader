@@ -72,7 +72,7 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
 
 #ifdef FEMAS
   //FEMAS
-#include "trader_mduser_api_femas_method_get.h"
+#include "trader_mduser_api_femas.h"
   api_imp = trader_mduser_api_femas_method_get();
 #endif
   

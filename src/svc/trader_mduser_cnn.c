@@ -104,16 +104,16 @@ int trader_mduser_cnn_proc(trader_mduser_cnn* self, trader_mduser_evt* evt)
 
   int i;
 
-  if(ONRTNDEPTHMARKETDATA == nType){
+  if(MDUSERONRTNDEPTHMARKETDATA == nType){
     if(self->tickCallback){
       (self->tickCallback)(self->userData, pEvt);
     }
     return 0;
   }
 
-  if(ONFRONTCONNECTED == nType){
+  if(MDUSERONFRONTCONNECTED == nType){
     self->pMduserApi->pMethod->xLogin(self->pMduserApi);
-  }else if(ONRSPUSERLOGIN == nType){
+  }else if(MDUSERONRSPUSERLOGIN == nType){
     if(0 == pEvt->ErrorCd){
       for(i = 0; i < self->instrumentNumber; i++){
         self->pMduserApi->pMethod->xSubscribe(self->pMduserApi, self->instruments[i]);

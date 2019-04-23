@@ -69,6 +69,8 @@ static int trader_svr_proc_client_reset_positions(trader_svr* self, trader_msg_r
 
 static int trader_svr_proc_mduser(trader_svr* self, trader_msg_mduser_struct* msg);
 static int trader_svr_proc_trader(trader_svr* self, trader_msg_trader_struct* msg);
+static int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg);
+
 
 static int trader_svr_client_notify_login(trader_svr* self, int err_cd, char* error_msg);
 
@@ -152,7 +154,7 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   
 #ifdef FEMAS
     //FEMAS
-#include "trader_mduser_api_femas_method_get.h"
+#include "trader_trader_api_femas.h"
   self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_femas_method_get());
 #endif
   self->pCtpTraderApi->pMethod->xSetFrontAddr(self->pCtpTraderApi, self->TrFrontAdd);
@@ -388,7 +390,8 @@ int trader_svr_on_trader_recv(trader_svr* self)
   int nRet = 0;
   int nSize = 0;
   int loop = 1;
-  trader_msg_trader_struct oMsg;
+  //trader_msg_trader_struct oMsg;
+  trader_trader_evt oMsg;
   do {
     nRet = cmn_util_bufferevent_recv(self->BufTrader, (unsigned char*)&oMsg, sizeof(oMsg));
     if(nRet <= 0){
@@ -396,7 +399,7 @@ int trader_svr_on_trader_recv(trader_svr* self)
       break;
     }
 
-    nRet = trader_svr_proc_trader(self, &oMsg);
+    nRet = trader_svr_proc_trader2(self, &oMsg);
     
   }while(loop);
 
@@ -670,6 +673,158 @@ int trader_svr_proc_trader(trader_svr* self, trader_msg_trader_struct* msg)
     break;
   }
 }
+
+int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
+{
+  int nType = msg->Type;
+  trader_trader_evt* pMsg = msg;
+  int bFound;
+  trader_contract* iter;
+  
+  trader_instrument* pInstrument = &(pMsg->Body.InstrumentRsp);
+  trader_position* pPosition = &(pMsg->Body.PositionRsp);
+  investor_position oInvestorPosition;
+  investor_position* pInvestorPosition = &oInvestorPosition;
+  trader_order* pOrder = &(pMsg->Body.OrderRsp);
+  trader_trade* pTrade = &(pMsg->Body.TradeRsp);
+
+  switch(nType){
+  case TRADERONFRONTCONNECTED:
+    break;
+  case TRADERONFRONTDISCONNECTED:
+    break;
+  case TRADERONRSPUSERLOGIN:
+    if(pMsg->ErrorCd){
+      // 登陆失败
+      trader_svr_client_notify_login(self, pMsg->ErrorCd, pMsg->ErrorMsg);
+      return -1;
+    }
+    
+    // 查询交易日期
+    char sTradingDay[9];
+    self->pCtpTraderApi->pMethod->xGetTradingDay(self->pCtpTraderApi, sTradingDay);
+    CMN_DEBUG("sTradingDay[%s]\n", sTradingDay);
+    self->pStrategyEngine->pMethod->xTradingDaySet(self->pStrategyEngine, sTradingDay);
+
+    
+    // 设置MaxUserOrderLocalID
+    char sMaxOrderLocalID[21];
+    self->pCtpTraderApi->pMethod->xGetMaxOrderLocalID(self->pCtpTraderApi, sMaxOrderLocalID);
+    CMN_DEBUG("sMaxOrderLocalID[%s]\n", sMaxOrderLocalID);
+    self->pStrategyEngine->pMethod->xLocalUserIdSet(self->pStrategyEngine, sMaxOrderLocalID);
+
+    if(0 != strcmp(sTradingDay, self->TradingDay)){
+      strcpy(self->TradingDay, sTradingDay);
+      self->bQueried = 0;
+    }
+
+    // 查询合约
+    self->pCtpTraderApi->pMethod->xQryInstrument(self->pCtpTraderApi);
+    break;
+  case TRADERONRSPQRYINVESTOR:
+    self->bQueried = 1;
+    // 通知登陆成功
+    trader_svr_client_notify_login(self, 0, "SUCCESS");
+    
+    // 查询持仓
+    sleep(1);
+    self->pCtpTraderApi->pMethod->xQryInvestorPosition(self->pCtpTraderApi);
+    break;
+  case TRADERONRSPQRYINSTRUMENT:
+    if(!pMsg->ErrorCd){
+      bFound = trader_svr_check_instrument(self, pInstrument->InstrumentID);
+      if( bFound ){
+        // 添加到行情列表中
+        trader_contract* pTraderContract = (trader_contract*)malloc(sizeof(trader_contract));
+        strcpy(pTraderContract->contract,  pInstrument->InstrumentID);
+        strcpy(pTraderContract->ExchangeID,  pInstrument->ExchangeID);
+        pTraderContract->PriceTick =  pInstrument->PriceTick;
+        pTraderContract->nCancelNum = 0;
+        pTraderContract->isSHFE = 0;
+        if(!strcmp(pInstrument->ExchangeID, "SHFE")
+        ||!strcmp(pInstrument->ExchangeID, "INE")){
+          pTraderContract->isSHFE = 1;
+        }        
+        self->nContractNum++;
+        
+        CMN_DEBUG("pMsg->InstrumentID[%s]\n", pInstrument->InstrumentID);
+        CMN_DEBUG("pMsg->ExchangeID[%s]\n", pInstrument->ExchangeID);
+        CMN_DEBUG("pMsg->isSHFE[%d]\n", pTraderContract->isSHFE);
+        
+        TAILQ_INSERT_TAIL(&self->listTraderContract, pTraderContract, next);
+      }
+    }
+
+    if(pMsg->IsLast){
+      // 查询投资者编号
+      sleep(1);
+      self->pCtpTraderApi->pMethod->xQryUserInvestor(self->pCtpTraderApi);
+    }
+    break;
+  case TRADERONRSPQRYINVESTORPOSITION:
+    
+    //pInvestorPosition->IsSHFE = 0;
+    //self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, pInvestorPosition);
+    if(pMsg->IsLast){
+
+    }
+    break;
+  case TRADERONRTNORDER:
+    
+    CMN_INFO("订单变化!\n");
+    CMN_INFO("pOrder->ExchangeID[%s]\n", pOrder->ExchangeID);
+    CMN_INFO("pOrder->OrderSysID[%s]\n", pOrder->OrderSysID);
+    CMN_INFO("pOrder->InstrumentID[%s]\n", pOrder->InstrumentID);
+    CMN_INFO("pOrder->UserOrderLocalID[%s]\n", pOrder->UserOrderLocalID);
+    CMN_INFO("pOrder->Direction[%c]\n", pOrder->Direction);
+    CMN_INFO("pOrder->OffsetFlag[%c]\n", pOrder->OffsetFlag);
+    CMN_INFO("pOrder->HedgeFlag[%c]\n", pOrder->HedgeFlag);
+    CMN_INFO("pOrder->LimitPrice[%lf]\n", pOrder->LimitPrice);
+    CMN_INFO("pOrder->VolumeOriginal[%d]\n", pOrder->VolumeOriginal);
+    CMN_INFO("pOrder->VolumeTraded[%d]\n", pOrder->VolumeTraded);
+    CMN_INFO("pOrder->OrderStatus[%c]\n", pOrder->OrderStatus);
+    CMN_INFO("pOrder->InsertTime[%s]\n", pOrder->InsertTime);
+
+    // 更新撤单笔数
+    if(TRADER_ORDER_OS_CANCELED == pOrder->OrderStatus){
+      trader_contract* iter;
+      TAILQ_FOREACH(iter, &self->listTraderContract, next){
+        if(!strcmp(pOrder->InstrumentID, iter->contract)){
+          iter->nCancelNum++;
+          break;
+        }
+      }
+    }
+    
+    self->pStrategyEngine->pMethod->xUpdateOrder(self->pStrategyEngine, pOrder);
+    break;
+  case TRADERONRTNTRADE:
+    
+    CMN_INFO("成交回报!\n");
+    CMN_INFO("InstrumentID[%s]\n", pTrade->InstrumentID);
+    CMN_INFO("UserOrderLocalID[%s]\n", pTrade->UserOrderLocalID);
+    CMN_INFO("TradingDay[%s]\n", pTrade->TradingDay);
+    CMN_INFO("TradeTime[%s]\n", pTrade->TradeTime);
+    CMN_INFO("Direction[%c]\n", pTrade->Direction);
+    CMN_INFO("OffsetFlag[%c]\n", pTrade->OffsetFlag);
+    CMN_INFO("TradePrice[%lf]\n", pTrade->TradePrice);
+    CMN_INFO("TradeVolume[%d]\n", pTrade->TradeVolume);
+    CMN_INFO("TradeID[%s]\n", pTrade->TradeID);
+
+    self->pStrategyEngine->pMethod->xUpdateTrade(self->pStrategyEngine, pTrade);
+    break;
+  case TRADERONRSPERROR:
+    CMN_ERROR("交易出错!\n");
+    // TODO
+    break;
+  default:
+    CMN_ERROR("nType[%d]\n", nType);
+    // TODO
+    break;
+  }
+
+}
+
 
 int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
 {

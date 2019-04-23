@@ -47,7 +47,7 @@ void trader_mduser_api_set_workspace(trader_mduser_api* self, char* ws)
 void trader_mduser_api_on_front_connected(trader_mduser_api* self)
 {
   trader_mduser_evt oEvent;
-  oEvent.Type = ONFRONTCONNECTED;
+  oEvent.Type = MDUSERONFRONTCONNECTED;
   oEvent.ErrorCd = 0;
   oEvent.ErrorMsg[0] = '\0';
 
@@ -58,7 +58,7 @@ void trader_mduser_api_on_front_connected(trader_mduser_api* self)
 void trader_mduser_api_on_front_disconnected(trader_mduser_api* self, int err_cd, char* err_msg)
 {
   trader_mduser_evt oEvent;
-  oEvent.Type = ONFRONTDISCONNECTED;
+  oEvent.Type = MDUSERONFRONTDISCONNECTED;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -71,7 +71,7 @@ void trader_mduser_api_on_front_disconnected(trader_mduser_api* self, int err_cd
 void trader_mduser_api_on_rsp_user_login(trader_mduser_api* self, int err_cd, char* err_msg)
 {
   trader_mduser_evt oEvent;
-  oEvent.Type = ONRSPUSERLOGIN;
+  oEvent.Type = MDUSERONRSPUSERLOGIN;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -84,7 +84,7 @@ void trader_mduser_api_on_rsp_user_login(trader_mduser_api* self, int err_cd, ch
 void trader_mduser_api_on_rsp_user_logout(trader_mduser_api* self, int err_cd, char* err_msg)
 {
   trader_mduser_evt oEvent;
-  oEvent.Type = ONRSPUSERLOGOUT;
+  oEvent.Type = MDUSERONRSPUSERLOGOUT;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -97,7 +97,7 @@ void trader_mduser_api_on_rsp_user_logout(trader_mduser_api* self, int err_cd, c
 void trader_mduser_api_on_rsp_error(trader_mduser_api* self, int err_cd, char* err_msg)
 {
   trader_mduser_evt oEvent;
-  oEvent.Type = ONRSPERROR;
+  oEvent.Type = MDUSERONRSPERROR;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -110,7 +110,7 @@ void trader_mduser_api_on_rsp_error(trader_mduser_api* self, int err_cd, char* e
 void trader_mduser_api_on_rsp_sub_market_data(trader_mduser_api* self, int err_cd, char* err_msg)
 {
   trader_mduser_evt oEvent;
-  oEvent.Type = ONRSPSUBMARKETDATA;
+  oEvent.Type = MDUSERONRSPSUBMARKETDATA;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -123,7 +123,7 @@ void trader_mduser_api_on_rsp_sub_market_data(trader_mduser_api* self, int err_c
 void trader_mduser_api_on_rsp_un_sub_market_data(trader_mduser_api* self, int err_cd, char* err_msg)
 {
   trader_mduser_evt oEvent;
-  oEvent.Type = ONRSPUNSUBMARKETDATA;
+  oEvent.Type = MDUSERONRSPUNSUBMARKETDATA;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
@@ -136,7 +136,7 @@ void trader_mduser_api_on_rsp_un_sub_market_data(trader_mduser_api* self, int er
 void trader_mduser_api_on_rtn_depth_market_data(trader_mduser_api* self, trader_tick* tick)
 {
   trader_mduser_evt oEvent;
-  oEvent.Type = ONRTNDEPTHMARKETDATA;
+  oEvent.Type = MDUSERONRTNDEPTHMARKETDATA;
   oEvent.ErrorCd = 0;
   oEvent.ErrorMsg[0] = '\0';
   memcpy(&oEvent.Tick, tick, sizeof(trader_tick));
