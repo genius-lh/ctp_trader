@@ -180,8 +180,17 @@ void cmn_log_svr_path_set(cmn_log_svr* self, char* a_path)
     return;
   }
 
+  int nPathLen;
+
   self->pAppPath = (char*)malloc(sizeof(char) * (strlen(a_path) + 1));
   strcpy(self->pAppPath, a_path);
+  
+  nPathLen = strlen(self->pAppPath);
+  if(nPathLen){
+    if(self->pAppPath[nPathLen-1] == '/'){
+      self->pAppPath[nPathLen-1] = '\0';
+    }
+  }
 
   return;
 }

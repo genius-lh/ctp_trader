@@ -57,26 +57,6 @@ void cmn_log_clt_free(cmn_log_clt* self)
   }
 }
 
-cmn_log_clt* cmn_log_clt_get()
-{
-  static cmn_log_clt_method gSynLogCtlMehtods = {
-    cmn_log_clt_ini,
-    cmn_log_clt_logger_msg,
-    cmn_log_clt_fini
-  };
-  
-  static cmn_log_clt stSynLogClt = {
-    0,
-    0,
-    5,
-    {0},
-    0
-  };
-  stSynLogClt.pMethod = &gSynLogCtlMehtods;	
-
-  return &stSynLogClt;
-}
-
 int cmn_log_clt_ini(cmn_log_clt* self, char* cfg_file, char* a_catalog)
 {
   int nRet = 0;
@@ -138,6 +118,20 @@ void cmn_log_clt_logger_msg(cmn_log_clt* self, int a_priority, const char* a_msg
 
 }
 
+cmn_log_clt* cmn_log_clt_get()
+{
+  static cmn_log_clt_method gSynLogCtlMehtods = {
+    cmn_log_clt_ini,
+    cmn_log_clt_logger_msg,
+    cmn_log_clt_fini
+  };
+  
+  static cmn_log_clt stSynLogClt;
+  memset(&stSynLogClt, 0, sizeof(stSynLogClt));
+  stSynLogClt.pMethod = &gSynLogCtlMehtods;	
+
+  return &stSynLogClt;
+}
 
 void cmn_log( cmn_log_clt* self, int aiLevel, const cmn_log_location_info* location, const char *aFormat, ...)
 {

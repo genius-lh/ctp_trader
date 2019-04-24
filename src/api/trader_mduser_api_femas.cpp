@@ -78,7 +78,7 @@ trader_mduser_api_method* trader_mduser_api_femas_method_get()
 
 void trader_mduser_api_femas_start(trader_mduser_api* self)
 {
-  CUstpFtdcMduserApi* pUserApi = CUstpFtdcMduserApi::CreateFtdcMduserApi();
+  CUstpFtdcMduserApi* pUserApi = CUstpFtdcMduserApi::CreateFtdcMduserApi(self->pWorkspace);
   CFemasMduserHandler* pHandler = new CFemasMduserHandler(femas_mduser_api_cb_get(), (void*)self);
 
   trader_mduser_api_femas* pImp = (trader_mduser_api_femas*)malloc(sizeof(trader_mduser_api_femas));
@@ -241,6 +241,8 @@ void femas_mduser_on_rtn_depth_market_data(void* arg, CUstpFtdcDepthMarketDataFi
   oTick.BidVolume1= pMarketData->BidVolume1;
   oTick.AskPrice1 = pMarketData->AskPrice1;
   oTick.AskVolume1= pMarketData->AskVolume1;
+  oTick.UpperLimitPrice= pMarketData->UpperLimitPrice;
+  oTick.LowerLimitPrice= pMarketData->LowerLimitPrice;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 

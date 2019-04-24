@@ -119,7 +119,7 @@ struct cmn_log_clt_def{
 };
 
 struct cmn_log_clt_method_def{
-  int (*xIni)(cmn_log_clt* self, char* a_catalog);
+  int (*xIni)(cmn_log_clt* self, char* cfg_file, char* a_catalog);
   void (*xLoggerMsg)(cmn_log_clt* self, int a_priority, const char* a_msg);
   void (*xFini)(cmn_log_clt* self);
   

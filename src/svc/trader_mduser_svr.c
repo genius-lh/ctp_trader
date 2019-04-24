@@ -82,6 +82,10 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
     self->instruments, self->instrumentNumber,
     api_imp);
 
+  if(!self->pCnnBackup){
+    return 0;
+  }
+  
   self->pCnnBackup->pMethod->xInit(self->pCnnBackup, self->pBase,
     self->backupBrokerId, self->backupUser, self->backupPasswd, self->backupAddr, "./backup/",
     trader_mduser_svr_tick_cb, self,
@@ -184,6 +188,7 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   int nRedisPort = 0;
   char pBoardcastAddr[14+1];
   int nBoardcastPort = 0;
+  int nUseBackup = 1;
 
   // ¶ÁÈ¡²ÎÊý
   nRet = glbPflGetString("RUN_CONFIG", "REDIS_ADDR", argv[1], pRedisIp);
@@ -195,6 +200,8 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   
   nRet = glbPflGetString("RUN_CONFIG", "BOARDCAST_ADDR", argv[1], pBoardcastAddr);
   nRet = glbPflGetInt("RUN_CONFIG", "BOARDCAST_PORT", argv[1], &nBoardcastPort);
+  
+  nRet = glbPflGetInt("RUN_CONFIG", "USE_BACKUP", argv[1], &nUseBackup);
   
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_BROKER_ID", argv[1], self->mainBrokerId);
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_USER", argv[1], self->mainUser);
@@ -225,8 +232,11 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   CMN_ASSERT(self->pCnnMain);
   
   CMN_DEBUG("self->pCnnBackup\n");
-  self->pCnnBackup= trader_mduser_cnn_new();
-  CMN_ASSERT(self->pCnnBackup);
+  self->pCnnBackup = (trader_mduser_cnn*)NULL;
+  if(nUseBackup){
+    self->pCnnBackup = trader_mduser_cnn_new();
+    CMN_ASSERT(self->pCnnBackup);
+  }
 
   CMN_DEBUG("self->pBoardcast\n");
   self->pBoardcast = trader_mduser_boardcast_new();
@@ -263,13 +273,23 @@ int trader_mduser_svr_run(trader_mduser_svr* self)
   nRet = event_add(self->pSigTermEvt, NULL);
   CMN_ASSERT(nRet >= 0);
 
-  self->pCnnMain->pMethod->xStart(self->pCnnMain);
-  self->pCnnBackup->pMethod->xStart(self->pCnnBackup);
+  if(self->pCnnMain){
+    self->pCnnMain->pMethod->xStart(self->pCnnMain);
+  }
+  
+  if(self->pCnnBackup){
+    self->pCnnBackup->pMethod->xStart(self->pCnnBackup);
+  }
   
   nRet = event_base_dispatch(self->pBase);
 
-  self->pCnnMain->pMethod->xStop(self->pCnnMain);
-  self->pCnnBackup->pMethod->xStop(self->pCnnBackup);
+  if(self->pCnnMain){
+    self->pCnnMain->pMethod->xStop(self->pCnnMain);
+  }
+  
+  if(self->pCnnBackup){
+    self->pCnnBackup->pMethod->xStop(self->pCnnBackup);
+  }
   
   self->pBoardcast->method->xExit(self->pBoardcast);
 

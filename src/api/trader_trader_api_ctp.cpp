@@ -16,6 +16,7 @@ extern "C" {
 #include "trader_data.h"
 #include "trader_trader_api.h"
 #include "trader_trader_api_ctp.h"
+#include "cmn_log.h"
 
 static void trader_trader_api_ctp_start(trader_trader_api* self);
 static void trader_trader_api_ctp_stop(trader_trader_api* self);
