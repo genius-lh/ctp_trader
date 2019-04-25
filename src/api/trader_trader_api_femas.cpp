@@ -18,6 +18,9 @@ extern "C" {
 #include "trader_trader_api_femas.h"
 #include "cmn_log.h"
 
+static int trader_trader_api_femas_get_trading_day(trader_trader_api* self, char* tradingday);
+static int trader_trader_api_femas_get_max_order_local_id(trader_trader_api* self, long* local_id);
+
 static void trader_trader_api_femas_start(trader_trader_api* self);
 static void trader_trader_api_femas_stop(trader_trader_api* self);
 static void trader_trader_api_femas_login(trader_trader_api* self);
@@ -62,8 +65,8 @@ trader_trader_api_method* trader_trader_api_femas_method_get()
     trader_trader_api_set_front_addr,
     trader_trader_api_set_workspace,
     trader_trader_api_set_param,
-    trader_trader_api_get_trading_day,
-    trader_trader_api_get_max_order_local_id,
+    trader_trader_api_femas_get_trading_day,
+    trader_trader_api_femas_get_max_order_local_id,
     trader_trader_api_femas_start,
     trader_trader_api_femas_stop,
     trader_trader_api_femas_login,
@@ -77,6 +80,21 @@ trader_trader_api_method* trader_trader_api_femas_method_get()
   };
 
   return &trader_trader_api_method_st;
+}
+
+int trader_trader_api_femas_get_trading_day(trader_trader_api* self, char* tradingday)
+{
+  trader_trader_api_femas* pImp = (trader_trader_api_femas*)self->pUserApi;
+  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+
+  strcpy(tradingday, pTraderApi->GetTradingDay());
+  return 0;
+}
+
+int trader_trader_api_femas_get_max_order_local_id(trader_trader_api* self, long* local_id)
+{
+  *local_id = self->userLocalId;
+  return 0;
 }
 
 
@@ -335,6 +353,10 @@ void femas_trader_on_rsp_user_login(void* arg, CUstpFtdcRspUserLoginField *pRspU
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+  }
+  if(pRspUserLogin){
+    // 获取最大报单号
+    trader_trader_api_get_max_order_local_id(self, pRspUserLogin->MaxOrderLocalID);
   }
   
   trader_trader_api_on_rsp_user_login(self, errNo, errMsg);

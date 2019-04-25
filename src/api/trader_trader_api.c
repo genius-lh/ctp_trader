@@ -56,6 +56,17 @@ int trader_trader_api_get_trading_day(trader_trader_api* self, char* tradingday)
 
 int trader_trader_api_get_max_order_local_id(trader_trader_api* self, char* local_id)
 {
+  int nIdLen;
+  char* sOrderId;
+  self->userLocalId = 1;
+  nIdLen = strlen(local_id);
+  if(nIdLen > 1){
+    sOrderId = (char*)malloc(sizeof(char) * nIdLen);
+    memcpy(sOrderId, local_id, nIdLen - 1);
+    sOrderId[nIdLen - 1] = '\0';
+    self->userLocalId = atol(sOrderId);
+    free(sOrderId);
+  }
   return 0;
 }
 

@@ -107,6 +107,7 @@ struct trader_trader_api_def {
   char* pPwd;
   char* pAddress;
   char* pWorkspace;
+  long userLocalId;
 
   cmn_util_map* pParamMap;
 
@@ -129,7 +130,7 @@ struct trader_trader_api_method_def{
   void (*xSetWorkspace)(trader_trader_api* self, char* ws);
   void (*xSetParam)(trader_trader_api* self, char* key, char* val);
   int (*xGetTradingDay)(trader_trader_api* self, char* tradingday);
-  int (*xGetMaxOrderLocalID)(trader_trader_api* self, char* local_id);
+  int (*xGetMaxOrderLocalID)(trader_trader_api* self, long* local_id);
   
   void (*xStart)(trader_trader_api* self);
   void (*xStop)(trader_trader_api* self);

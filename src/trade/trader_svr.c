@@ -136,8 +136,8 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pCtpTraderApi->FrontAddress = self->TrFrontAdd;
   self->pCtpTraderApi->HedgeFlag= self->cHedgeFlag;
   */
-  CMN_DEBUG("BrokenId[%s]\n", self->pCtpTraderApi->pBrokerID);
-  CMN_DEBUG("FrontAddress[%s]\n", self->pCtpTraderApi->pAddress);
+  CMN_DEBUG("BrokenId[%s]\n", self->BrokerId);
+  CMN_DEBUG("FrontAddress[%s]\n", self->TrFrontAdd);
   
   CMN_DEBUG("self->pCtpTraderApi\n");
 #ifdef LTS
@@ -527,8 +527,8 @@ int trader_svr_proc_trader(trader_svr* self, trader_msg_trader_struct* msg)
 
     
     // ÉèÖÃMaxUserOrderLocalID
-    char sMaxOrderLocalID[21];
-    self->pCtpTraderApi->pMethod->xGetMaxOrderLocalID(self->pCtpTraderApi, sMaxOrderLocalID);
+    long sMaxOrderLocalID = 0;
+    self->pCtpTraderApi->pMethod->xGetMaxOrderLocalID(self->pCtpTraderApi, &sMaxOrderLocalID);
     CMN_DEBUG("sMaxOrderLocalID[%s]\n", sMaxOrderLocalID);
     self->pStrategyEngine->pMethod->xLocalUserIdSet(self->pStrategyEngine, sMaxOrderLocalID);
 
@@ -708,8 +708,8 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
 
     
     // ÉèÖÃMaxUserOrderLocalID
-    char sMaxOrderLocalID[21];
-    self->pCtpTraderApi->pMethod->xGetMaxOrderLocalID(self->pCtpTraderApi, sMaxOrderLocalID);
+    long sMaxOrderLocalID = 0;
+    self->pCtpTraderApi->pMethod->xGetMaxOrderLocalID(self->pCtpTraderApi, &sMaxOrderLocalID);
     CMN_DEBUG("sMaxOrderLocalID[%s]\n", sMaxOrderLocalID);
     self->pStrategyEngine->pMethod->xLocalUserIdSet(self->pStrategyEngine, sMaxOrderLocalID);
 

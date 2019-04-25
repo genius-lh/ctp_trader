@@ -22,7 +22,7 @@ static int trader_strategy_engine_cancel_order(trader_strategy_engine* self, cha
 static int trader_strategy_engine_set_timer(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
 
 static int trader_strategy_engine_trading_day_set(trader_strategy_engine* self, char* day);
-static int trader_strategy_engine_local_user_id_set(trader_strategy_engine* self, char* user_id);
+static int trader_strategy_engine_local_user_id_set(trader_strategy_engine* self, long user_id);
 static int trader_strategy_engine_gen_local_id(trader_strategy_engine* self, char type, char* local_id);
 static char trader_strategy_engine_get_order_type(trader_strategy_engine* self, char* local_id);
 
@@ -344,21 +344,14 @@ int trader_strategy_engine_trading_day_set(trader_strategy_engine* self, char* d
   return 0;
 }
 
-int trader_strategy_engine_local_user_id_set(trader_strategy_engine* self, char* user_id)
+int trader_strategy_engine_local_user_id_set(trader_strategy_engine* self, long user_id)
 {
-  char sSequence[8];
-  int nSeq = 0;
-  int nCmp;
-  if(strlen(user_id)>7){
-    memcpy(sSequence, &user_id[0], 7);
-    sSequence[7] ='\0';
-    nSeq = atoi(sSequence);
-  }
+  long nSeq = user_id;
 
-  if(self->nSequence > nSeq){
-    nSeq = self->nSequence;
+  if(nSeq > self->nSequence){
+    self->nSequence = nSeq;
   }
-  self->nSequence = nSeq + 1;
+  self->nSequence++;
 
   return 0;
 }

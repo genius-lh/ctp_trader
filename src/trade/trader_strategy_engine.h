@@ -37,7 +37,7 @@ struct trader_strategy_engine_def {
   int nPositionSize;
   
   char TradingDay[9];
-  int nSequence;
+  long nSequence;
   
   // 交易API
   trader_trader_api* pCtpTraderApi;
@@ -71,7 +71,7 @@ struct trader_strategy_engine_method_def {
   // 设置交易日期
   int (*xTradingDaySet)(trader_strategy_engine* self, char* day);
   // 设置当前user_id
-  int (*xLocalUserIdSet)(trader_strategy_engine* self, char* user_id);
+  int (*xLocalUserIdSet)(trader_strategy_engine* self, long user_id);
   // 获取生成报单号
   int (*xGenLocalId)(trader_strategy_engine* self, char type, char* local_id);
   // 根据UserLocalId判断报单类型
