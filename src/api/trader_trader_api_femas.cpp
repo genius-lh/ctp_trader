@@ -559,8 +559,9 @@ void femas_query_on_rsp_qry_instrument(void* arg, CUstpFtdcRspInstrumentField *p
 
   if(pInstrument) {
     strcpy(traderInstrument.InstrumentID, pInstrument->InstrumentID);
-    traderInstrument.PriceTick = pInstrument->PriceTick;
+    strcpy(traderInstrument.ExchangeID, pInstrument->ExchangeID);
     traderInstrument.VolumeMultiple = pInstrument->VolumeMultiple;
+    traderInstrument.PriceTick = pInstrument->PriceTick;
 
     CMN_DEBUG(
       "pInstrument->ExchangeID[%s]\n"

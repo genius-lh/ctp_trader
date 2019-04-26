@@ -227,6 +227,10 @@ int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char
   CThostFtdcInputOrderActionField inputOrderActionField;
   
   memset(&inputOrderActionField, 0, sizeof(inputOrderActionField));
+  
+  //strcpy(req.OrderRef, orderRef); //报单引用	
+  //req.FrontID = frontId;           //前置编号	
+  //req.SessionID = sessionId;       //会话编号
 
 	///经纪公司代码
 	strcpy(inputOrderActionField.BrokerID, self->pBrokerID);
@@ -235,7 +239,7 @@ int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char
 	///报单操作引用
 	inputOrderActionField.OrderActionRef = atoi(local_id);
 	///报单引用
-	strcpy(inputOrderActionField.OrderRef, org_local_id);
+  strcpy(inputOrderActionField.OrderSysID, order_sys_id);
 	///前置编号
 	//inputOrderActionField.FrontID = front_id;
 	///会话编号
@@ -266,7 +270,7 @@ int trader_trader_api_ctp_qry_instrument(trader_trader_api* self)
 	//TThostFtdcInstrumentIDType	InstrumentID;
 	///交易所代码
 	//TThostFtdcExchangeIDType	ExchangeID;
-	strcpy(qryInstrumentField.ExchangeID, "SSE");
+	//strcpy(qryInstrumentField.ExchangeID, "SSE");
 
   pTraderApi->ReqQryInstrument(&qryInstrumentField, pImp->nTraderRequestID++);
 
@@ -435,8 +439,9 @@ void ctp_trader_on_rtn_order(void* arg, CThostFtdcOrderField *pOrder)
   trader_order traderOrder;
   memset(&traderOrder, 0, sizeof(traderOrder));
   
+  strcpy(traderOrder.ExchangeID, pOrder->ExchangeID);
+  strcpy(traderOrder.OrderSysID, pOrder->OrderSysID);
   // 合约代码
-  char InstrumentID [31];
   strcpy(traderOrder.InstrumentID, pOrder->InstrumentID);
   // 本地报单编号
   strcpy(traderOrder.UserOrderLocalID, pOrder->OrderRef);
@@ -577,7 +582,7 @@ void ctp_query_on_rsp_qry_instrument(void* arg, CThostFtdcInstrumentField *pInst
 
   if(pInstrument) {
     strcpy(traderInstrument.InstrumentID, pInstrument->InstrumentID);
-    //TODO
+    strcpy(traderInstrument.ExchangeID, pInstrument->ExchangeID);
     traderInstrument.PriceTick = pInstrument->PriceTick;
   }
 

@@ -689,14 +689,26 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
   trader_trade* pTrade = &(pMsg->Body.TradeRsp);
 
   switch(nType){
-  case TRADERONFRONTCONNECTED:
+  case TRADERONFRONTCONNECTED:    
+    CMN_DEBUG("trader connected!\n");
+    if(self->bProcessing){      
+      self->pCtpTraderApi->pMethod->xLogin(self->pCtpTraderApi);
+    }
     break;
   case TRADERONFRONTDISCONNECTED:
+    CMN_DEBUG("trader disconnected!\n");
+    
+    break;
+  case TRADERONRSPUSERLOGOUT:    
+    CMN_DEBUG("trader disconnected!\n");
+    self->bProcessing = 0;    
+    self->pCtpTraderApi->pMethod->xStop(self->pCtpTraderApi);
     break;
   case TRADERONRSPUSERLOGIN:
     if(pMsg->ErrorCd){
       // 登陆失败
       trader_svr_client_notify_login(self, pMsg->ErrorCd, pMsg->ErrorMsg);
+      self->bProcessing = 0;
       return -1;
     }
     
@@ -710,7 +722,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     // 设置MaxUserOrderLocalID
     long sMaxOrderLocalID = 0;
     self->pCtpTraderApi->pMethod->xGetMaxOrderLocalID(self->pCtpTraderApi, &sMaxOrderLocalID);
-    CMN_DEBUG("sMaxOrderLocalID[%s]\n", sMaxOrderLocalID);
+    CMN_DEBUG("sMaxOrderLocalID[%ld]\n", sMaxOrderLocalID);
     self->pStrategyEngine->pMethod->xLocalUserIdSet(self->pStrategyEngine, sMaxOrderLocalID);
 
     if(0 != strcmp(sTradingDay, self->TradingDay)){
@@ -878,7 +890,7 @@ int trader_svr_proc_client_logout(trader_svr* self)
   */
   
   // 交易退出
-  self->pCtpTraderApi->pMethod->xStop(self->pCtpTraderApi);
+  self->pCtpTraderApi->pMethod->xLogout(self->pCtpTraderApi);
 
   return 0;
 }

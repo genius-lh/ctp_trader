@@ -126,9 +126,12 @@ cmn_log_clt* cmn_log_clt_get()
     cmn_log_clt_fini
   };
   
-  static cmn_log_clt stSynLogClt;
-  memset(&stSynLogClt, 0, sizeof(stSynLogClt));
-  stSynLogClt.pMethod = &gSynLogCtlMehtods;	
+  static cmn_log_clt stSynLogClt = {
+    (cmn_log_queue*)NULL,
+    0,
+    "",
+    &gSynLogCtlMehtods
+  };
 
   return &stSynLogClt;
 }

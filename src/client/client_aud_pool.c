@@ -137,7 +137,9 @@ void client_aud_pool_free(client_aud_pool* self)
   client_aud_trader* pIter;
   while((pIter = TAILQ_FIRST(&self->hCnnTraderList))!=NULL){
   	TAILQ_REMOVE(&self->hCnnTraderList, pIter, next);
+    bufferevent_free(pIter->BufTrader);
     free(pIter);
+    pIter = (client_aud_trader*)NULL;
   }
   if(self->redis){
     redisFree(self->redis);

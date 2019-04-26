@@ -195,19 +195,11 @@ int client_aud_svr_exit(client_aud_svr* self)
   while((pCnn = TAILQ_FIRST(&self->hCnnUsedList))!=NULL){
   	TAILQ_REMOVE(&self->hCnnUsedList, pCnn, next);
     bufferevent_free(pCnn->BufClient);
-    if(pCnn->BufTrader){
-      bufferevent_free(pCnn->BufTrader);
-      pCnn->BufTrader = (struct bufferevent *)NULL;
-    }
     client_aud_cnn_free(pCnn);
   }
 
   while((pCnn = TAILQ_FIRST(&self->hCnnFreeList))!=NULL){
   	TAILQ_REMOVE(&self->hCnnFreeList, pCnn, next);
-    if(pCnn->BufTrader){
-      bufferevent_free(pCnn->BufTrader);
-      pCnn->BufTrader = (struct bufferevent *)NULL;
-    }
     client_aud_cnn_free(pCnn);
   }
 
