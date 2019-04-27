@@ -563,8 +563,7 @@ int trader_svr_proc_trader(trader_svr* self, trader_msg_trader_struct* msg)
       "pInvestorPosition->YdPosition[%d]\n"
       "pInvestorPosition->TodayPosition[%d]\n"
       "pInvestorPosition->Position[%d]\n"
-      "pInvestorPosition->LongFrozen[%d]\n"
-      "pInvestorPosition->ShortFrozen[%d]\n",
+      "pInvestorPosition->LongFrozen[%d]\n",
       pInvestorPosition->InstrumentID,
       pInvestorPosition->PosiDirection,
       pInvestorPosition->IsSHFE,
@@ -572,8 +571,7 @@ int trader_svr_proc_trader(trader_svr* self, trader_msg_trader_struct* msg)
       pInvestorPosition->YdPosition,
       pInvestorPosition->TodayPosition,
       pInvestorPosition->Position,
-      pInvestorPosition->LongFrozen,
-      pInvestorPosition->ShortFrozen
+      pInvestorPosition->LongFrozen
     );
     
     self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, &pMsg->oPosition);
@@ -682,9 +680,8 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
   trader_contract* iter;
   
   trader_instrument* pInstrument = &(pMsg->Body.InstrumentRsp);
-  trader_position* pPosition = &(pMsg->Body.PositionRsp);
-  investor_position oInvestorPosition;
-  investor_position* pInvestorPosition = &oInvestorPosition;
+  trader_position* pInvestorPosition = &(pMsg->Body.PositionRsp);
+  investor_position traderPosition;
   trader_order* pOrder = &(pMsg->Body.OrderRsp);
   trader_trade* pTrade = &(pMsg->Body.TradeRsp);
 
@@ -774,9 +771,50 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     }
     break;
   case TRADERONRSPQRYINVESTORPOSITION:
+    pInvestorPosition->IsSHFE = 0;
+    TAILQ_FOREACH(iter, &self->listTraderContract, next){
+      CMN_DEBUG("pInvestorPosition->InstrumentID[%s]"
+        "iter->contract[%s]"
+        "iter->isSHFE[%d]\n",
+        pInvestorPosition->InstrumentID,
+        iter->contract,
+        iter->isSHFE
+      );
+      if(!strcmp(pInvestorPosition->InstrumentID, iter->contract)){
+        pInvestorPosition->IsSHFE = iter->isSHFE;
+        break;
+      }
+    }
+
+    CMN_INFO("pInvestorPosition->InstrumentID[%s]\n"
+      "pInvestorPosition->PosiDirection[%c]\n"
+      "pInvestorPosition->IsSHFE[%d]\n"
+      "pInvestorPosition->PositionDate[%c]\n"
+      "pInvestorPosition->YdPosition[%d]\n"
+      "pInvestorPosition->TodayPosition[%d]\n"
+      "pInvestorPosition->Position[%d]\n"
+      "pInvestorPosition->LongFrozen[%d]\n",
+      pInvestorPosition->InstrumentID,
+      pInvestorPosition->PosiDirection,
+      pInvestorPosition->IsSHFE,
+      pInvestorPosition->PositionDate,
+      pInvestorPosition->YdPosition,
+      pInvestorPosition->TodayPosition,
+      pInvestorPosition->Position,
+      pInvestorPosition->LongFrozen
+    );
+
+    strcpy(traderPosition.InstrumentID, pInvestorPosition->InstrumentID);
+    traderPosition.PosiDirection = pInvestorPosition->PosiDirection;
+    traderPosition.IsSHFE = pInvestorPosition->IsSHFE;
+    traderPosition.PositionDate = pInvestorPosition->PositionDate;
+    traderPosition.YdPosition = pInvestorPosition->YdPosition;
+    traderPosition.TodayPosition = pInvestorPosition->TodayPosition;
+    traderPosition.Position = pInvestorPosition->Position;
+    traderPosition.LongFrozen = pInvestorPosition->LongFrozen;
     
-    //pInvestorPosition->IsSHFE = 0;
-    //self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, pInvestorPosition);
+    self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, &traderPosition);
+
     if(pMsg->IsLast){
 
     }

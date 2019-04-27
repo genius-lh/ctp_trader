@@ -200,7 +200,7 @@ int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char
 	///数量
 	inputOrderField.VolumeTotalOriginal = vol;
 	///有效期类型
-	inputOrderField.TimeCondition = THOST_FTDC_TC_GFD;
+	inputOrderField.TimeCondition = THOST_FTDC_TC_GFS;
 	///成交量类型
 	inputOrderField.VolumeCondition = THOST_FTDC_VC_AV;
 	///最小成交量
@@ -714,8 +714,15 @@ void ctp_query_on_rsp_qry_investor_position(void* arg, CThostFtdcInvestorPositio
       pInvestorPosition->StrikeFrozenAmount,
       pInvestorPosition->AbandonFrozen
     );
+    
     strcpy(traderPosition.InstrumentID, pInvestorPosition->InstrumentID);
-    //TODO
+    traderPosition.PositionDate = pInvestorPosition->PositionDate;
+    traderPosition.PosiDirection = pInvestorPosition->PosiDirection;
+    traderPosition.YdPosition = pInvestorPosition->YdPosition;
+    traderPosition.TodayPosition = pInvestorPosition->TodayPosition;
+    traderPosition.Position = pInvestorPosition->Position;
+    traderPosition.LongFrozen = pInvestorPosition->LongFrozen + pInvestorPosition->ShortFrozen;
+
   }
 
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);

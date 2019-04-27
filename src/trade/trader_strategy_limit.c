@@ -73,14 +73,14 @@ void trader_strategy_limit_on_init(trader_strategy_limit* self, investor_positio
   }
   if(!pInvestorPosition->IsSHFE) {
     pLimitPosition->YdPosition = pInvestorPosition->Position;
-    pLimitPosition->YdFronze = pInvestorPosition->LongFrozen + pInvestorPosition->ShortFrozen;
+    pLimitPosition->YdFronze = pInvestorPosition->LongFrozen;
   }else{
     if(TRADER_POSITION_DATE_TODAY == pInvestorPosition->PositionDate){
       pLimitPosition->Position = pInvestorPosition->Position;
-      pLimitPosition->Fronze = pInvestorPosition->LongFrozen + pInvestorPosition->ShortFrozen;
+      pLimitPosition->Fronze = pInvestorPosition->LongFrozen;
     }else{
       pLimitPosition->YdPosition = pInvestorPosition->Position;
-      pLimitPosition->YdFronze = pInvestorPosition->LongFrozen + pInvestorPosition->ShortFrozen;
+      pLimitPosition->YdFronze = pInvestorPosition->LongFrozen;
     }
   }
   

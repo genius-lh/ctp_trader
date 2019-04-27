@@ -422,9 +422,11 @@ void femas_trader_on_rtn_order(void* arg, CUstpFtdcOrderField *pOrder)
 
   trader_order traderOrder;
   memset(&traderOrder, 0, sizeof(traderOrder));
-  
+	///交易所代码
+  strcpy(traderOrder.ExchangeID, pOrder->ExchangeID);
+	///系统报单编号
+  strcpy(traderOrder.OrderSysID, pOrder->OrderSysID);
   // 合约代码
-  char InstrumentID [31];
   strcpy(traderOrder.InstrumentID, pOrder->InstrumentID);
   // 本地报单编号
   strcpy(traderOrder.UserOrderLocalID, pOrder->UserOrderLocalID);
@@ -756,8 +758,14 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
       pInvestorPosition->LastOrderLocalID,
       pInvestorPosition->Currency
     );
+    
     strcpy(traderPosition.InstrumentID, pInvestorPosition->InstrumentID);
-    //TODO
+    traderPosition.PositionDate = '1'; // 
+    traderPosition.PosiDirection = pInvestorPosition->Direction;
+    traderPosition.YdPosition = pInvestorPosition->YdPosition;
+    traderPosition.TodayPosition = pInvestorPosition->Position - pInvestorPosition->YdPosition;
+    traderPosition.Position = pInvestorPosition->Position;
+    traderPosition.LongFrozen = pInvestorPosition->FrozenPosition;
   }
 
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);

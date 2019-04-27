@@ -76,7 +76,6 @@ struct trader_position_def {
   int TodayPosition;
   int Position;
   int LongFrozen;
-  int ShortFrozen;
 };
 
 

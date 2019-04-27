@@ -492,8 +492,7 @@ void ctp_trader_on_rsp_qry_investor_position(void* arg, CThostFtdcInvestorPositi
     oMsg.oPosition.YdPosition = pInvestorPosition->YdPosition;
     oMsg.oPosition.TodayPosition = pInvestorPosition->TodayPosition;
     oMsg.oPosition.Position = pInvestorPosition->Position;
-    oMsg.oPosition.LongFrozen = pInvestorPosition->LongFrozen;
-    oMsg.oPosition.ShortFrozen = pInvestorPosition->ShortFrozen;
+    oMsg.oPosition.LongFrozen = pInvestorPosition->LongFrozen + pInvestorPosition->ShortFrozen;
     
     cmn_util_evbuffer_send(self->fd, (unsigned char*)&oMsg, sizeof(oMsg));
 
