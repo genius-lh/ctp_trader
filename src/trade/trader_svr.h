@@ -91,6 +91,8 @@ struct trader_svr_def {
   int nStoreMduser;
   // 下单方式
   char cHedgeFlag;
+  // 有效期类型
+  char cTimeCondition;
   // 行情接收地址端口
   char boardcastAddr[14+1];
   int boardcastPort;

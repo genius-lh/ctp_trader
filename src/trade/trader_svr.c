@@ -310,11 +310,16 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
   self->nStoreMduser = pCfg->pMethod->xGetStoreMduser(pCfg);
 
   self->cHedgeFlag = pCfg->pMethod->xGetHedgeFlag(pCfg);
-  
   cmn_cfg_free(pCfg);
   
   nRet = glbPflGetString("MDUSER", "BOARDCAST_ADDR", cfg_file, self->boardcastAddr);
   nRet = glbPflGetInt("MDUSER", "BOARDCAST_PORT", cfg_file, &self->boardcastPort);
+  
+  char sTimeCondition[2];
+  nRet = glbPflGetString("TRADER", "TIME_CONDITION", cfg_file, sTimeCondition);
+  if(nRet){
+    self->cTimeCondition = sTimeCondition[0];
+  }
 
   return 0;
 }

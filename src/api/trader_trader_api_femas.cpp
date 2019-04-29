@@ -110,11 +110,13 @@ void trader_trader_api_femas_start(trader_trader_api* self)
   pImp->nTraderRequestID = 0;
 
   self->pUserApi = (void*)pImp;
-
+  
+  self->timeCondition = USTP_FTDC_TC_GFD;
+  self->hedgeFlag = USTP_FTDC_CHF_Speculation;
+  
   // 交易
   pTraderApi->RegisterSpi(pTraderHandler);
   pTraderApi->RegisterFront(self->pAddress);
-
   
   pTraderApi->SubscribePrivateTopic(USTP_TERT_RESUME);
 
@@ -200,13 +202,13 @@ int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, ch
 	///组合开平标志
 	inputOrderField.OffsetFlag = open_close;
 	///组合投机套保标志
-	inputOrderField.HedgeFlag = USTP_FTDC_CHF_Speculation; //TODO
+	inputOrderField.HedgeFlag = self->hedgeFlag;
 	///价格
 	inputOrderField.LimitPrice = price;
 	///数量
-	inputOrderField.Volume= vol;
+	inputOrderField.Volume = vol;
 	///有效期类型
-	inputOrderField.TimeCondition = USTP_FTDC_TC_GFD; //TODO
+	inputOrderField.TimeCondition = self->timeCondition;
 	///成交量类型
 	inputOrderField.VolumeCondition = USTP_FTDC_VC_AV;
 	///最小成交量

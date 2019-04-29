@@ -115,6 +115,9 @@ void trader_trader_api_ctp_start(trader_trader_api* self)
   // 交易
   pTraderApi->RegisterSpi(pTraderHandler);
   pTraderApi->RegisterFront(self->pAddress);
+
+  self->timeCondition = THOST_FTDC_TC_GFD;
+  self->hedgeFlag = THOST_FTDC_HF_Speculation;
   
   // 连接交易服务器
   pTraderApi->Init();
@@ -194,13 +197,13 @@ int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char
 	///组合开平标志
 	inputOrderField.CombOffsetFlag[0] = open_close;
 	///组合投机套保标志
-	inputOrderField.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
+	inputOrderField.CombHedgeFlag[0] = self->hedgeFlag;
 	///价格
 	inputOrderField.LimitPrice = price;
 	///数量
 	inputOrderField.VolumeTotalOriginal = vol;
 	///有效期类型
-	inputOrderField.TimeCondition = THOST_FTDC_TC_GFS;
+	inputOrderField.TimeCondition = self->timeCondition;
 	///成交量类型
 	inputOrderField.VolumeCondition = THOST_FTDC_VC_AV;
 	///最小成交量

@@ -46,7 +46,13 @@ void trader_trader_api_set_workspace(trader_trader_api* self, char* ws)
 
 void trader_trader_api_set_param(trader_trader_api* self, char* key, char* val)
 {
-  //TODO
+  if(!strcmp("TIME_CONDITION", key)){
+    self->timeCondition = val[0];
+  }
+  
+  if(!strcmp("HEDGE_FLAG", key)){
+    self->hedgeFlag = val[0];
+  }
 }
 
 int trader_trader_api_get_trading_day(trader_trader_api* self, char* tradingday)

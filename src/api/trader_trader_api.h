@@ -107,8 +107,8 @@ struct trader_trader_api_def {
   char* pAddress;
   char* pWorkspace;
   long userLocalId;
-
-  cmn_util_map* pParamMap;
+  char timeCondition;
+  char hedgeFlag;
 
   void* pUserApi;
   
