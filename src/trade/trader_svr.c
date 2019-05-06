@@ -320,6 +320,10 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
   if(nRet){
     self->cTimeCondition = sTimeCondition[0];
   }
+  
+  nRet = glbPflGetString("TRADER", "REDIS_ADDR", cfg_file, self->pRedisIp);
+  nRet = glbPflGetInt("TRADER", "REDIS_PORT", cfg_file, &self->nRedisPort);
+  nRet = glbPflGetString("TRADER", "REDIS_INST_KEY", cfg_file, self->redisInstrumentKey);
 
   return 0;
 }
@@ -689,6 +693,15 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
   investor_position traderPosition;
   trader_order* pOrder = &(pMsg->Body.OrderRsp);
   trader_trade* pTrade = &(pMsg->Body.TradeRsp);
+  
+  CMN_DEBUG("Type[%d]\n"
+    "ErrorCd[%d]\n"
+    "ErrorMsg[%s]\n"
+    "IsLast[%d]\n",
+    msg->Type,
+    msg->ErrorCd,
+    msg->ErrorMsg,
+    msg->IsLast);
 
   switch(nType){
   case TRADERONFRONTCONNECTED:    

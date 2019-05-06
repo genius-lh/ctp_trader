@@ -356,7 +356,27 @@ void femas_trader_on_rsp_user_login(void* arg, CUstpFtdcRspUserLoginField *pRspU
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
   }
-  if(pRspUserLogin){
+  if(pRspUserLogin){  
+    CMN_DEBUG("pRspUserLogin->TradingDay[%s]\n"
+      "pRspUserLogin->BrokerID[%s]\n"
+      "pRspUserLogin->UserID[%s]\n"
+      "pRspUserLogin->LoginTime[%s]\n"
+      "pRspUserLogin->MaxOrderLocalID[%s]\n"
+      "pRspUserLogin->TradingSystemName[%s]\n"
+      "pRspUserLogin->DataCenterID[%d]\n"
+      "pRspUserLogin->PrivateFlowSize[%d]\n"
+      "pRspUserLogin->UserFlowSize[%d]\n",
+      pRspUserLogin->TradingDay,
+      pRspUserLogin->BrokerID,
+      pRspUserLogin->UserID,
+      pRspUserLogin->LoginTime,
+      pRspUserLogin->MaxOrderLocalID,
+      pRspUserLogin->TradingSystemName,
+      pRspUserLogin->DataCenterID,
+      pRspUserLogin->PrivateFlowSize,
+      pRspUserLogin->UserFlowSize
+      );
+
     // 获取最大报单号
     trader_trader_api_get_max_order_local_id(self, pRspUserLogin->MaxOrderLocalID);
   }
@@ -372,6 +392,14 @@ void femas_trader_on_rsp_user_logout(void* arg, CUstpFtdcRspUserLogoutField *pRs
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+  }
+
+  if(pRspUserLogout){
+    CMN_DEBUG("pRspUserLogout->BrokerID[%s]\n"
+      "pRspUserLogout->UserID[%s]\n",
+      pRspUserLogout->BrokerID,
+      pRspUserLogout->UserID
+      );
   }
   
   trader_trader_api_on_rsp_user_logout(self, errNo, errMsg);
@@ -400,7 +428,7 @@ void femas_trader_on_rsp_order_insert(void* arg, CUstpFtdcInputOrderField *pInpu
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
   }
-  
+
   trader_trader_api_on_rsp_order_insert(self, errNo, errMsg);
   
 }

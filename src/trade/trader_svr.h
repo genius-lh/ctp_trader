@@ -69,6 +69,9 @@ struct trader_svr_def {
 
   // Redis
   redisContext* pRedis;
+  char pRedisIp[21];
+  int nRedisPort;
+  char redisInstrumentKey[64];
   
   // 交易行情服务
   int nContractNum;
