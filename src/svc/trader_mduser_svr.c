@@ -75,7 +75,17 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
 #include "trader_mduser_api_femas.h"
   api_imp = trader_mduser_api_femas_method_get();
 #endif
-  
+
+#ifdef XSPEED_STOCK
+#include "trader_mduser_api_dfitc_stock.h"
+    api_imp = trader_mduser_api_dfitc_stock_method_get();
+#endif
+
+#ifdef XSPEED
+#include "trader_mduser_api_dfitc_sop.h"
+      api_imp = trader_mduser_api_dfitc_sop_method_get();
+#endif
+
   self->pCnnMain->pMethod->xInit(self->pCnnMain, self->pBase,
     self->mainBrokerId, self->mainUser, self->mainPasswd, self->mainAddr, "./main/",
     trader_mduser_svr_tick_cb, self,
