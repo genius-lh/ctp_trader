@@ -1197,7 +1197,7 @@ int trader_svr_check_instrument(trader_svr* self, char* inst)
   int found = 0;
 
   redisReply *reply;
-  reply = redisCommand(self->pRedis, "SISMEMBER %s %s", "MDUSER.INSTRUMENTS", inst);
+  reply = redisCommand(self->pRedis, "SISMEMBER %s %s", self->redisInstrumentKey, inst);
   found = (int)reply->integer;
   freeReplyObject(reply);
 
@@ -1381,7 +1381,11 @@ int trader_svr_redis_init(trader_svr* self)
   // Á´½Óredis
   redisContext *c;
   struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-  c = redisConnectWithTimeout("localhost", 6379, timeout);
+  if(self->nRedisPort){
+    c = redisConnectWithTimeout(self->pRedisIp, self->nRedisPort, timeout);
+  }else{
+    c = redisConnectUnixWithTimeout(self->pRedisIp, timeout);
+  }
   if (c == NULL || c->err) {
     if (c) {
       redisFree(c);

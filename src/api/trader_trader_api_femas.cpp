@@ -818,7 +818,7 @@ void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusF
       "pInstrumentStatus->MinMarketOrderVolume[%d]\n"
       "pInstrumentStatus->VolumeMultiple[%d]\n"
       "pInstrumentStatus->PriceTick[%lf]\n"
-      "pInstrumentStatus->Currency[%s]\n"
+      "pInstrumentStatus->Currency[%c]\n"
       "pInstrumentStatus->LongPosLimit[%d]\n"
       "pInstrumentStatus->ShortPosLimit[%d]\n"
       "pInstrumentStatus->LowerLimitPrice[%lf]\n"
