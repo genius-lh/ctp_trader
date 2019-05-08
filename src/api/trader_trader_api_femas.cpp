@@ -804,6 +804,23 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
 void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusField *pInstrumentStatus)
 {
   if(pInstrumentStatus){
+    
+    CMN_DEBUG(
+      "pInstrumentStatus->ExchangeID[%s]\n"
+      "pInstrumentStatus->ProductID[%s]\n"
+      "pInstrumentStatus->ProductName[%s]\n"
+      "pInstrumentStatus->InstrumentID[%s]\n"
+      "pInstrumentStatus->InstrumentName[%s]\n"
+      "pInstrumentStatus->DeliveryYear[%d]\n"
+      "pInstrumentStatus->DeliveryMonth[%d]\n",
+      pInstrumentStatus->ExchangeID,
+      pInstrumentStatus->ProductID,
+      pInstrumentStatus->ProductName,
+      pInstrumentStatus->InstrumentID,
+      pInstrumentStatus->InstrumentName,
+      pInstrumentStatus->DeliveryYear,
+      pInstrumentStatus->DeliveryMonth);
+    /*
     CMN_DEBUG(
       "pInstrumentStatus->ExchangeID[%s]\n"
       "pInstrumentStatus->ProductID[%s]\n"
@@ -824,7 +841,7 @@ void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusF
       "pInstrumentStatus->LowerLimitPrice[%lf]\n"
       "pInstrumentStatus->UpperLimitPrice[%lf]\n"
       "pInstrumentStatus->PreSettlementPrice[%lf]\n"
-      "pInstrumentStatus->InstrumentStatus[%s]\n"
+      "pInstrumentStatus->InstrumentStatus[%c]\n"
       "pInstrumentStatus->CreateDate[%s]\n"
       "pInstrumentStatus->OpenDate[%s]\n"
       "pInstrumentStatus->ExpireDate[%s]\n"
@@ -870,6 +887,7 @@ void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusF
       pInstrumentStatus->StrikePrice,
       pInstrumentStatus->OptionsType
     );
+    */
 
   }
 }

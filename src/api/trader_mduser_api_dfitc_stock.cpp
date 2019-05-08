@@ -74,6 +74,7 @@ void trader_mduser_api_dfitc_stock_start(trader_mduser_api* self)
   pImp->pMdApi = (void*)pUserApi;
   pImp->pHandler = (void*)pHandler;
   pImp->nRequestID = 0;
+  strncpy(pImp->instPrefix, "SH", sizeof(pImp->instPrefix));
   
   self->pUserApi = (void*)pImp;
 
@@ -133,8 +134,10 @@ void trader_mduser_api_dfitc_stock_subscribe(trader_mduser_api* self, char* inst
   trader_mduser_api_dfitc_stock* pImp = (trader_mduser_api_dfitc_stock*)self->pUserApi;
   DFITCSECMdApi* pUserApi = (DFITCSECMdApi*)pImp->pMdApi;
 
+  char buff[31];
   char* contracts[1];
-  contracts[0] = instrument;
+  snprintf(buff, sizeof(buff), "%s%s", pImp->instPrefix, instrument);
+  contracts[0] = buff;
 
   pUserApi->SubscribeStockMarketData(contracts, 1, pImp->nRequestID++);
   return ;

@@ -12,6 +12,7 @@ struct trader_mduser_api_dfitc_stock_def {
   void* pMdApi;
   void* pHandler;
   int nRequestID;
+  char instPrefix[3];
 };
 
 extern trader_mduser_api_method* trader_mduser_api_dfitc_stock_method_get();
