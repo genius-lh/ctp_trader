@@ -495,6 +495,10 @@ void femas_trader_on_rtn_trade(void* arg, CUstpFtdcTradeField *pTrade)
   strcpy(traderTrade.TradingDay, pTrade->TradingDay);
   ///成交时间
   strcpy(traderTrade.TradeTime, pTrade->TradeTime);
+  ///买卖方向
+  traderTrade.Direction = pTrade->Direction;
+  ///开平标志
+  traderTrade.OffsetFlag = pTrade->OffsetFlag;
   ///成交价格
   traderTrade.TradePrice = pTrade->TradePrice;
   ///成交数量
@@ -615,7 +619,7 @@ void femas_query_on_rsp_qry_instrument(void* arg, CUstpFtdcRspInstrumentField *p
       "pInstrument->LowerLimitPrice[%lf]\n"
       "pInstrument->UpperLimitPrice[%lf]\n"
       "pInstrument->PreSettlementPrice[%lf]\n"
-      "pInstrument->InstrumentStatus[%s]\n"
+      "pInstrument->InstrumentStatus[%c]\n"
       "pInstrument->CreateDate[%s]\n"
       "pInstrument->OpenDate[%s]\n"
       "pInstrument->StartDelivDate[%s]\n"

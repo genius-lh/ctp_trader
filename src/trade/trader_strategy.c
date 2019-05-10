@@ -1112,6 +1112,8 @@ int trader_strategy_insert_t1_open(trader_strategy* self, char long_short)
 
   // ´´½¨¶©µ¥
   trader_order* pOrder = (trader_order*)malloc(sizeof(trader_order));
+  pOrder->ExchangeID[0] = '\0';
+  pOrder->OrderSysID[0] = '\0';
   strcpy(pOrder->InstrumentID, self->T1);
   strcpy(pOrder->UserOrderLocalID, sLocalUserId);
   pOrder->Direction = cT1Direction;

@@ -483,6 +483,10 @@ void ctp_trader_on_rtn_trade(void* arg, CThostFtdcTradeField *pTrade)
   strcpy(traderTrade.TradingDay, pTrade->TradingDay);
   ///成交时间
   strcpy(traderTrade.TradeTime, pTrade->TradeTime);
+  ///买卖方向
+  traderTrade.Direction = pTrade->Direction;
+  ///开平标志
+  traderTrade.OffsetFlag = pTrade->OffsetFlag;
   ///成交价格
   traderTrade.TradePrice = pTrade->Price;
   ///成交数量

@@ -82,6 +82,7 @@ void trader_trader_api_on_front_connected(trader_trader_api* self)
   oEvent.Type = TRADERONFRONTCONNECTED;
   oEvent.ErrorCd = 0;
   oEvent.ErrorMsg[0] = '\0';
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -92,6 +93,7 @@ void trader_trader_api_on_front_disconnected(trader_trader_api* self, int nReaso
   oEvent.Type = TRADERONFRONTDISCONNECTED;
   oEvent.ErrorCd = nReason;
   oEvent.ErrorMsg[0] = '\0';
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -104,6 +106,7 @@ void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, char* e
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 
@@ -117,6 +120,7 @@ void trader_trader_api_on_rsp_user_login(trader_trader_api* self, int err_cd, ch
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -129,6 +133,7 @@ void trader_trader_api_on_rsp_user_logout(trader_trader_api* self, int err_cd, c
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -141,6 +146,7 @@ void trader_trader_api_on_rsp_order_insert(trader_trader_api* self, int err_cd, 
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -153,6 +159,7 @@ void trader_trader_api_on_rsp_order_action(trader_trader_api* self, int err_cd, 
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -162,6 +169,7 @@ void trader_trader_api_on_rtn_trade(trader_trader_api* self, trader_trade* trade
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRTNTRADE;
   oEvent.ErrorCd = 0;
+  oEvent.IsLast = 1;
   memcpy(&(oEvent.Body.TradeRsp), trade, sizeof(oEvent.Body.TradeRsp));
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -171,6 +179,7 @@ void trader_trader_api_on_rtn_order(trader_trader_api* self, trader_order* order
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRTNORDER;
   oEvent.ErrorCd = 0;
+  oEvent.IsLast = 1;
   memcpy(&(oEvent.Body.OrderRsp), order, sizeof(oEvent.Body.OrderRsp));
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 
@@ -184,6 +193,7 @@ void trader_trader_api_on_err_rtn_order_insert(trader_trader_api* self, int err_
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -196,6 +206,7 @@ void trader_trader_api_on_err_rtn_order_action(trader_trader_api* self, int err_
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
+  oEvent.IsLast = 1;
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
@@ -206,6 +217,7 @@ void trader_trader_api_on_rsp_qry_user_investor(trader_trader_api* self, char* i
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPQRYINVESTOR;
   oEvent.ErrorCd = err_cd;
+  oEvent.IsLast = 1;
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
