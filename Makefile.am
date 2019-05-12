@@ -3,11 +3,11 @@ noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 noinst_PROGRAMS=libctpmduser.so libctptrader.so \
 				libfemasmduser.so libfemastrader.so \
 				libfemasmduserAF.so libfemastraderAF.so \
-				libxspeedstockmduser.so
-bin_PROGRAMS=testMduser traderMduserSvr traderStrategy \
+				libxspeedmduser.so
+bin_PROGRAMS=testMduserClient traderMduserSvr traderStrategy \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
-			traderMduserXSpeed
+			traderMduserXSpeedStock traderMduserXSpeedSOP
 
 libtradercmn_a_SOURCES=src/util/cmn_util.c \
 	src/util/cJSON.c \
@@ -75,15 +75,15 @@ traderStrategy_LDADD=\
         -L. -ltradercmn -ltraderapi\
         -Lctp -lctptrader -lthosttraderapi
 
-testMduser_SOURCES=\
+testMduserClient_SOURCES=\
         src/test/trader_mduser_client_test.c\
         src/trade/trader_mduser_client.c
 
-testMduser_CFLAGS=-Isrc/trade -Isrc/util -Isrc/log -Isrc/cfg\
+testMduserClient_CFLAGS=-Isrc/trade -Isrc/util -Isrc/log -Isrc/cfg\
         -Isrc/api -Isrc/db\
         -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
-testMduser_LDADD=\
+testMduserClient_LDADD=\
         -Llibevent -levent_core -Lsqlite3 -lsqlite3\
         -lc -lstdc++ -lm -lpthread -lresolv -ldl\
         -L. -ltradercmn
@@ -108,22 +108,34 @@ libfemastraderAF_so_SOURCES=src/api/trader_trader_api_femas.cpp\
 libfemastraderAF_so_CPPFLAGS=-fPIC -DFEMAS20 -Ifemas20 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libfemastraderAF_so_LDFLAGS=-shared -fPIC
 
-libxspeedstockmduser_so_SOURCES=src/api/trader_mduser_api_dfitc_stock.cpp\
+libxspeedmduser_so_SOURCES=src/api/trader_mduser_api_xspeed.cpp\
 	src/api/DFITCSECMduserHandler.cpp
-libxspeedstockmduser_so_CPPFLAGS=-fPIC -Ixspeed -Ilibevent -Ilibevent/compat/sys
-libxspeedstockmduser_so_LDFLAGS=-shared -fPIC
+libxspeedmduser_so_CPPFLAGS=-fPIC -Ixspeed -Ilibevent -Ilibevent/compat/sys
+libxspeedmduser_so_LDFLAGS=-shared -fPIC
 
-traderMduserXSpeed_SOURCES=src/svc/trader_mduser_boardcast.c \
+traderMduserXSpeedStock_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserXSpeed_CFLAGS=-DXSPEED_STOCK\
+traderMduserXSpeedStock_CFLAGS=-DXSPEED_STOCK\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserXSpeed_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
+traderMduserXSpeedStock_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
 	-L. -ltradercmn -lmduserapi\
-	-Lxspeed -lxspeedstockmduser -lDFITCSECMdApi
+	-Lxspeed -lxspeedmduser -lDFITCSECMdApi
+	
+traderMduserXSpeedSOP_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserXSpeedSOP_CFLAGS=-DXSPEED\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserXSpeedSOP_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
+	-L. -ltradercmn -lmduserapi\
+	-Lxspeed -lxspeedmduser -lDFITCSECMdApi
 
 traderMduserFemas_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \

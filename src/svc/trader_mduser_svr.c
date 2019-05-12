@@ -77,17 +77,17 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
 #endif
 
 #ifdef XSPEED_STOCK
-#include "trader_mduser_api_dfitc_stock.h"
-    api_imp = trader_mduser_api_dfitc_stock_method_get();
+#include "trader_mduser_api_xspeed.h"
+    api_imp = trader_mduser_api_xspeed_stock_method_get();
 #endif
 
 #ifdef XSPEED
-#include "trader_mduser_api_dfitc_sop.h"
-      api_imp = trader_mduser_api_dfitc_sop_method_get();
+#include "trader_mduser_api_xspeed.h"
+      api_imp = trader_mduser_api_xspeed_sop_method_get();
 #endif
 
   self->pCnnMain->pMethod->xInit(self->pCnnMain, self->pBase,
-    self->mainBrokerId, self->mainUser, self->mainPasswd, self->mainAddr, "./main/",
+    self->mainBrokerId, self->mainUser, self->mainPasswd, self->mainAddr, self->mainWorkspace,
     trader_mduser_svr_tick_cb, self,
     self->instruments, self->instrumentNumber,
     api_imp);
@@ -97,7 +97,7 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
   }
   
   self->pCnnBackup->pMethod->xInit(self->pCnnBackup, self->pBase,
-    self->backupBrokerId, self->backupUser, self->backupPasswd, self->backupAddr, "./backup/",
+    self->backupBrokerId, self->backupUser, self->backupPasswd, self->backupAddr, self->backupWorkspace,
     trader_mduser_svr_tick_cb, self,
     self->instruments, self->instrumentNumber,
     api_imp);
@@ -217,11 +217,13 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_USER", argv[1], self->mainUser);
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_PASSWD", argv[1], self->mainPasswd);
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_ADDR", argv[1], self->mainAddr);
+  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_WORKSPACE", argv[1], self->mainWorkspace);
   
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_BROKER_ID", argv[1], self->backupBrokerId);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_USER", argv[1], self->backupUser);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_PASSWD", argv[1], self->backupPasswd);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_ADDR", argv[1], self->backupAddr);
+  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_WORKSPACE", argv[1], self->backupWorkspace);
 
   // 各种初始化
   CMN_DEBUG("self->pBase\n");

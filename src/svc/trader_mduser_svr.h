@@ -36,11 +36,13 @@ struct trader_mduser_svr_def {
   char mainUser[16];
   char mainPasswd[16];
   char mainAddr[64];
+  char mainWorkspace[64];
 
   char backupBrokerId[8];
   char backupUser[16];
   char backupPasswd[16];
   char backupAddr[64];
+  char backupWorkspace[64];
 
   char redisInstrumentKey[32];
   

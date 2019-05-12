@@ -22,25 +22,31 @@
 
 #include "trader_mduser_client.h"
 
+typedef struct trader_mduser_client_test_api_def trader_mduser_client_test_api;
+struct trader_mduser_client_test_api_def{
+  void* test;
+  trader_mduser_client* pApi;
+  char cache[sizeof(trader_mduser_evt)];
+  int cacheLen;
+};
+
 typedef struct trader_mduser_client_test_def trader_mduser_client_test;
 struct trader_mduser_client_test_def {
 
   struct event_base *pBase;
   struct event* pSigIntEvt;
   struct event* pSigTermEvt;
-  
-  trader_mduser_client* pApi;
+
+  trader_mduser_client_test_api oTestApi;
+  trader_mduser_client_test_api oTestApi2;
 
   int commitCount;
   int linePos;
   trader_tick* tickBuffer;
 
   char csvFile[256];
-
-  char cache[sizeof(trader_mduser_evt)];
-  int cacheLen;
-
 };
+
 
 static void trader_mduser_client_test_connect_callback(void* user_data);
 static void trader_mduser_client_test_disconnect_callback(void* user_data);
@@ -70,13 +76,16 @@ void trader_mduser_client_test_disconnect_callback(void* user_data)
 {
   printf("disconnected!\n");
   sleep(1);
-  trader_mduser_client_test* test = (trader_mduser_client_test*)user_data;
-  test->pApi->method->xConnect(test->pApi);
+  trader_mduser_client_test_api* pTestApi = (trader_mduser_client_test_api*)user_data;
+  trader_mduser_client* pApi = pTestApi->pApi;
+  pApi->method->xConnect(pApi);
 }
 
 void trader_mduser_client_test_recv_callback(void* user_data, void* data, int len)
 {
-  trader_mduser_client_test* test = (trader_mduser_client_test*)user_data;
+  trader_mduser_client_test_api* pTestApi = (trader_mduser_client_test_api*)user_data;
+  trader_mduser_client_test* test = (trader_mduser_client_test*)pTestApi->test;
+  
   int bDone = 0;
   int nLen;
   int nPos = 0;
@@ -87,17 +96,17 @@ void trader_mduser_client_test_recv_callback(void* user_data, void* data, int le
   trader_tick* tick_data = &pEvt->Tick;
   char* pData = (char*)data;
   
-  if((test->cacheLen + len) < sizeof(trader_mduser_evt)){
-    memcpy(&test->cache[test->cacheLen], pData, len);
-    test->cacheLen += len;
+  if((pTestApi->cacheLen + len) < sizeof(trader_mduser_evt)){
+    memcpy(&pTestApi->cache[pTestApi->cacheLen], pData, len);
+    pTestApi->cacheLen += len;
     return ;
   }
 
-  if(test->cacheLen > 0){
-    nPos = sizeof(trader_mduser_evt) - test->cacheLen;
-    memcpy(pBuff, test->cache, test->cacheLen);
-    memcpy(&pBuff[test->cacheLen], pData, nPos);
-    test->cacheLen = 0;
+  if(pTestApi->cacheLen > 0){
+    nPos = sizeof(trader_mduser_evt) - pTestApi->cacheLen;
+    memcpy(pBuff, pTestApi->cache, pTestApi->cacheLen);
+    memcpy(&pBuff[pTestApi->cacheLen], pData, nPos);
+    pTestApi->cacheLen = 0;
     
     pEvt = (trader_mduser_evt*)pBuff;
     tick_data = &pEvt->Tick;
@@ -106,8 +115,8 @@ void trader_mduser_client_test_recv_callback(void* user_data, void* data, int le
 
   while(nPos < len){
     if((nPos + sizeof(trader_mduser_evt)) > len){
-      test->cacheLen = len - nPos;
-      memcpy(&test->cache[0], &pData[nPos], test->cacheLen);
+      pTestApi->cacheLen = len - nPos;
+      memcpy(&pTestApi->cache[0], &pData[nPos], pTestApi->cacheLen);
       break;
     }
 
@@ -196,10 +205,14 @@ int main(int argc, char* argv[])
   char* pCfgFile = argv[1];
   char boardcastAddr[14+1];
   int boardcastPort;
+  char boardcastAddr2[14+1];
+  int boardcastPort2;
   char filenamePreifx[200+1];
 
   nRet = glbPflGetString("MDUSER", "BOARDCAST_ADDR", pCfgFile, boardcastAddr);
   nRet = glbPflGetInt("MDUSER", "BOARDCAST_PORT", pCfgFile, &boardcastPort);
+  nRet = glbPflGetString("MDUSER", "BOARDCAST_ADDR2", pCfgFile, boardcastAddr2);
+  nRet = glbPflGetInt("MDUSER", "BOARDCAST_PORT2", pCfgFile, &boardcastPort2);
   nRet = glbPflGetInt("MDUSER", "COMMIT_COUNT", pCfgFile, &test->commitCount);
   nRet = glbPflGetString("MDUSER", "CSV_FILENAME", pCfgFile, filenamePreifx);
   
@@ -219,21 +232,43 @@ int main(int argc, char* argv[])
   test->pSigIntEvt = evsignal_new(test->pBase, SIGINT, client_test_signal_cb, (void *)test);
   test->pSigTermEvt = evsignal_new(test->pBase, SIGTERM, client_test_signal_cb, (void *)test);
   
-  test->pApi = trader_mduser_client_new();
-
-  test->pApi->method->xInit(test->pApi, test->pBase, boardcastAddr, boardcastPort,
-    trader_mduser_client_test_connect_callback,
-    trader_mduser_client_test_disconnect_callback,
-    trader_mduser_client_test_recv_callback,
-    test
-    );
-
   test->tickBuffer = (trader_tick*)malloc((test->commitCount + 1) * sizeof(trader_tick));
   test->linePos = 0;
 
-  test->cacheLen = 0;
+  trader_mduser_client_test_api* pTestApi;
 
-  test->pApi->method->xConnect(test->pApi);
+  // 1 
+  pTestApi = &test->oTestApi;
+  pTestApi->pApi = trader_mduser_client_new();
+  pTestApi->cacheLen = 0;
+  pTestApi->test = test;
+
+  pTestApi->pApi->method->xInit(pTestApi->pApi, test->pBase, boardcastAddr, boardcastPort,
+    trader_mduser_client_test_connect_callback,
+    trader_mduser_client_test_disconnect_callback,
+    trader_mduser_client_test_recv_callback,
+    pTestApi
+    );
+
+  // 2 
+  pTestApi = &test->oTestApi2;
+  pTestApi->pApi = trader_mduser_client_new();
+  pTestApi->cacheLen = 0;
+  pTestApi->test = test;
+
+  pTestApi->pApi->method->xInit(pTestApi->pApi, test->pBase, boardcastAddr2, boardcastPort2,
+    trader_mduser_client_test_connect_callback,
+    trader_mduser_client_test_disconnect_callback,
+    trader_mduser_client_test_recv_callback,
+    pTestApi
+    );
+
+
+  pTestApi = &test->oTestApi;
+  pTestApi->pApi->method->xConnect(pTestApi->pApi);
+  
+  pTestApi = &test->oTestApi2;
+  pTestApi->pApi->method->xConnect(pTestApi->pApi);
 
   nRet = event_add(test->pSigIntEvt, NULL);
   
@@ -241,12 +276,16 @@ int main(int argc, char* argv[])
 
   event_base_dispatch(test->pBase);
 
-  test->pApi->method->xExit(test->pApi);
+  pTestApi = &test->oTestApi;
+  pTestApi->pApi->method->xExit(pTestApi->pApi);
+  trader_mduser_client_free(pTestApi->pApi);
+  
+  pTestApi = &test->oTestApi2;
+  pTestApi->pApi->method->xExit(pTestApi->pApi);
+  trader_mduser_client_free(pTestApi->pApi);
 
   event_free(test->pSigTermEvt);
   event_free(test->pSigIntEvt);
-
-  trader_mduser_client_free(test->pApi);
 
   trader_mduser_client_test_flush(test);
   
