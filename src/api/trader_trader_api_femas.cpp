@@ -442,7 +442,7 @@ void femas_trader_on_rsp_order_action(void* arg, CUstpFtdcOrderActionField *pInp
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
   }
-  
+
   trader_trader_api_on_rsp_order_action(self, errNo, errMsg);
 }
 
@@ -519,6 +519,45 @@ void femas_trader_on_err_rtn_order_insert(void* arg, CUstpFtdcInputOrderField *p
     errMsg = pRspInfo->ErrorMsg;
   }
   
+  trader_order traderOrder;
+  CMN_WARN("报单失败\n");
+
+  if(pInputOrder){
+    CMN_INFO("pInputOrder->ExchangeID[%s]\n"
+      "pInputOrder->OrderSysID[%s]\n"
+      "pInputOrder->UserID[%s]\n"
+      "pInputOrder->InstrumentID[%s]\n"
+      "pInputOrder->UserOrderLocalID[%s]\n",
+      pInputOrder->ExchangeID,
+      pInputOrder->OrderSysID,
+      pInputOrder->UserID,
+      pInputOrder->InstrumentID,
+      pInputOrder->UserOrderLocalID
+      );
+      
+    memset(&traderOrder, 0, sizeof(traderOrder));
+    ///交易所代码
+    strcpy(traderOrder.ExchangeID, pInputOrder->ExchangeID);
+    ///系统报单编号
+    strcpy(traderOrder.OrderSysID, pInputOrder->OrderSysID);
+    // 合约代码
+    strcpy(traderOrder.InstrumentID, pInputOrder->InstrumentID);
+    // 本地报单编号
+    strcpy(traderOrder.UserOrderLocalID, pInputOrder->UserOrderLocalID);
+    // 买卖
+    traderOrder.Direction = pInputOrder->Direction;
+    // 开平
+    traderOrder.OffsetFlag = pInputOrder->OffsetFlag;
+    ///投机套保标志
+    traderOrder.HedgeFlag = pInputOrder->HedgeFlag;
+    // 报单价格
+    traderOrder.LimitPrice = pInputOrder->LimitPrice;
+    // 订单状态
+    traderOrder.OrderStatus = TRADER_ORDER_OS_CANCELED;
+
+    trader_trader_api_on_rtn_order(self, &traderOrder);
+  }
+  
   trader_trader_api_on_err_rtn_order_insert(self, errNo, errMsg);
 }
 
@@ -532,6 +571,21 @@ void femas_trader_on_err_rtn_order_action(void* arg, CUstpFtdcOrderActionField *
     errMsg = pRspInfo->ErrorMsg;
   }
   
+  if(pOrderAction){
+    CMN_DEBUG("pOrderAction->ExchangeID[%s]\n"
+      "pOrderAction->OrderSysID[%s]\n"
+      "pOrderAction->InvestorID[%s]\n"
+      "pOrderAction->UserID[%s]\n"
+      "pOrderAction->UserOrderActionLocalID[%s]\n"
+      "pOrderAction->UserOrderLocalID[%s]\n",
+      pOrderAction->ExchangeID,
+      pOrderAction->OrderSysID,
+      pOrderAction->InvestorID,
+      pOrderAction->UserID,
+      pOrderAction->UserOrderActionLocalID,
+      pOrderAction->UserOrderLocalID
+      );
+  }
   trader_trader_api_on_err_rtn_order_action(self, errNo, errMsg);
 }
 
@@ -613,7 +667,7 @@ void femas_query_on_rsp_qry_instrument(void* arg, CUstpFtdcRspInstrumentField *p
       "pInstrument->MinMarketOrderVolume[%d]\n"
       "pInstrument->VolumeMultiple[%d]\n"
       "pInstrument->PriceTick[%lf]\n"
-      "pInstrument->Currency[%s]\n"
+      "pInstrument->Currency[%c]\n"
       "pInstrument->LongPosLimit[%d]\n"
       "pInstrument->ShortPosLimit[%d]\n"
       "pInstrument->LowerLimitPrice[%lf]\n"
@@ -797,8 +851,8 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
     traderPosition.PositionDate = '1'; // 
     traderPosition.PosiDirection = pInvestorPosition->Direction;
     traderPosition.YdPosition = pInvestorPosition->YdPosition;
-    traderPosition.TodayPosition = pInvestorPosition->Position - pInvestorPosition->YdPosition;
-    traderPosition.Position = pInvestorPosition->Position;
+    traderPosition.TodayPosition = pInvestorPosition->Position;
+    traderPosition.Position = pInvestorPosition->Position + pInvestorPosition->YdPosition;
     traderPosition.LongFrozen = pInvestorPosition->FrozenPosition;
   }
 
