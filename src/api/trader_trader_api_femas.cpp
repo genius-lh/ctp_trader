@@ -848,12 +848,17 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
     );
     
     strcpy(traderPosition.InstrumentID, pInvestorPosition->InstrumentID);
-    traderPosition.PositionDate = '1'; // 
-    traderPosition.PosiDirection = pInvestorPosition->Direction;
+    traderPosition.PositionDate = '1'; //
+    traderPosition.PosiDirection = TRADER_POSITION_LONG;
+    if(USTP_FTDC_D_Sell == pInvestorPosition->Direction){
+      traderPosition.PosiDirection = TRADER_POSITION_SHORT;
+    }
     traderPosition.YdPosition = pInvestorPosition->YdPosition;
-    traderPosition.TodayPosition = pInvestorPosition->Position;
-    traderPosition.Position = pInvestorPosition->Position + pInvestorPosition->YdPosition;
+    traderPosition.TodayPosition = pInvestorPosition->Position - pInvestorPosition->YdPosition;
+    traderPosition.Position = pInvestorPosition->Position;
     traderPosition.LongFrozen = pInvestorPosition->FrozenPosition;
+
+    return ;
   }
 
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);

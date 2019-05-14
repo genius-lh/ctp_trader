@@ -30,7 +30,9 @@ static dfitc_sec_mduser_api_cb* xspeed_mduser_api_cb_get();
 
 static void xspeed_mduser_on_front_connected(void* arg);
 static void xspeed_mduser_on_front_disconnected(void* arg, int nReason);
+#ifndef DFITC55
 static void xspeed_mduser_on_rtn_notice(void* arg, DFITCSECRspNoticeField *pNotice);
+#endif
 static void xspeed_mduser_on_rsp_error(void* arg, DFITCSECRspInfoField *pRspInfo);
 static void xspeed_mduser_on_rsp_stockuserlogin(void* arg, DFITCSECRspUserLoginField * pRspUserLogin, DFITCSECRspInfoField * pRspInfo);
 static void xspeed_mduser_on_rsp_stockuserlogout(void* arg, DFITCSECRspUserLogoutField * pRspUsrLogout, DFITCSECRspInfoField * pRspInfo);
@@ -214,7 +216,9 @@ dfitc_sec_mduser_api_cb* xspeed_mduser_api_cb_get()
   static dfitc_sec_mduser_api_cb dfitc_sec_mduser_api_cb_st ={
     xspeed_mduser_on_front_connected,
     xspeed_mduser_on_front_disconnected,
+#ifndef DFITC55
     xspeed_mduser_on_rtn_notice,
+#endif
     xspeed_mduser_on_rsp_error,
     xspeed_mduser_on_rsp_stockuserlogin,
     xspeed_mduser_on_rsp_stockuserlogout,
@@ -273,9 +277,11 @@ void xspeed_mduser_on_front_disconnected(void* arg, int nReason)
 
 }
 
+#ifndef DFITC55
 void xspeed_mduser_on_rtn_notice(void* arg, DFITCSECRspNoticeField *pNotice)
 {
 }
+#endif
 
 void xspeed_mduser_on_rsp_error(void* arg, DFITCSECRspInfoField *pRspInfo)
 {  

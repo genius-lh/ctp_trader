@@ -32,12 +32,14 @@ void CDfitcSecMduserHandler::OnFrontDisconnected(int nReason){
 m_pUserCb->xOnFrontDisconnected(m_parent, nReason);
 }
 
+#ifndef DFITC55
 /**
 * SEC-消息通知
 */
 void CDfitcSecMduserHandler::OnRtnNotice(DFITCSECRspNoticeField *pNotice) {
 m_pUserCb->xOnRtnNotice(m_parent, pNotice);
 }
+#endif
 
 /**
 * ERR-错误应答

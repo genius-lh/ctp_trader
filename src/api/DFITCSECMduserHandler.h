@@ -21,11 +21,12 @@ struct dfitc_sec_mduser_api_cb_def{
    */
  void (*xOnFrontDisconnected)(void* arg, int nReason);
 
+#ifndef DFITC55
   /**
    * SEC-消息通知
    */
  void (*xOnRtnNotice)(void* arg, DFITCSECRspNoticeField *pNotice);
-
+#endif
   /**
    * ERR-错误应答
    * @param pRspInfo:若请求失败，返回错误信息地址
@@ -154,11 +155,12 @@ public:
    */
  void OnFrontDisconnected(int nReason);
 
+#ifndef DFITC55
   /**
    * SEC-消息通知
    */
  void OnRtnNotice(DFITCSECRspNoticeField *pNotice);
-
+#endif
   /**
    * ERR-错误应答
    * @param pRspInfo:若请求失败，返回错误信息地址
