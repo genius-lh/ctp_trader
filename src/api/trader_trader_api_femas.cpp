@@ -857,11 +857,10 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
     traderPosition.TodayPosition = pInvestorPosition->Position - pInvestorPosition->YdPosition;
     traderPosition.Position = pInvestorPosition->Position;
     traderPosition.LongFrozen = pInvestorPosition->FrozenPosition;
-
-    return ;
   }
 
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);
+  return ;
 }
 
 void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusField *pInstrumentStatus)
