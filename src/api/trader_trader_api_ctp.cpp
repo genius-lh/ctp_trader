@@ -646,6 +646,24 @@ void ctp_query_on_rsp_qry_trading_account(void* arg, CThostFtdcTradingAccountFie
   }
 
   if(pTradingAccount) {
+    CMN_DEBUG(
+      "pTradingAccount->BrokerID[%s]\n"
+      "pTradingAccount->AccountID[%s]\n"
+      "pTradingAccount->PreDeposit[%lf]\n"
+      "pTradingAccount->PreBalance[%lf]\n"
+      "pTradingAccount->FrozenMargin[%lf]\n"
+      "pTradingAccount->FrozenCash[%lf]\n"
+      "pTradingAccount->FrozenCommission[%lf]\n"
+      "pTradingAccount->CurrMargin[%lf]\n",
+      pTradingAccount->BrokerID,
+      pTradingAccount->AccountID,
+      pTradingAccount->PreDeposit,
+      pTradingAccount->PreBalance,
+      pTradingAccount->FrozenMargin,
+      pTradingAccount->FrozenCash,
+      pTradingAccount->FrozenCommission,
+      pTradingAccount->CurrMargin);
+
     strcpy(traderAccount.AccountID, pTradingAccount->AccountID);
     //TODO
   }

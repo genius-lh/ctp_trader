@@ -839,8 +839,10 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     
     self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, &traderPosition);
 
-    if(pMsg->IsLast){
-
+    if(pMsg->IsLast){   
+      sleep(1);
+      CMN_DEBUG("xQryTradingAccount!\n");
+      self->pCtpTraderApi->pMethod->xQryTradingAccount(self->pCtpTraderApi);
     }
     break;
   case TRADERONRTNORDER:
