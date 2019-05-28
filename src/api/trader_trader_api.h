@@ -106,6 +106,8 @@ struct trader_trader_api_def {
   char* pPwd;
   char* pAddress;
   char* pWorkspace;
+  char* pAppID;
+  char* pAuthCode;
   long userLocalId;
   char timeCondition;
   char hedgeFlag;
@@ -127,6 +129,8 @@ struct trader_trader_api_method_def{
   void (*xSetUser)(trader_trader_api* self, char* broker_id, char* user, char* pwd);
   void (*xSetFrontAddr)(trader_trader_api* self, char* addr);
   void (*xSetWorkspace)(trader_trader_api* self, char* ws);
+  void (*xSetAppID)(trader_trader_api* self, char* appid);
+  void (*xSetAuthCode)(trader_trader_api* self, char* authcode);
   void (*xSetParam)(trader_trader_api* self, char* key, char* val);
   int (*xGetTradingDay)(trader_trader_api* self, char* tradingday);
   int (*xGetMaxOrderLocalID)(trader_trader_api* self, long* local_id);
@@ -151,6 +155,9 @@ extern void trader_trader_api_free(trader_trader_api* self);
 extern void trader_trader_api_set_user(trader_trader_api* self, char* broker_id, char* user, char* pwd);
 extern void trader_trader_api_set_front_addr(trader_trader_api* self, char* addr);
 extern void trader_trader_api_set_workspace(trader_trader_api* self, char* ws);
+extern void trader_trader_api_set_app_id(trader_trader_api* self, char* appid);
+extern void trader_trader_api_set_auth_code(trader_trader_api* self, char* authcode);
+
 extern void trader_trader_api_set_param(trader_trader_api* self, char* key, char* val);
 extern int trader_trader_api_get_trading_day(trader_trader_api* self, char* tradingday);
 extern int trader_trader_api_get_max_order_local_id(trader_trader_api* self, char* local_id);

@@ -37,6 +37,7 @@ static int trader_trader_api_ctp_qry_trading_account(trader_trader_api* self);
 
 static void ctp_trader_on_front_connected(void* arg);
 static void ctp_trader_on_front_disconnected(void* arg, int nReason);
+static void ctp_trader_on_rsp_authenticate(void* arg, CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 static void ctp_trader_on_rsp_user_login(void* arg, CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 static void ctp_trader_on_rsp_user_logout(void* arg, CThostFtdcUserLogoutField *pRspUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 static void ctp_trader_on_rsp_error(void* arg, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
@@ -65,6 +66,8 @@ trader_trader_api_method* trader_trader_api_ctp_method_get()
     trader_trader_api_set_user,
     trader_trader_api_set_front_addr,
     trader_trader_api_set_workspace,
+    trader_trader_api_set_app_id,
+    trader_trader_api_set_auth_code,
     trader_trader_api_set_param,
     trader_trader_api_ctp_get_trading_day,
     trader_trader_api_ctp_get_max_order_local_id,
@@ -146,14 +149,14 @@ void trader_trader_api_ctp_login(trader_trader_api* self)
 {
   trader_trader_api_ctp* pImp = (trader_trader_api_ctp*)self->pUserApi;
   CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)pImp->pTraderApi;
-  CThostFtdcReqUserLoginField reqUserLoginField;
+  CThostFtdcReqAuthenticateField reqAuthenticateField;
+  memset(&reqAuthenticateField, 0, sizeof(reqAuthenticateField));
+  strcpy(reqAuthenticateField.BrokerID, self->pBrokerID);
+  strcpy(reqAuthenticateField.UserID, self->pUser);
+  strcpy(reqAuthenticateField.AppID, self->pAppID);
+  strcpy(reqAuthenticateField.AuthCode, self->pAuthCode);
+  pTraderApi->ReqAuthenticate(&reqAuthenticateField, pImp->nTraderRequestID++);
   
-  memset(&reqUserLoginField, 0, sizeof(reqUserLoginField));
-  strcpy(reqUserLoginField.BrokerID, self->pBrokerID);
-  strcpy(reqUserLoginField.UserID, self->pUser);
-  strcpy(reqUserLoginField.Password, self->pPwd);
-  
-  pTraderApi->ReqUserLogin(&reqUserLoginField, pImp->nTraderRequestID++);
 }
 
 void trader_trader_api_ctp_logout(trader_trader_api* self)
@@ -345,6 +348,35 @@ void ctp_trader_on_front_disconnected(void* arg, int nReason)
   trader_trader_api_on_front_disconnected(self, nReason);
 }
 
+void ctp_trader_on_rsp_authenticate(void* arg, CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
+{
+  trader_trader_api* self = (trader_trader_api*)arg;
+  trader_trader_api_ctp* pImp = (trader_trader_api_ctp*)self->pUserApi;
+  CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)pImp->pTraderApi;
+  
+  int errNo = 0;
+  char* errMsg = NULL;
+  if(pRspInfo) {
+    errNo = pRspInfo->ErrorID;
+    errMsg = pRspInfo->ErrorMsg;
+    
+    trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+    return ;
+  }
+
+
+
+  CThostFtdcReqUserLoginField reqUserLoginField;
+  memset(&reqUserLoginField, 0, sizeof(reqUserLoginField));
+  strcpy(reqUserLoginField.BrokerID, self->pBrokerID);
+  strcpy(reqUserLoginField.UserID, self->pUser);
+  strcpy(reqUserLoginField.Password, self->pPwd);
+
+  pTraderApi->ReqUserLogin(&reqUserLoginField, pImp->nTraderRequestID++);
+
+
+}
+
 void ctp_trader_on_rsp_user_login(void* arg, CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
   trader_trader_api* self = (trader_trader_api*)arg;
@@ -356,19 +388,17 @@ void ctp_trader_on_rsp_user_login(void* arg, CThostFtdcRspUserLoginField *pRspUs
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+    trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+    return ;
   }
   
   if(pRspUserLogin){
     // 获取最大报单号
     trader_trader_api_get_max_order_local_id(self, pRspUserLogin->MaxOrderRef);
   }
-  
-  trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
 
-  if(errNo){
-    return;
-  }
-  
+  trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+    
   CThostFtdcSettlementInfoConfirmField req;
   memset(&req, 0, sizeof(CThostFtdcSettlementInfoConfirmField));
 
@@ -529,6 +559,7 @@ ctp_trader_api_cb* ctp_trader_api_cb_get()
   static ctp_trader_api_cb ctp_trader_api_cb_st = {
     ctp_trader_on_front_connected,
     ctp_trader_on_front_disconnected,
+    ctp_trader_on_rsp_authenticate,
     ctp_trader_on_rsp_user_login,
     ctp_trader_on_rsp_user_logout,
     ctp_trader_on_rsp_error,

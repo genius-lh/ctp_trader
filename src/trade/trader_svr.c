@@ -158,6 +158,8 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_femas_method_get());
 #endif
   self->pCtpTraderApi->pMethod->xSetFrontAddr(self->pCtpTraderApi, self->TrFrontAdd);
+  self->pCtpTraderApi->pMethod->xSetAppID(self->pCtpTraderApi, self->appId);
+  self->pCtpTraderApi->pMethod->xSetAuthCode(self->pCtpTraderApi, self->authCode);
 
   //self->BufMduser
   /*
@@ -306,6 +308,10 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
   self->WorkSpace = (char*)malloc(sizeof(char) * (strlen(pCfg->pMethod->xGetWorkspace(pCfg)) + 1));
   strcpy(self->WorkSpace, pCfg->pMethod->xGetWorkspace(pCfg));
   CMN_DEBUG("self->WorkSpace[%s]\n", self->WorkSpace);
+
+  
+  nRet = glbPflGetString("TRADER", "APP_ID", cfg_file, self->appId);
+  nRet = glbPflGetString("TRADER", "AUTH_CODE", cfg_file, self->authCode);
 
   self->nStoreMduser = pCfg->pMethod->xGetStoreMduser(pCfg);
 

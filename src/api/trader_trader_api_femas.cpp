@@ -64,6 +64,8 @@ trader_trader_api_method* trader_trader_api_femas_method_get()
     trader_trader_api_set_user,
     trader_trader_api_set_front_addr,
     trader_trader_api_set_workspace,
+    trader_trader_api_set_app_id,
+    trader_trader_api_set_auth_code,
     trader_trader_api_set_param,
     trader_trader_api_femas_get_trading_day,
     trader_trader_api_femas_get_max_order_local_id,

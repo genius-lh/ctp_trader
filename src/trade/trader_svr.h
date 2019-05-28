@@ -99,6 +99,10 @@ struct trader_svr_def {
   // 行情接收地址端口
   char boardcastAddr[14+1];
   int boardcastPort;
+  // AppId
+  char appId[32+1];
+  // AuthCode
+  char authCode[16+1];
 
   // 登录信息
   int bProcessing;

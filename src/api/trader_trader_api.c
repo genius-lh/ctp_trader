@@ -44,6 +44,17 @@ void trader_trader_api_set_workspace(trader_trader_api* self, char* ws)
   self->pWorkspace = ws;
 }
 
+void trader_trader_api_set_app_id(trader_trader_api* self, char* appid)
+{
+  self->pAppID = appid;
+}
+
+void trader_trader_api_set_auth_code(trader_trader_api* self, char* authcode)
+{
+  self->pAuthCode = authcode;
+}
+
+
 void trader_trader_api_set_param(trader_trader_api* self, char* key, char* val)
 {
   if(!strcmp("TIME_CONDITION", key)){

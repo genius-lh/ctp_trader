@@ -48,7 +48,7 @@ traderMduserCtp_CFLAGS=-DCTP\
 
 traderMduserCtp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
         -L. -ltradercmn -lmduserapi\
-        -Lctp -lctpmduser -lthostmduserapi
+        -Lctp -lctpmduser -lthostmduserapi_se
 
 traderStrategyCtp_SOURCES=\
         src/log/cmn_log_catalog.c\
@@ -74,7 +74,7 @@ traderStrategyCtp_LDADD=\
         -lc -lstdc++ -lm -lpthread -lresolv -ldl\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
-        -Lctp -lctptrader -lthosttraderapi
+        -Lctp -lctptrader -lthosttraderapi_se
 
 testMduserClient_SOURCES=\
         src/test/trader_mduser_client_test.c\

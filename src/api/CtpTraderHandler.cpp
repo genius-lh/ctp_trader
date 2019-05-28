@@ -41,6 +41,11 @@ void CCtpTraderHandler::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfi
 
 }
 
+///客户端认证响应
+void CCtpTraderHandler::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
+{
+	m_TraderCb->xOnRspAuthenticate(m_Arg, pRspAuthenticateField, pRspInfo, nRequestID, bIsLast);
+}
 
 ///风控前置系统用户登录应答
 void CCtpTraderHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) 
