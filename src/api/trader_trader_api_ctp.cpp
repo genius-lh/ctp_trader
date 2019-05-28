@@ -359,12 +359,12 @@ void ctp_trader_on_rsp_authenticate(void* arg, CThostFtdcRspAuthenticateField *p
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
-    
+  }
+
+  if(errNo){
     trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
     return ;
   }
-
-
 
   CThostFtdcReqUserLoginField reqUserLoginField;
   memset(&reqUserLoginField, 0, sizeof(reqUserLoginField));
@@ -388,6 +388,9 @@ void ctp_trader_on_rsp_user_login(void* arg, CThostFtdcRspUserLoginField *pRspUs
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+  }
+  
+  if(errNo){
     trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
     return ;
   }
