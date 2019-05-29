@@ -527,7 +527,7 @@ int trader_strategy_tick_finished(trader_strategy* self)
   // 持仓判断
   if(self->nPositionBuy > 0){
     // 限仓判断
-    if(self->nPositionBuy > self->hold){
+    if(self->nPositionBuy > (self->hold * self->T2Ratio)){
       bClose =  trader_strategy_judge_buy_close(self);
       if(bClose){
         // 新建平仓计划
@@ -540,7 +540,7 @@ int trader_strategy_tick_finished(trader_strategy* self)
   // 持仓判断
   if(self->nPositionSell > 0){
     // 限仓判断
-    if(self->nPositionSell > self->hold){
+    if(self->nPositionSell > (self->hold * self->T2Ratio)){
       bClose =  trader_strategy_judge_sell_close(self);
       if(bClose){
         // 新建平仓计划
@@ -574,8 +574,8 @@ int trader_strategy_tick_open(trader_strategy* self)
   nSize = self->nPositionBuy 
     + self->nPositionSell;
   
-  if(nSize >= self->MP){
-    CMN_DEBUG("nSize[%d]>=MP[%d]!\n", nSize, self->MP);
+  if(nSize >= self->MP * self->T2Ratio){
+    CMN_DEBUG("nSize[%d]>=MP[%d]*T2Ratio[%d]!\n", nSize, self->MP, self->T2Ratio);
     return 0;
   }
 
@@ -1055,9 +1055,8 @@ int trader_strategy_insert_t1_open(trader_strategy* self, char long_short)
   int nSize2 = 0;
   // 计算下单量
   nSize1 = self->Mult;
-  nSize2 = self->MP 
-    - self->nPositionBuy
-    - self->nPositionSell;
+  nSize2 = (self->MP * self->T2Ratio - self->nPositionBuy - self->nPositionSell);
+  nSize2 /= self->T2Ratio;
 
   if(nSize2 <= 0){
     return -1;
@@ -1156,10 +1155,12 @@ int trader_strategy_insert_t1_close(trader_strategy* self, char long_short)
   int nSize3 = 0;
   
   if(TRADER_POSITION_LONG == cLongShort){
-    nSize1 = self->nPositionBuy - self->hold;
+    nSize1 = self->nPositionBuy - self->hold * self->T2Ratio;
   }else{
-    nSize1 = self->nPositionSell - self->hold;
+    nSize1 = self->nPositionSell - self->hold * self->T2Ratio;
   }
+
+  nSize1 /= self->T2Ratio;
 
   if(nSize1 > self->Mult){
     nSize1 = self->Mult;

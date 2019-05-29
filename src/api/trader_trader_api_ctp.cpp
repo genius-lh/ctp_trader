@@ -360,6 +360,16 @@ void ctp_trader_on_rsp_authenticate(void* arg, CThostFtdcRspAuthenticateField *p
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
   }
+  
+  if(pRspAuthenticateField) {
+    CMN_DEBUG(
+      "pRspAuthenticateField->BrokerID[%s]\n"
+      "pRspAuthenticateField->UserID[%s]\n"
+      "pRspAuthenticateField->AppID[%s]\n",
+      pRspAuthenticateField->BrokerID,
+      pRspAuthenticateField->UserID,
+      pRspAuthenticateField->AppID);
+  }
 
   if(errNo){
     trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
@@ -388,6 +398,18 @@ void ctp_trader_on_rsp_user_login(void* arg, CThostFtdcRspUserLoginField *pRspUs
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+  }
+
+  if(pRspUserLogin) {
+    CMN_DEBUG(
+      "pRspUserLogin->BrokerID[%s]\n"
+      "pRspUserLogin->UserID[%s]\n"
+      "pRspUserLogin->TradingDay[%s]\n"
+      "pRspUserLogin->LoginTime[%s]\n",
+      pRspUserLogin->BrokerID,
+      pRspUserLogin->UserID,
+      pRspUserLogin->TradingDay,
+      pRspUserLogin->LoginTime);
   }
   
   if(errNo){
@@ -585,8 +607,25 @@ ctp_trader_api_cb* ctp_trader_api_cb_get()
 
 void ctp_trader_on_rsp_settlement_info_confirm(void* arg, CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
-  trader_trader_api* self = (trader_trader_api*)arg;
+  if(pRspInfo) {
+    CMN_DEBUG(
+      "pRspInfo->ErrorID[%d]"
+      "pRspInfo->ErrorMsg[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
 
+  if(pSettlementInfoConfirm) {
+    CMN_DEBUG(
+      "pSettlementInfoConfirm->BrokerID[%s]\n"
+      "pSettlementInfoConfirm->InvestorID[%s]\n"
+      "pSettlementInfoConfirm->ConfirmDate[%s]\n"
+      "pSettlementInfoConfirm->ConfirmTime[%s]\n",
+      pSettlementInfoConfirm->BrokerID,
+      pSettlementInfoConfirm->InvestorID,
+      pSettlementInfoConfirm->ConfirmDate,
+      pSettlementInfoConfirm->ConfirmTime);
+  }
 }
 
 
