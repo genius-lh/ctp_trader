@@ -120,7 +120,7 @@ public:
 	virtual void OnErrRtnQuoteInsert(CUstpFtdcInputQuoteField *pInputQuote, CUstpFtdcRspInfoField *pRspInfo) {};
 
 	///报价撤单错误回报
-	virtual void OnErrRtnQuoteAction(CUstpFtdcOrderActionField *pOrderAction, CUstpFtdcRspInfoField *pRspInfo) {};
+	virtual void OnErrRtnQuoteAction(CUstpFtdcQuoteActionField *pQuoteAction, CUstpFtdcRspInfoField *pRspInfo) {};
 
 	///询价回报
 	virtual void OnRtnForQuote(CUstpFtdcReqForQuoteField *pReqForQuote) {};
@@ -178,6 +178,12 @@ public:
 
 	///交易编码单腿持仓查询应答
 	virtual void OnRspQryInvestorLegPosition(CUstpFtdcRspInvestorLegPositionField *pRspInvestorLegPosition, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+	///穿透监管客户认证应答
+	virtual void OnRspDSUserCertification(CUstpFtdcDSUserCertRspDataField *pDSUserCertRspData, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+
+	///穿透监管信息采集中继上传信息响应
+	virtual void OnRspDSProxySubmitInfo(CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
 };
 
 class TRADER_API_EXPORT CUstpFtdcTraderApi
@@ -289,6 +295,10 @@ public:
 	///@return -1 打开日志文件失败
 	virtual int OpenResponseLog(const char *pszRspLogFileName) = 0;
 
+	///穿透监管中继处用户证书认证 
+	virtual int RegisterDSProxyUserCert(CUstpFtdcDSProxyCheckUserInfoField *pDSProxyUserUserInfo, CUstpFtdcDSProxyUserCertInField *pDSProxyUserCertIn, CUstpFtdcDSProxyUserCertOutField *pDProxyUserCertOut, int nRequestID) = 0;	
+
+
 
 	///风控前置系统用户登录请求
 	virtual int ReqUserLogin(CUstpFtdcReqUserLoginField *pReqUserLogin, int nRequestID) = 0;
@@ -367,6 +377,12 @@ public:
 
 	///交易编码单腿持仓查询请求
 	virtual int ReqQryInvestorLegPosition(CUstpFtdcQryInvestorLegPositionField *pQryInvestorLegPosition, int nRequestID) = 0;
+
+	///穿透监管客户认证请求
+	virtual int ReqDSUserCertification(CUstpFtdcDSUserInfoField *pDSUserInfo, int nRequestID) = 0;
+
+	///穿透监管信息采集中继上传信息
+	virtual int ReqDSProxySubmitInfo(CUstpFtdcDSProxySubmitDataField *pDSProxySubmitData, int nRequestID) = 0;
 protected:
 	~CUstpFtdcTraderApi(){};
 };

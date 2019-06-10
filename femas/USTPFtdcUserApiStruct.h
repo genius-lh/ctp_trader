@@ -1391,6 +1391,94 @@ struct CUstpFtdcRspInvestorLegPositionField
 	///空头冻结保证金
 	TUstpFtdcMoneyType	ShortFrozenMargin;
 };
+///穿透监管客户信息
+struct CUstpFtdcDSUserInfoField
+{
+	///用户AppID
+	TUstpFtdcDSAppIDType	AppID;
+	///用户授权码
+	TUstpFtdcDSAuthorizationCodeType	AuthCode;
+	///密钥加密类型
+	TUstpFtdcDSKeyEncryptType	EncryptType;
+};
+///穿透监管客户认证请求信息
+struct CUstpFtdcDSUserCertReqDataField
+{
+	///用户AppID
+	TUstpFtdcDSAppIDType	AppID;
+	///用户认证请求信息
+	TUstpFtdcDSStreamDataType	UserCertReqData;
+	///用户证书信息分片的总片数
+	TUstpFtdcDSSeqeneceType	TotalNum;
+	///用户证书信息分片的第几片
+	TUstpFtdcDSSeqeneceType	CurrentNum;
+};
+///穿透监管客户认证响应信息
+struct CUstpFtdcDSUserCertRspDataField
+{
+	///AppID
+	TUstpFtdcDSAppIDType	AppID;
+	///AppID类型
+	TUstpFtdcDSAppIDTypeType	AppIDType;
+	///用户认证返回信息
+	TUstpFtdcDSStreamDataType	UserCertRspData;
+	///用户证书返回信息分片的总片数
+	TUstpFtdcDSSeqeneceType	TotalNum;
+	///用户证书返回信息分片的第几片
+	TUstpFtdcDSSeqeneceType	CurrentNum;
+};
+///穿透监管客户信息采集信息
+struct CUstpFtdcDSLocalSystemDataField
+{
+	///用户AppID
+	TUstpFtdcDSAppIDType	AppID;
+	///异常标识
+	TUstpFtdcDSExceptionFlagType	ExceptionFlag;
+	///用户信息采集结果
+	TUstpFtdcDSLocalSystemDataType	LocalSystemData;
+};
+///穿透监管中继验证客户信息
+struct CUstpFtdcDSProxyCheckUserInfoField
+{
+	///用户AppID
+	TUstpFtdcDSAppIDType	AppID;
+	///用户授权码
+	TUstpFtdcDSAuthorizationCodeType	AuthCode;
+	///密钥加密类型
+	TUstpFtdcDSKeyEncryptType	EncryptType;
+};
+///穿透监管中继处接收到的终端认证信息
+struct CUstpFtdcDSProxyUserCertInField
+{
+	///穿透监管中继处接收到的终端认证信息
+	TUstpFtdcDSProxyCertStreamDataType	UserCertReqInfo;
+};
+///穿透监管中继处接终端认证返回信息
+struct CUstpFtdcDSProxyUserCertOutField
+{
+	///穿透监管中继处证书认证的返回结果
+	TUstpFtdcDSProxyCertStreamDataType	UserCertRspInfo;
+	///中继处返回数据已使用长度信息
+	TUstpFtdcDSBufLenType	UserCertRspInfoLen;
+};
+///穿透监管中继提交信息
+struct CUstpFtdcDSProxySubmitDataField
+{
+	///AppID
+	TUstpFtdcDSAppIDType	AppID;
+	///客户终端公网IP
+	TUstpFtdcDSPubNetIPType	TerminalPubNetIP;
+	///客户终端公网端口号
+	TUstpFtdcDSPubNetPortType	TerminalPubNetPort;
+	///客户终端登入时间
+	TUstpFtdcDSLoginTimeType	TerminalLoginTime;
+	///异常标识
+	TUstpFtdcDSExceptionFlagType	ExceptionFlag;
+	///RealyID
+	TUstpFtdcDSAppIDType	RelayID;
+	///终端采集信息
+	TUstpFtdcDSLocalSystemDataType	TerminalSystemData;
+};
 
 
 #endif
