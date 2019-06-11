@@ -117,6 +117,11 @@ void CFemasTraderHandler::OnRspQryInvestorPosition(CUstpFtdcRspInvestorPositionF
   m_TraderCb->xOnRspQryInvestorPosition(m_Arg, pRspInvestorPosition, pRspInfo, nRequestID, bIsLast);
 }
 
+///穿透监管客户认证应答
+void CFemasTraderHandler::OnRspDSUserCertification(CUstpFtdcDSUserCertRspDataField *pDSUserCertRspData, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
+{
+  m_TraderCb->xOnRspDSUserCertification(m_Arg, pDSUserCertRspData, pRspInfo, nRequestID, bIsLast);
+}
 
 
 

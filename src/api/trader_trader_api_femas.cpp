@@ -52,6 +52,7 @@ static void femas_query_on_rsp_qry_instrument(void* arg, CUstpFtdcRspInstrumentF
 static void femas_query_on_rsp_qry_trading_account(void* arg, CUstpFtdcRspInvestorAccountField *pTradingAccount, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, int bIsLast);
 static void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPositionField *pInvestorPosition, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, int bIsLast);
 static void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusField *pInstrumentStatus);
+static void femas_trader_on_rsp_ds_user_certification(void* arg, CUstpFtdcDSUserCertRspDataField *pDSUserCertRspData, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, int bIsLast);
 static femas_trader_api_cb* femas_trader_api_cb_get();
 
 #ifdef __cplusplus
@@ -151,14 +152,15 @@ void trader_trader_api_femas_login(trader_trader_api* self)
 {
   trader_trader_api_femas* pImp = (trader_trader_api_femas*)self->pUserApi;
   CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-  CUstpFtdcReqUserLoginField reqUserLoginField;
+  CUstpFtdcDSUserInfoField reqDSUserInfoField;
   
-  memset(&reqUserLoginField, 0, sizeof(reqUserLoginField));
-  strcpy(reqUserLoginField.BrokerID, self->pBrokerID);
-  strcpy(reqUserLoginField.UserID, self->pUser);
-  strcpy(reqUserLoginField.Password, self->pPwd);
-  
-  pTraderApi->ReqUserLogin(&reqUserLoginField, pImp->nTraderRequestID++);
+  memset(&reqDSUserInfoField, 0, sizeof(reqDSUserInfoField));
+
+  strcpy(reqDSUserInfoField.AppID, self->pAppID);
+  strcpy(reqDSUserInfoField.AuthCode, self->pAuthCode);
+  reqDSUserInfoField.EncryptType = '1';
+
+  pTraderApi->ReqDSUserCertification(&reqDSUserInfoField, pImp->nTraderRequestID++);
 }
 
 void trader_trader_api_femas_logout(trader_trader_api* self)
@@ -956,4 +958,37 @@ void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusF
   }
 }
 
+void femas_trader_on_rsp_ds_user_certification(void* arg, CUstpFtdcDSUserCertRspDataField *pDSUserCertRspData, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, int bIsLast)
+{
+  trader_trader_api* self = (trader_trader_api*)arg;
+  trader_trader_api_femas* pImp = (trader_trader_api_femas*)self->pUserApi;
+  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+
+  int errNo = 0;
+  char* errMsg = NULL;
+  if(pRspInfo) {
+    errNo = pRspInfo->ErrorID;
+    errMsg = pRspInfo->ErrorMsg;
+  }
+  
+  if(pDSUserCertRspData) {
+    CMN_DEBUG("pDSUserCertRspData->AppID[%s]\n",
+      pDSUserCertRspData->AppID);
+  }
+
+  if(errNo){
+    trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+    return ;
+  }
+  
+  CUstpFtdcReqUserLoginField reqUserLoginField;
+  
+  memset(&reqUserLoginField, 0, sizeof(reqUserLoginField));
+  strcpy(reqUserLoginField.BrokerID, self->pBrokerID);
+  strcpy(reqUserLoginField.UserID, self->pUser);
+  strcpy(reqUserLoginField.Password, self->pPwd);
+  
+  pTraderApi->ReqUserLogin(&reqUserLoginField, pImp->nTraderRequestID++);
+
+}
 
