@@ -117,6 +117,8 @@ void trader_trader_api_ctp_start(trader_trader_api* self)
 
   // ½»Ò×
   pTraderApi->RegisterSpi(pTraderHandler);
+  pTraderApi->SubscribePrivateTopic(THOST_TERT_RESUME);
+  pTraderApi->SubscribePublicTopic(THOST_TERT_RESUME);
   pTraderApi->RegisterFront(self->pAddress);
 
   self->timeCondition = THOST_FTDC_TC_GFD;
