@@ -58,6 +58,7 @@ static void trader_svr_client_read_cb(struct bufferevent *bev, void *arg);
 static void trader_svr_client_write_cb(struct bufferevent *bev, void *arg);
 static void trader_svr_client_evt_cb(struct bufferevent *bev, short event, void *arg);
 static void trader_svr_signal_cb(evutil_socket_t fd, short event, void *arg);
+static void trader_svr_mduser_connect_cb(evutil_socket_t fd, short event, void *arg);
 
 static int trader_svr_proc_client_logout(trader_svr* self);
 static int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req);
@@ -103,6 +104,10 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   CMN_DEBUG("self->pSigTermEvt\n");
   self->pSigTermEvt = evsignal_new(self->pBase, SIGTERM, trader_svr_signal_cb, (void *)self);
   CMN_ASSERT(self->pSigTermEvt);
+  
+  CMN_DEBUG("self->pConnectTimer\n");
+  self->pConnectTimer = evtimer_new(self->pBase, trader_svr_mduser_connect_cb, (void *)self);
+  CMN_ASSERT(self->pConnectTimer);
   
   nRet = event_add(self->pSigIntEvt, NULL);
   CMN_ASSERT(nRet >= 0);
@@ -275,6 +280,7 @@ int trader_svr_exit(trader_svr* self)
 
   event_free(self->pSigIntEvt);
   event_free(self->pSigTermEvt);
+  event_free(self->pConnectTimer);
   event_base_free(self->pBase);
   
   return 0;
@@ -1266,10 +1272,19 @@ void trader_svr_signal_cb(evutil_socket_t fd, short event, void *arg)
 
   event_del(self->pSigIntEvt);
   event_del(self->pSigTermEvt);
+  event_del(self->pConnectTimer);
 
   event_base_loopexit(base, &delay);
 
 }
+
+void trader_svr_mduser_connect_cb(evutil_socket_t fd, short event, void *arg)
+{
+  trader_svr* self = (trader_svr*)arg;
+  self->pMduserClt->method->xConnect(self->pMduserClt);
+  event_del(self->pConnectTimer);
+}
+
 
 trader_svr* trader_svr_new()
 {
@@ -1332,7 +1347,10 @@ void trader_svr_mduser_client_disconnect_callback(void* user_data)
 {
   CMN_ERROR("disconnected!\n");
   trader_svr* self = (trader_svr*)user_data;
-  self->pMduserClt->method->xConnect(self->pMduserClt);
+  static struct timeval t1_timeout = {
+    1, 0
+  };
+  evtimer_add(self->pConnectTimer, &t1_timeout);
 }
 
 void trader_svr_mduser_client_recv_callback(void* user_data, void* data, int len)

@@ -40,6 +40,7 @@ struct trader_svr_def {
   struct event_base *pBase;
   struct event* pSigIntEvt;
   struct event* pSigTermEvt;
+  struct event* pConnectTimer;
 
   trader_mduser_client* pMduserClt;
   char cache[sizeof(trader_mduser_evt)];
