@@ -119,7 +119,12 @@ int trader_mduser_cnn_proc(trader_mduser_cnn* self, trader_mduser_evt* evt)
         self->pMduserApi->pMethod->xSubscribe(self->pMduserApi, self->instruments[i]);
       }
     }else{
-      //TODO
+      printf("Type[%d]\n"
+        "ErrorCd[%d]\n"
+        "ErrorMsg[%s]\n",
+        pEvt->Type,
+        pEvt->ErrorCd,
+        pEvt->ErrorMsg);
       event_base_loopexit(self->pBase, NULL);
     }
   }
