@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "USTPFtdcUserApiDataType.h"
 #include "USTPFtdcTraderApi.h"
@@ -117,13 +118,13 @@ void trader_trader_api_femas_start(trader_trader_api* self)
   self->timeCondition = USTP_FTDC_TC_GFD;
   self->hedgeFlag = USTP_FTDC_CHF_Speculation;
   
-  // 交易
-  pTraderApi->RegisterSpi(pTraderHandler);
-  pTraderApi->RegisterFront(self->pAddress);
-  
   pTraderApi->SubscribePrivateTopic(USTP_TERT_RESUME);
 
   pTraderApi->SubscribePublicTopic(USTP_TERT_RESUME);
+  
+  // 交易
+  pTraderApi->RegisterSpi(pTraderHandler);
+  pTraderApi->RegisterFront(self->pAddress);
   
   // 连接交易服务器
   pTraderApi->Init();
@@ -155,10 +156,12 @@ void trader_trader_api_femas_login(trader_trader_api* self)
   CUstpFtdcDSUserInfoField reqDSUserInfoField;
   
   memset(&reqDSUserInfoField, 0, sizeof(reqDSUserInfoField));
-
-  strcpy(reqDSUserInfoField.AppID, self->pAppID);
-  strcpy(reqDSUserInfoField.AuthCode, self->pAuthCode);
+  strncpy(reqDSUserInfoField.AppID, self->pAppID, sizeof(reqDSUserInfoField.AppID));
+  strncpy(reqDSUserInfoField.AuthCode, self->pAuthCode, sizeof(reqDSUserInfoField.AuthCode));
   reqDSUserInfoField.EncryptType = '1';
+
+  CMN_DEBUG("reqDSUserInfoField.AppID[%s]\n", reqDSUserInfoField.AppID);
+  CMN_DEBUG("reqDSUserInfoField.AuthCode[%s]\n", reqDSUserInfoField.AuthCode);
 
   pTraderApi->ReqDSUserCertification(&reqDSUserInfoField, pImp->nTraderRequestID++);
 }
@@ -338,6 +341,7 @@ int trader_trader_api_femas_qry_trading_account(trader_trader_api* self)
 void femas_trader_on_front_connected(void* arg)
 {
   trader_trader_api* self = (trader_trader_api*)arg;
+  usleep(1000);
   trader_trader_api_on_front_connected(self);
 
 }
