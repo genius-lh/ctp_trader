@@ -341,9 +341,7 @@ int trader_trader_api_femas_qry_trading_account(trader_trader_api* self)
 void femas_trader_on_front_connected(void* arg)
 {
   trader_trader_api* self = (trader_trader_api*)arg;
-  usleep(1000);
   trader_trader_api_on_front_connected(self);
-
 }
 
 void femas_trader_on_front_disconnected(void* arg, int nReason)
