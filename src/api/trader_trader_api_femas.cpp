@@ -615,7 +615,8 @@ femas_trader_api_cb* femas_trader_api_cb_get()
     femas_query_on_rsp_qry_instrument,
     femas_trader_on_rtn_instrument_status,
     femas_query_on_rsp_qry_trading_account,
-    femas_query_on_rsp_qry_investor_position
+    femas_query_on_rsp_qry_investor_position,
+    femas_trader_on_rsp_ds_user_certification
   };
 
   return &femas_trader_api_cb_st;
