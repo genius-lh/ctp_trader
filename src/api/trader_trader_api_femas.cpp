@@ -558,6 +558,10 @@ void femas_trader_on_err_rtn_order_insert(void* arg, CUstpFtdcInputOrderField *p
     traderOrder.HedgeFlag = pInputOrder->HedgeFlag;
     // 报单价格
     traderOrder.LimitPrice = pInputOrder->LimitPrice;
+    // 报单手数
+    traderOrder.VolumeOriginal = pInputOrder->Volume;
+    // 成交手数
+    traderOrder.VolumeTraded = 0;
     // 订单状态
     traderOrder.OrderStatus = TRADER_ORDER_OS_CANCELED;
 
