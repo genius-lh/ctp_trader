@@ -196,7 +196,7 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
 
   // 收盘判断
   trader_strategy_check_closing(self, tick_data);
-  
+#ifndef FEMAS
   if((self->oT1Tick.AskVolume1 + self->oT1Tick.BidVolume1) > (self->oT2Tick.AskVolume1 + self->oT2Tick.BidVolume1)){
     // T1 为主力合约
     if(!strcmp(self->T2, tick_data->InstrumentID)){
@@ -208,6 +208,12 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
       return 0;
     }
   }
+#else
+  // T2 为主力合约
+  if(0 != strcmp(self->T2, tick_data->InstrumentID)){
+    return 0;
+  }
+#endif
 
   // 开盘自动策略
   trader_strategy_tick_auto(self, tick_data->UpdateMillisec);
