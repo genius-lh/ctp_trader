@@ -86,6 +86,8 @@ static void trader_svr_mduser_client_connect_callback(void* user_data);
 static void trader_svr_mduser_client_disconnect_callback(void* user_data);
 static void trader_svr_mduser_client_recv_callback(void* user_data, void* data, int len);
 
+static int trader_svr_order_cancel_init(trader_svr* self, trader_contract* contract);
+static int trader_svr_order_cancel_do(trader_svr* self, char* contract_id);
 
 int trader_svr_init(trader_svr* self, evutil_socket_t sock)
 {
@@ -778,7 +780,6 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
         strcpy(pTraderContract->contract,  pInstrument->InstrumentID);
         strcpy(pTraderContract->ExchangeID,  pInstrument->ExchangeID);
         pTraderContract->PriceTick =  pInstrument->PriceTick;
-        pTraderContract->nCancelNum = 0;
         pTraderContract->isSHFE = 0;
         if(!strcmp(pInstrument->ExchangeID, "SHFE")
         ||!strcmp(pInstrument->ExchangeID, "INE")){
@@ -791,6 +792,8 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
         CMN_DEBUG("pMsg->isSHFE[%d]\n", pTraderContract->isSHFE);
         
         TAILQ_INSERT_TAIL(&self->listTraderContract, pTraderContract, next);
+
+        trader_svr_order_cancel_init(self, pTraderContract);
       }
     }
 
@@ -869,13 +872,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
 
     // 更新撤单笔数
     if(TRADER_ORDER_OS_CANCELED == pOrder->OrderStatus){
-      trader_contract* iter;
-      TAILQ_FOREACH(iter, &self->listTraderContract, next){
-        if(!strcmp(pOrder->InstrumentID, iter->contract)){
-          iter->nCancelNum++;
-          break;
-        }
-      }
+      trader_svr_order_cancel_do(self, pOrder->InstrumentID);
     }
     
     self->pStrategyEngine->pMethod->xUpdateOrder(self->pStrategyEngine, pOrder);
@@ -1436,6 +1433,74 @@ int trader_svr_redis_fini(trader_svr* self)
 
   return 0;
 
+}
+
+int trader_svr_order_cancel_init(trader_svr* self, trader_contract* contract)
+{
+  // 查询redis
+  int cancelNum = 0;
+  redisReply *reply;
+  do{
+    CMN_DEBUG("GET CO_%s_%s_%s", self->TradingDay, contract->contract, self->UserId);
+    reply = redisCommand(self->pRedis, "GET CO_%s_%s_%s", self->TradingDay, contract->contract, self->UserId);
+    if(REDIS_REPLY_INTEGER == reply->type){
+      cancelNum = (int)reply->integer;
+      freeReplyObject(reply);
+      break;
+    }
+    
+    if(REDIS_REPLY_ERROR == reply->type){
+      CMN_ERROR("call redis error[%s]", reply->str);
+      freeReplyObject(reply);
+      break;
+    }
+
+    freeReplyObject(reply);
+    
+    CMN_DEBUG("SET CO_%s_%s_%s 0", self->TradingDay, contract->contract, self->UserId);
+    reply = redisCommand(self->pRedis, "SET CO_%s_%s_%s 0", self->TradingDay, contract->contract, self->UserId);
+    if(REDIS_REPLY_ERROR == reply->type){
+      CMN_ERROR("call redis error[%s]", reply->str);
+      freeReplyObject(reply);
+      break;
+    }
+    freeReplyObject(reply);
+    
+    CMN_DEBUG("EXPIRE CO_%s_%s_%s %d", self->TradingDay, contract->contract, self->UserId, 18*60*60);
+    reply = redisCommand(self->pRedis, "EXPIRE CO_%s_%s_%s %d", self->TradingDay, contract->contract, self->UserId, 18*60*60);
+    if(REDIS_REPLY_ERROR == reply->type){
+      CMN_ERROR("call redis error[%s]", reply->str);
+    }
+    freeReplyObject(reply);
+    
+  }while(0);
+
+  contract->nCancelNum = cancelNum;
+  
+  return 0;
+}
+
+int trader_svr_order_cancel_do(trader_svr* self, char* contract_id)
+{
+  // 更新内存
+  trader_contract* iter;
+  TAILQ_FOREACH(iter, &self->listTraderContract, next){
+    if(!strcmp(contract_id, iter->contract)){
+      iter->nCancelNum++;
+      break;
+    }
+  }
+
+  // 更新redis
+  CMN_DEBUG("INCR CO_%s_%s_%s", self->TradingDay, iter->contract, self->UserId);
+  redisReply *reply;
+  reply = redisCommand(self->pRedis, "INCR CO_%s_%s_%s", self->TradingDay, iter->contract, self->UserId);
+  if(REDIS_REPLY_ERROR == reply->type){
+    CMN_ERROR("call redis error[%s]", reply->str);
+  }
+  
+  freeReplyObject(reply);
+  return 0;
 }
 
 
