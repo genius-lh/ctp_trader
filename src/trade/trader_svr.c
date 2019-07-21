@@ -1469,15 +1469,14 @@ int trader_svr_order_cancel_init(trader_svr* self, trader_contract* contract)
       break;
     }
     freeReplyObject(reply);
-    
-    CMN_DEBUG("EXPIRE CO_%s_%s_%s %d\n", self->TradingDay, contract->contract, self->UserId, 18*60*60);
-    reply = redisCommand(self->pRedis, "EXPIRE CO_%s_%s_%s %d", self->TradingDay, contract->contract, self->UserId, 18*60*60);
-    if(REDIS_REPLY_ERROR == reply->type){
-      CMN_ERROR("call redis error[%s]", reply->str);
-    }
-    freeReplyObject(reply);
-    
   }while(0);
+  
+  CMN_DEBUG("EXPIRE CO_%s_%s_%s %d\n", self->TradingDay, contract->contract, self->UserId, 3*24*60*60);
+  reply = redisCommand(self->pRedis, "EXPIRE CO_%s_%s_%s %d", self->TradingDay, contract->contract, self->UserId, 3*24*60*60);
+  if(REDIS_REPLY_ERROR == reply->type){
+    CMN_ERROR("call redis error[%s]", reply->str);
+  }
+  freeReplyObject(reply);
 
   contract->nCancelNum = cancelNum;
   
