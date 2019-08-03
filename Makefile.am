@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS=foreign
 noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a 
 noinst_PROGRAMS=libctpmduser.so libctptrader.so \
-				libfemasmduser.so libfemastrader.so \
+				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so\
 				libfemasmduserAF.so libfemastraderAF.so \
 				libxspeedmduser.so libdfitcmduser.so
 bin_PROGRAMS=testMduserClient traderMduserCtp traderStrategyCtp \
@@ -93,6 +93,11 @@ libfemasmduser_so_SOURCES=src/api/trader_mduser_api_femas.cpp\
 	src/api/FemasMduserHandler.cpp
 libfemasmduser_so_CPPFLAGS=-fPIC -Ifemas -Ilibevent -Ilibevent/compat/sys
 libfemasmduser_so_LDFLAGS=-shared -fPIC
+
+libfemasmduser_udp_so_SOURCES=src/api/trader_mduser_api_femas.cpp\
+	src/api/FemasMduserHandler.cpp
+libfemasmduser_udp_so_CPPFLAGS=-DFEMAS_UDP -DFEMAS20 -fPIC -Ifemas20 -Ilibevent -Ilibevent/compat/sys
+libfemasmduser_udp_so_LDFLAGS=-shared -fPIC
 
 libfemastrader_so_SOURCES=src/api/trader_trader_api_femas.cpp\
 	src/api/FemasTraderHandler.cpp
