@@ -293,5 +293,15 @@ void trader_trader_api_on_rsp_qry_trading_account(trader_trader_api* self, trade
 
 }
 
+void trader_trader_api_on_rtn_instrument_status(trader_trader_api* self, instrument_status* status)
+{
+  trader_trader_evt oEvent;
+  oEvent.Type = TRADERONRTNINSTRUMENTSTATUS;
+  oEvent.ErrorCd = 0;
+  oEvent.IsLast = 1;
+  memcpy(&(oEvent.Body.InstrumentStatusRsp), status, sizeof(oEvent.Body.InstrumentStatusRsp));
+  cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
+
+}
 
 

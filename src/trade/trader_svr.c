@@ -705,6 +705,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
   
   trader_instrument* pInstrument = &(pMsg->Body.InstrumentRsp);
   trader_position* pInvestorPosition = &(pMsg->Body.PositionRsp);
+  instrument_status* pInstrumentStatus = &(pMsg->Body.InstrumentStatusRsp);
   investor_position traderPosition;
   trader_order* pOrder = &(pMsg->Body.OrderRsp);
   trader_trade* pTrade = &(pMsg->Body.TradeRsp);
@@ -889,6 +890,13 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     CMN_INFO("TradeID[%s]\n", pTrade->TradeID);
 
     self->pStrategyEngine->pMethod->xUpdateTrade(self->pStrategyEngine, pTrade);
+    break;
+  case TRADERONRTNINSTRUMENTSTATUS:
+    CMN_INFO("InstrumentStatus!\n");
+    CMN_INFO("InstrumentID[%s]\n", pInstrumentStatus->InstrumentID);
+    CMN_INFO("InstrumentStatus[%c]\n", pInstrumentStatus->InstrumentStatus);
+    
+    self->pStrategyEngine->pMethod->xUpdateStatus(self->pStrategyEngine, pInstrumentStatus);
     break;
   case TRADERONRSPERROR:
     CMN_ERROR("½»Ò×³ö´í!\n");

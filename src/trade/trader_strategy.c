@@ -20,6 +20,7 @@ static int trader_strategy_init(trader_strategy* self);
 static int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data);
 static int trader_strategy_on_order(trader_strategy* self, trader_order* order_data);
 static int trader_strategy_on_trade(trader_strategy* self, trader_trade* trade_data);
+static int trader_strategy_on_status(trader_strategy* self, instrument_status* status_data);
 
 static int trader_strategy_tick_not_finished(trader_strategy* self);
 static int trader_strategy_tick_finished(trader_strategy* self);
@@ -76,6 +77,7 @@ trader_strategy_method* trader_strategy_method_get()
     trader_strategy_on_tick,
     trader_strategy_on_order,
     trader_strategy_on_trade,
+    trader_strategy_on_status,
     trader_strategy_reset_position,
     trader_strategy_query_position
   };
@@ -318,6 +320,40 @@ int trader_strategy_on_trade(trader_strategy* self, trader_trade* trade_data)
 
   return 0;
 }
+
+int trader_strategy_on_status(trader_strategy* self, instrument_status* status_data)
+{
+  if(INSTRUMENT_STATUS_CONTINOUS != status_data->InstrumentStatus){
+    return 0;
+  }
+  
+  // T2 为主力合约
+  if(0 != strcmp(self->T2, status_data->InstrumentID)){
+    return 0;
+  }
+
+  if((0 == self->oT1Tick.AskVolume1)
+  || (0 == self->oT1Tick.BidVolume1)
+  || (0 == self->oT2Tick.AskVolume1)
+  || (0 == self->oT2Tick.BidVolume1)){
+    // 行情不正常
+    CMN_INFO("T1.AskVolume1=[%d]T1.BidVolume1=[%d]T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
+      self->oT1Tick.AskVolume1,
+      self->oT1Tick.BidVolume1,
+      self->oT2Tick.AskVolume1,
+      self->oT2Tick.BidVolume1);
+    return 0;
+  }
+  
+  // 成交队列处理
+  trader_strategy_tick_finished(self);
+
+  // 新建委托判断
+  trader_strategy_tick_open(self);
+  
+  return 0;
+}
+
 
 // 重置仓位
 int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int volume)

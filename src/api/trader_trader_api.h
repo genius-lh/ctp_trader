@@ -44,6 +44,7 @@
 #define TRADERONRSPQRYFUNDINTERTRANSFERSERIAL 37 // NOT USED
 #define TRADERONRTNFUNDINTERTRANSFERSERIAL 38 // NOT USED
 #define TRADERONERRRTNFUNDINTERTRANSFER 39 // NOT USED
+#define TRADERONRTNINSTRUMENTSTATUS 40
 
 typedef struct trader_instrument_def trader_instrument;
 typedef struct trader_account_def trader_account;
@@ -78,7 +79,6 @@ struct trader_position_def {
   int LongFrozen;
 };
 
-
 typedef struct trader_trader_evt_def trader_trader_evt;
 struct trader_trader_evt_def {
   int Type;
@@ -92,6 +92,7 @@ struct trader_trader_evt_def {
     char InvestorRsp[21];
     trader_account AccountRsp;
     trader_position PositionRsp;
+    instrument_status InstrumentStatusRsp;
   } Body;
 };
 
@@ -178,6 +179,7 @@ extern void trader_trader_api_on_rsp_qry_user_investor(trader_trader_api* self, 
 extern void trader_trader_api_on_rsp_qry_instrument(trader_trader_api* self, trader_instrument *pRspInstrument, int err_cd, char* err_msg, int is_last);
 extern void trader_trader_api_on_rsp_qry_investor_position(trader_trader_api* self, trader_position *pInvestorPosition, int err_cd, char* err_msg, int is_last);
 extern void trader_trader_api_on_rsp_qry_trading_account(trader_trader_api* self, trader_account *pTradingAcount, int err_cd, char* err_msg, int is_last);
+extern void trader_trader_api_on_rtn_instrument_status(trader_trader_api* self, instrument_status* status);
 
 
 #endif //_TRADER_TRADER_API_H_

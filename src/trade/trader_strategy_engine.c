@@ -17,6 +17,7 @@ static int trader_strategy_engine_update_strategy(trader_strategy_engine* self, 
 static int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick* tick_data);
 static int trader_strategy_engine_update_trade(trader_strategy_engine* self, trader_trade* trade_data);
 static int trader_strategy_engine_update_order(trader_strategy_engine* self, trader_order* order_data);
+static int trader_strategy_engine_update_status(trader_strategy_engine* self, instrument_status* status_data);
 static int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strategy* strategy, char* contract, char direction, char offset, double price, int volume, char* user_local_id);
 static int trader_strategy_engine_cancel_order(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
 static int trader_strategy_engine_set_timer(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
@@ -50,6 +51,7 @@ trader_strategy_engine_method* trader_strategy_engine_method_get()
     trader_strategy_engine_update_tick,
     trader_strategy_engine_update_trade,
     trader_strategy_engine_update_order,
+    trader_strategy_engine_update_status,
     trader_strategy_engine_send_order,
     trader_strategy_engine_cancel_order,
     trader_strategy_engine_set_timer,
@@ -266,6 +268,19 @@ int trader_strategy_engine_update_order(trader_strategy_engine* self, trader_ord
 
   CMN_DEBUG("ÍÆËÍpOrderÊı¾İ\n");
   pStrategy->pMethod->xOnOrder(pStrategy, pOrder);
+}
+
+int trader_strategy_engine_update_status(trader_strategy_engine* self, instrument_status* status_data)
+{
+  int i = 0;
+  trader_strategy* pStrategy;
+  
+  for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
+    pStrategy = self->trader_strategys[i];
+    pStrategy->pMethod->xOnStatus(pStrategy, status_data);
+  }
+
+  return 0;
 }
 
 

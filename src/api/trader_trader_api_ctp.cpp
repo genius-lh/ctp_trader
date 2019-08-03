@@ -830,21 +830,24 @@ void ctp_query_on_rsp_qry_investor_position(void* arg, CThostFtdcInvestorPositio
 
 void ctp_trader_on_rtn_instrument_status(void* arg, CThostFtdcInstrumentStatusField *pInstrumentStatus)
 {
-  //TODO
-/*
-  CMN_INFO("\n"
-    "pInstrumentStatus->InstrumentID=[%s]\n"
-    "pInstrumentStatus->InstrumentStatus=[%c]\n"
-    "pInstrumentStatus->TradingSegmentSN=[%d]\n"
-    "pInstrumentStatus->EnterTime=[%s]\n"
-    "pInstrumentStatus->EnterReason=[%c]\n",
-    pInstrumentStatus->InstrumentID,
-    pInstrumentStatus->InstrumentStatus,
-    pInstrumentStatus->TradingSegmentSN,
-    pInstrumentStatus->EnterTime,
-    pInstrumentStatus->EnterReason
-  );
-  */
+  trader_trader_api* self = (trader_trader_api*)arg;
+  if(pInstrumentStatus){
+    CMN_DEBUG(
+      "pInstrumentStatus->ExchangeID[%s]\n"
+      "pInstrumentStatus->InstrumentID[%s]\n"
+      "pInstrumentStatus->InstrumentStatus[%c]\n",
+      pInstrumentStatus->ExchangeID,
+      pInstrumentStatus->InstrumentID,
+      pInstrumentStatus->InstrumentStatus
+      );
+    instrument_status oInstrumentStatus;
+    strncpy(oInstrumentStatus.InstrumentID, pInstrumentStatus->InstrumentID, sizeof(oInstrumentStatus.InstrumentID));
+    oInstrumentStatus.InstrumentStatus = pInstrumentStatus->InstrumentStatus;
+    
+    trader_trader_api_on_rtn_instrument_status(self, &oInstrumentStatus);
+  }
+
+  return ;
 }
 
 
