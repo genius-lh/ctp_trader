@@ -26,7 +26,7 @@
 #include "cmn_cfg.h"
 #include "glbProfile.h"
 
-#include "ctp_trader_api.h"
+//#include "ctp_trader_api.h"
 #include "trader_mduser_api.h"
 
 #include "trader_data.h"

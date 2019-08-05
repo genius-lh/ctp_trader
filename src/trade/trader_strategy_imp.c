@@ -11,7 +11,7 @@
 #include "trader_strategy_engine.h"
 #include "trader_data.h"
 #include "trader_msg_struct.h"
-#include "ctp_trader_api.h"
+#include "trader_trader_api.h"
 
 #include "trader_strategy_limit.h"
 
