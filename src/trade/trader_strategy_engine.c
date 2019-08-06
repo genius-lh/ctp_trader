@@ -114,6 +114,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
   	CMN_INFO("T2Weight[%lf]\n", pUpdate->stage[i].T2Weight);
   	CMN_INFO("T2Ratio[%d]\n", pUpdate->stage[i].T2Ratio);
   	CMN_INFO("NightClosingTime[%d]\n", pUpdate->stage[i].NightClosingTime);
+  	CMN_INFO("TriggerType[%d]\n", pUpdate->stage[i].TriggerType);
   	CMN_INFO("PriceTick[%lf]\n", pUpdate->stage[i].PriceTick);
   	CMN_INFO("IsSHFE[%d]\n", pUpdate->stage[i].IsSHFE);
   	CMN_INFO("T2PriceTick[%lf]\n", pUpdate->stage[i].T2PriceTick);
@@ -145,6 +146,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->T2Weight = pUpdate->stage[i].T2Weight; 
     pStrategy->T2Ratio = pUpdate->stage[i].T2Ratio; 
     pStrategy->NightClosingTime = pUpdate->stage[i].NightClosingTime; 
+    pStrategy->TriggerType = pUpdate->stage[i].TriggerType; 
     pStrategy->PriceTick = pUpdate->stage[i].PriceTick;
     pStrategy->IsSHFE = pUpdate->stage[i].IsSHFE;
     pStrategy->T2PriceTick = pUpdate->stage[i].T2PriceTick;
@@ -523,6 +525,7 @@ trader_strategy_engine* trader_strategy_engine_new()
     pTraderStrategy->pMethod->xInit(pTraderStrategy);
     pTraderStrategy->pEngine = self;
     pTraderStrategy->idx = i;
+    pTraderStrategy->TriggerType = 0;
     self->trader_strategys[i] = pTraderStrategy;
   }
 

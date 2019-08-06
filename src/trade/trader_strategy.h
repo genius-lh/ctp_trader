@@ -112,6 +112,8 @@ struct trader_strategy_def{
   int T2Ratio;
   // 夜盘收盘时间
   int NightClosingTime;
+  
+  int TriggerType;
 
   // T1 行情
   trader_tick oT1Tick;

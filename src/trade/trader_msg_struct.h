@@ -79,6 +79,7 @@ struct trader_cmd_update_req_def {
     double T2Weight;
     int T2Ratio;
     int NightClosingTime;
+    int TriggerType;
 
     double PriceTick; // 一跳价格
     int IsSHFE; // 是否是上期
