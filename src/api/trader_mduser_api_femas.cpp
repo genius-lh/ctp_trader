@@ -37,7 +37,6 @@ static void femas_mduser_on_rsp_sub_market_data(void* arg, CUstpFtdcSpecificInst
 static void femas_mduser_on_rsp_un_sub_market_data(void* arg, CUstpFtdcSpecificInstrumentField *pSpecificInstrument, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, int bIsLast);
 
 
-
 #ifdef __cplusplus
 }
 #endif
@@ -91,11 +90,16 @@ void trader_mduser_api_femas_start(trader_mduser_api* self)
   // connect
   pUserApi->RegisterSpi(pHandler);
   
+#ifndef FEMAS_UDP
   pUserApi->SubscribeMarketDataTopic (100, USTP_TERT_RESUME);
-  //pUserApi->SubscribeMarketDataTopic (110, USTP_TERT_RESTART);
-  
-  //pUserApi->SubscribeMarketDataTopic(self->TopicId, USTP_TERT_QUICK);
+
   pUserApi->RegisterFront(self->pAddress);
+#else
+  pUserApi->SetUseMultiChannel(true);
+
+  pUserApi->RegisterMultiChannel(self->pAddress);
+#endif
+
   pUserApi->Init();
 
   return ;

@@ -44,6 +44,7 @@ typedef char trader_instrument_id_type[31];
 typedef struct trader_tick_def trader_tick;
 typedef struct trader_order_def trader_order;
 typedef struct trader_trade_def trader_trade;
+typedef struct instrument_status_def instrument_status;
 
 struct trader_tick_def {
 	///合约代码
@@ -142,6 +143,28 @@ struct trader_trade_def {
   // 回报时间
   struct timeval UpdateTime;
 };
+
+///开盘前
+#define INSTRUMENT_STATUS_BEFORE_TRADING '0'
+///非交易
+#define INSTRUMENT_STATUS_NO_TRADING '1'
+///连续交易
+#define INSTRUMENT_STATUS_CONTINOUS '2'
+///集合竞价报单
+#define INSTRUMENT_STATUS_AUCTION_ORDERING '3'
+///集合竞价价格平衡
+#define INSTRUMENT_STATUS_AUCTION_BALANCE '4'
+///集合竞价撮合
+#define INSTRUMENT_STATUS_AUCTION_MATCH '5'
+///收盘
+#define INSTRUMENT_STATUS_CLOSED '6'
+
+struct instrument_status_def{
+	///合约代码
+	char InstrumentID [31];
+  char InstrumentStatus;
+};
+
 
 #define TRADER_POSITION_BUY '0'
 #define TRADER_POSITION_SELL '1'

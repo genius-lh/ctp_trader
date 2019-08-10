@@ -8,7 +8,7 @@
 #include "trader_strategy.h"
 #include "trader_data.h"
 #include "trader_msg_struct.h"
-#include "ctp_trader_api.h"
+#include "trader_trader_api.h"
 
 #include "trader_strategy_engine.h"
 
@@ -17,6 +17,7 @@ static int trader_strategy_engine_update_strategy(trader_strategy_engine* self, 
 static int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick* tick_data);
 static int trader_strategy_engine_update_trade(trader_strategy_engine* self, trader_trade* trade_data);
 static int trader_strategy_engine_update_order(trader_strategy_engine* self, trader_order* order_data);
+static int trader_strategy_engine_update_status(trader_strategy_engine* self, instrument_status* status_data);
 static int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strategy* strategy, char* contract, char direction, char offset, double price, int volume, char* user_local_id);
 static int trader_strategy_engine_cancel_order(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
 static int trader_strategy_engine_set_timer(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
@@ -50,6 +51,7 @@ trader_strategy_engine_method* trader_strategy_engine_method_get()
     trader_strategy_engine_update_tick,
     trader_strategy_engine_update_trade,
     trader_strategy_engine_update_order,
+    trader_strategy_engine_update_status,
     trader_strategy_engine_send_order,
     trader_strategy_engine_cancel_order,
     trader_strategy_engine_set_timer,
@@ -112,6 +114,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
   	CMN_INFO("T2Weight[%lf]\n", pUpdate->stage[i].T2Weight);
   	CMN_INFO("T2Ratio[%d]\n", pUpdate->stage[i].T2Ratio);
   	CMN_INFO("NightClosingTime[%d]\n", pUpdate->stage[i].NightClosingTime);
+  	CMN_INFO("TriggerType[%d]\n", pUpdate->stage[i].TriggerType);
   	CMN_INFO("PriceTick[%lf]\n", pUpdate->stage[i].PriceTick);
   	CMN_INFO("IsSHFE[%d]\n", pUpdate->stage[i].IsSHFE);
   	CMN_INFO("T2PriceTick[%lf]\n", pUpdate->stage[i].T2PriceTick);
@@ -143,6 +146,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->T2Weight = pUpdate->stage[i].T2Weight; 
     pStrategy->T2Ratio = pUpdate->stage[i].T2Ratio; 
     pStrategy->NightClosingTime = pUpdate->stage[i].NightClosingTime; 
+    pStrategy->TriggerType = pUpdate->stage[i].TriggerType; 
     pStrategy->PriceTick = pUpdate->stage[i].PriceTick;
     pStrategy->IsSHFE = pUpdate->stage[i].IsSHFE;
     pStrategy->T2PriceTick = pUpdate->stage[i].T2PriceTick;
@@ -266,6 +270,19 @@ int trader_strategy_engine_update_order(trader_strategy_engine* self, trader_ord
 
   CMN_DEBUG("ÍÆËÍpOrderÊı¾İ\n");
   pStrategy->pMethod->xOnOrder(pStrategy, pOrder);
+}
+
+int trader_strategy_engine_update_status(trader_strategy_engine* self, instrument_status* status_data)
+{
+  int i = 0;
+  trader_strategy* pStrategy;
+  
+  for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
+    pStrategy = self->trader_strategys[i];
+    pStrategy->pMethod->xOnStatus(pStrategy, status_data);
+  }
+
+  return 0;
 }
 
 
@@ -508,6 +525,7 @@ trader_strategy_engine* trader_strategy_engine_new()
     pTraderStrategy->pMethod->xInit(pTraderStrategy);
     pTraderStrategy->pEngine = self;
     pTraderStrategy->idx = i;
+    pTraderStrategy->TriggerType = 0;
     self->trader_strategys[i] = pTraderStrategy;
   }
 

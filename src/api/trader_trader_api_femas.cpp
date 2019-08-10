@@ -876,93 +876,24 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
 
 void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusField *pInstrumentStatus)
 {
+  trader_trader_api* self = (trader_trader_api*)arg;
   if(pInstrumentStatus){
+    CMN_DEBUG(
+      "pInstrumentStatus->ExchangeID[%s]\n"
+      "pInstrumentStatus->InstrumentID[%s]\n"
+      "pInstrumentStatus->InstrumentStatus[%c]\n",
+      pInstrumentStatus->ExchangeID,
+      pInstrumentStatus->InstrumentID,
+      pInstrumentStatus->InstrumentStatus
+      );
+    instrument_status oInstrumentStatus;
+    strncpy(oInstrumentStatus.InstrumentID, pInstrumentStatus->InstrumentID, sizeof(oInstrumentStatus.InstrumentID));
+    oInstrumentStatus.InstrumentStatus = pInstrumentStatus->InstrumentStatus;
     
-    CMN_DEBUG(
-      "pInstrumentStatus->ExchangeID[%s]\n"
-      "pInstrumentStatus->ProductID[%s]\n"
-      "pInstrumentStatus->ProductName[%s]\n"
-      "pInstrumentStatus->InstrumentID[%s]\n"
-      "pInstrumentStatus->InstrumentName[%s]\n"
-      "pInstrumentStatus->DeliveryYear[%d]\n"
-      "pInstrumentStatus->DeliveryMonth[%d]\n",
-      pInstrumentStatus->ExchangeID,
-      pInstrumentStatus->ProductID,
-      pInstrumentStatus->ProductName,
-      pInstrumentStatus->InstrumentID,
-      pInstrumentStatus->InstrumentName,
-      pInstrumentStatus->DeliveryYear,
-      pInstrumentStatus->DeliveryMonth);
-    /*
-    CMN_DEBUG(
-      "pInstrumentStatus->ExchangeID[%s]\n"
-      "pInstrumentStatus->ProductID[%s]\n"
-      "pInstrumentStatus->ProductName[%s]\n"
-      "pInstrumentStatus->InstrumentID[%s]\n"
-      "pInstrumentStatus->InstrumentName[%s]\n"
-      "pInstrumentStatus->DeliveryYear[%d]\n"
-      "pInstrumentStatus->DeliveryMonth[%d]\n"
-      "pInstrumentStatus->MaxLimitOrderVolume[%d]\n"
-      "pInstrumentStatus->MinLimitOrderVolume[%d]\n"
-      "pInstrumentStatus->MaxMarketOrderVolume[%d]\n"
-      "pInstrumentStatus->MinMarketOrderVolume[%d]\n"
-      "pInstrumentStatus->VolumeMultiple[%d]\n"
-      "pInstrumentStatus->PriceTick[%lf]\n"
-      "pInstrumentStatus->Currency[%c]\n"
-      "pInstrumentStatus->LongPosLimit[%d]\n"
-      "pInstrumentStatus->ShortPosLimit[%d]\n"
-      "pInstrumentStatus->LowerLimitPrice[%lf]\n"
-      "pInstrumentStatus->UpperLimitPrice[%lf]\n"
-      "pInstrumentStatus->PreSettlementPrice[%lf]\n"
-      "pInstrumentStatus->InstrumentStatus[%c]\n"
-      "pInstrumentStatus->CreateDate[%s]\n"
-      "pInstrumentStatus->OpenDate[%s]\n"
-      "pInstrumentStatus->ExpireDate[%s]\n"
-      "pInstrumentStatus->StartDelivDate[%s]\n"
-      "pInstrumentStatus->EndDelivDate[%s]\n"
-      "pInstrumentStatus->BasisPrice[%lf]\n"
-      "pInstrumentStatus->IsTrading[%d]\n"
-      "pInstrumentStatus->UnderlyingInstrID[%s]\n"
-      "pInstrumentStatus->UnderlyingMultiple[%d]\n"
-      "pInstrumentStatus->PositionType[%c]\n"
-      "pInstrumentStatus->StrikePrice[%lf]\n"
-      "pInstrumentStatus->OptionsType[%c]\n",
-      pInstrumentStatus->ExchangeID,
-      pInstrumentStatus->ProductID,
-      pInstrumentStatus->ProductName,
-      pInstrumentStatus->InstrumentID,
-      pInstrumentStatus->InstrumentName,
-      pInstrumentStatus->DeliveryYear,
-      pInstrumentStatus->DeliveryMonth,
-      pInstrumentStatus->MaxLimitOrderVolume,
-      pInstrumentStatus->MinLimitOrderVolume,
-      pInstrumentStatus->MaxMarketOrderVolume,
-      pInstrumentStatus->MinMarketOrderVolume,
-      pInstrumentStatus->VolumeMultiple,
-      pInstrumentStatus->PriceTick,
-      pInstrumentStatus->Currency,
-      pInstrumentStatus->LongPosLimit,
-      pInstrumentStatus->ShortPosLimit,
-      pInstrumentStatus->LowerLimitPrice,
-      pInstrumentStatus->UpperLimitPrice,
-      pInstrumentStatus->PreSettlementPrice,
-      pInstrumentStatus->InstrumentStatus,
-      pInstrumentStatus->CreateDate,
-      pInstrumentStatus->OpenDate,
-      pInstrumentStatus->ExpireDate,
-      pInstrumentStatus->StartDelivDate,
-      pInstrumentStatus->EndDelivDate,
-      pInstrumentStatus->BasisPrice,
-      pInstrumentStatus->IsTrading,
-      pInstrumentStatus->UnderlyingInstrID,
-      pInstrumentStatus->UnderlyingMultiple,
-      pInstrumentStatus->PositionType,
-      pInstrumentStatus->StrikePrice,
-      pInstrumentStatus->OptionsType
-    );
-    */
-
+    trader_trader_api_on_rtn_instrument_status(self, &oInstrumentStatus);
   }
+
+  return ;
 }
 
 void femas_trader_on_rsp_ds_user_certification(void* arg, CUstpFtdcDSUserCertRspDataField *pDSUserCertRspData, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, int bIsLast)

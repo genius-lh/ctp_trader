@@ -10,7 +10,7 @@
 #include "trader_strategy_engine.h"
 #include "trader_data.h"
 #include "trader_msg_struct.h"
-#include "ctp_trader_api.h"
+#include "trader_trader_api.h"
 
 #include "trader_strategy_limit.h"
 
@@ -20,12 +20,12 @@ static int trader_strategy_init(trader_strategy* self);
 static int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data);
 static int trader_strategy_on_order(trader_strategy* self, trader_order* order_data);
 static int trader_strategy_on_trade(trader_strategy* self, trader_trade* trade_data);
+static int trader_strategy_on_status(trader_strategy* self, instrument_status* status_data);
 
 static int trader_strategy_tick_not_finished(trader_strategy* self);
 static int trader_strategy_tick_finished(trader_strategy* self);
 static int trader_strategy_tick_open(trader_strategy* self);
 static int trader_strategy_tick_auto(trader_strategy* self, int ms);
-
 
 // 重置仓位
 static int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int volume);
@@ -66,6 +66,7 @@ static int trader_strategy_release_order(trader_strategy* self, char* user_order
 static int trader_strategy_print_tick(trader_strategy* self);
 
 static int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data);
+static int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data);
 
 static trader_strategy_method* trader_strategy_method_get();
 
@@ -76,6 +77,7 @@ trader_strategy_method* trader_strategy_method_get()
     trader_strategy_on_tick,
     trader_strategy_on_order,
     trader_strategy_on_trade,
+    trader_strategy_on_status,
     trader_strategy_reset_position,
     trader_strategy_query_position
   };
@@ -196,24 +198,13 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
 
   // 收盘判断
   trader_strategy_check_closing(self, tick_data);
-#ifndef FEMAS
-  if((self->oT1Tick.AskVolume1 + self->oT1Tick.BidVolume1) > (self->oT2Tick.AskVolume1 + self->oT2Tick.BidVolume1)){
-    // T1 为主力合约
-    if(!strcmp(self->T2, tick_data->InstrumentID)){
-      return 0;
-    }
-  }else{
-    // T2 为主力合约
-    if(!strcmp(self->T1, tick_data->InstrumentID)){
-      return 0;
-    }
-  }
-#else
-  // T2 为主力合约
-  if(0 != strcmp(self->T2, tick_data->InstrumentID)){
+
+  // 策略执行判断  
+  int ret = 0;
+  ret = trader_strategy_tick_trigger(self, tick_data);
+  if(!ret){
     return 0;
   }
-#endif
 
   // 开盘自动策略
   trader_strategy_tick_auto(self, tick_data->UpdateMillisec);
@@ -318,6 +309,62 @@ int trader_strategy_on_trade(trader_strategy* self, trader_trade* trade_data)
 
   return 0;
 }
+
+int trader_strategy_on_status(trader_strategy* self, instrument_status* status_data)
+{  
+  if(INSTRUMENT_STATUS_CONTINOUS != status_data->InstrumentStatus){
+    return 0;
+  }
+  
+  int nT1Len = strnlen(self->T1, sizeof(self->T1));
+  int nT2Len = strnlen(self->T2, sizeof(self->T2));
+  int nIIDLen = strnlen(status_data->InstrumentID, sizeof(status_data->InstrumentID));
+  
+  do{
+    if(nIIDLen < nT1Len){
+      nT1Len = nIIDLen;
+    }
+    
+    if(nIIDLen < nT2Len){
+      nT2Len = nIIDLen;
+    }
+
+    if(0 == memcmp(self->T1, status_data->InstrumentID, nT1Len)){
+      break;
+    }
+
+    if(0 == memcmp(self->T2, status_data->InstrumentID, nT2Len)){
+      break;
+    }
+    // 非本策略关注合约，直接忽略
+    //CMN_DEBUG("Not Focused[%s]!\n", tick_data->InstrumentID);
+    return 0;
+  }while(0);
+  
+  if((0 == self->oT1Tick.AskVolume1)
+  || (0 == self->oT1Tick.BidVolume1)
+  || (0 == self->oT2Tick.AskVolume1)
+  || (0 == self->oT2Tick.BidVolume1)){
+    // 行情不正常
+    CMN_INFO("T1.AskVolume1=[%d]T1.BidVolume1=[%d]T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
+      self->oT1Tick.AskVolume1,
+      self->oT1Tick.BidVolume1,
+      self->oT2Tick.AskVolume1,
+      self->oT2Tick.BidVolume1);
+    return 0;
+  }
+  
+  CMN_INFO("status_data->InstrumentID[%s]\n", status_data->InstrumentID);
+  
+  // 成交队列处理
+  trader_strategy_tick_finished(self);
+
+  // 新建委托判断
+  trader_strategy_tick_open(self);
+  
+  return 0;
+}
+
 
 // 重置仓位
 int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int volume)
@@ -1732,6 +1779,51 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
 
   return 0;
 }
+
+int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
+{
+
+  if(0 == self->TriggerType){
+    self->TriggerType = 2;
+    if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
+    && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
+      if(0 == strcmp(self->T1, tick_data->InstrumentID)){
+        self->TriggerType = 1;
+      }
+    }
+    CMN_INFO("self->TriggerType=[%d]\n", self->TriggerType);
+  }
+  
+  if(1 == self->TriggerType){
+    if(0 == strcmp(self->T1, tick_data->InstrumentID)){
+      return 1;
+    }
+  }
+  
+  if(2 == self->TriggerType){
+    if(0 == strcmp(self->T2, tick_data->InstrumentID)){
+      return 1;
+    }
+  }
+
+  if(3 == self->TriggerType){
+    if((self->oT1Tick.AskVolume1 + self->oT1Tick.BidVolume1) > (self->oT2Tick.AskVolume1 + self->oT2Tick.BidVolume1)){
+      // T1 为主力合约
+      if(0 == strcmp(self->T1, tick_data->InstrumentID)){
+        return 1;
+      }
+    }else{
+      // T2 为主力合约
+      if(0 == strcmp(self->T2, tick_data->InstrumentID)){
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+
+}
+
 
 trader_strategy* trader_strategy_new()
 {

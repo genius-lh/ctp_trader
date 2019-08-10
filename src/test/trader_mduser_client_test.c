@@ -208,13 +208,18 @@ int main(int argc, char* argv[])
   char boardcastAddr2[14+1];
   int boardcastPort2;
   char filenamePreifx[200+1];
+  int bUsed = 0;
 
   nRet = glbPflGetString("MDUSER", "BOARDCAST_ADDR", pCfgFile, boardcastAddr);
   nRet = glbPflGetInt("MDUSER", "BOARDCAST_PORT", pCfgFile, &boardcastPort);
-  nRet = glbPflGetString("MDUSER", "BOARDCAST_ADDR2", pCfgFile, boardcastAddr2);
-  nRet = glbPflGetInt("MDUSER", "BOARDCAST_PORT2", pCfgFile, &boardcastPort2);
   nRet = glbPflGetInt("MDUSER", "COMMIT_COUNT", pCfgFile, &test->commitCount);
   nRet = glbPflGetString("MDUSER", "CSV_FILENAME", pCfgFile, filenamePreifx);
+  
+  nRet = glbPflGetString("MDUSER", "BOARDCAST_ADDR2", pCfgFile, boardcastAddr2);
+  nRet = glbPflGetInt("MDUSER", "BOARDCAST_PORT2", pCfgFile, &boardcastPort2);
+  if(!nRet){
+    bUsed = 1;
+  }
   
   time_t tt = time(NULL);
   struct tm now;
@@ -250,26 +255,30 @@ int main(int argc, char* argv[])
     pTestApi
     );
 
-  // 2 
-  pTestApi = &test->oTestApi2;
-  pTestApi->pApi = trader_mduser_client_new();
-  pTestApi->cacheLen = 0;
-  pTestApi->test = test;
+  if(bUsed){
+    // 2 
+    pTestApi = &test->oTestApi2;
+    pTestApi->pApi = trader_mduser_client_new();
+    pTestApi->cacheLen = 0;
+    pTestApi->test = test;
 
-  pTestApi->pApi->method->xInit(pTestApi->pApi, test->pBase, boardcastAddr2, boardcastPort2,
-    trader_mduser_client_test_connect_callback,
-    trader_mduser_client_test_disconnect_callback,
-    trader_mduser_client_test_recv_callback,
-    pTestApi
-    );
+    pTestApi->pApi->method->xInit(pTestApi->pApi, test->pBase, boardcastAddr2, boardcastPort2,
+      trader_mduser_client_test_connect_callback,
+      trader_mduser_client_test_disconnect_callback,
+      trader_mduser_client_test_recv_callback,
+      pTestApi
+      );
+  }
 
 
   pTestApi = &test->oTestApi;
   pTestApi->pApi->method->xConnect(pTestApi->pApi);
   
-  pTestApi = &test->oTestApi2;
-  pTestApi->pApi->method->xConnect(pTestApi->pApi);
-
+  if(bUsed){
+    pTestApi = &test->oTestApi2;
+    pTestApi->pApi->method->xConnect(pTestApi->pApi);
+  }
+  
   nRet = event_add(test->pSigIntEvt, NULL);
   
   nRet = event_add(test->pSigTermEvt, NULL);
@@ -280,9 +289,11 @@ int main(int argc, char* argv[])
   pTestApi->pApi->method->xExit(pTestApi->pApi);
   trader_mduser_client_free(pTestApi->pApi);
   
-  pTestApi = &test->oTestApi2;
-  pTestApi->pApi->method->xExit(pTestApi->pApi);
-  trader_mduser_client_free(pTestApi->pApi);
+  if(bUsed){
+    pTestApi = &test->oTestApi2;
+    pTestApi->pApi->method->xExit(pTestApi->pApi);
+    trader_mduser_client_free(pTestApi->pApi);
+  }
 
   event_free(test->pSigTermEvt);
   event_free(test->pSigIntEvt);
