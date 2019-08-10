@@ -122,6 +122,10 @@ int trader_mduser_svr_init_instruments(trader_mduser_svr* self)
 {
   int nRet = -1;
   int i;
+  self->instruments = (trader_instrument_id_type*)NULL;
+  self->ticks = (trader_tick*)NULL;
+  self->instrumentNumber = 0;
+  
   redisReply* reply = (redisReply*)redisCommand(self->pRedisCtx, "SMEMBERS %s", self->redisInstrumentKey);
   redisReply* r;
   do {
@@ -358,6 +362,13 @@ trader_mduser_svr* trader_mduser_svr_new()
 void trader_mduser_svr_free(trader_mduser_svr* self)
 {
   if(self) {
+    if(self->instruments){
+      free(self->instruments);
+    }
+    
+    if(self->ticks){
+      free(self->ticks);
+    }
     
     if(self->pCnnMain){
       trader_mduser_cnn_free(self->pCnnMain);

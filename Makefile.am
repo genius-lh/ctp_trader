@@ -1,10 +1,10 @@
 AUTOMAKE_OPTIONS=foreign
-noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a 
+noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 noinst_PROGRAMS=libctpmduser.so libctptrader.so \
 				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so\
 				libfemasmduserAF.so libfemastraderAF.so \
 				libxspeedmduser.so libdfitcmduser.so
-bin_PROGRAMS=testMduserClient traderMduserCtp traderStrategyCtp \
+bin_PROGRAMS=testMduserShm testMduserClient traderMduserCtp traderStrategyCtp \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
 			traderMduserXSpeedStock traderMduserXSpeedSOP \
@@ -19,6 +19,15 @@ libtradercmn_a_SOURCES=src/util/cmn_util.c \
 
 libtradercmn_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
 	-Isrc/cfg
+	
+testMduserShm_SOURCES=\
+        src/test/trader_mduser_shm_test.c \
+        src/svc/trader_mduser_shm.c
+
+testMduserShm_CFLAGS=-Isrc/api -Isrc/svc
+
+testMduserShm_LDADD=\
+        -lc -lstdc++ -lm -lpthread -lresolv -ldl
 
 libmduserapi_a_SOURCES=src/api/trader_mduser_api.c
 libmduserapi_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
