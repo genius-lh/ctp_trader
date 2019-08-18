@@ -11,9 +11,15 @@ extern "C" {
 
 typedef struct trader_mduser_api_ib_def  trader_mduser_api_ib;
 struct trader_mduser_api_ib_def {
-  void* pMdApi;
   void* pHandler;
-  int nRequestID;
+	//! [socket_declare]
+	void * pSignal;
+	void * pClient;
+	void * pReader;
+	//! [socket_declare]
+
+  long tickId;
+  int reqId;
 };
 
 extern trader_mduser_api_method* trader_mduser_api_ib_method_get();
