@@ -8,7 +8,8 @@ bin_PROGRAMS=testMduserShm testMduserClient traderMduserCtp traderStrategyCtp \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
 			traderMduserXSpeedStock traderMduserXSpeedSOP \
-			traderMduserDfitcStock traderMduserDfitcSOP
+			traderMduserDfitcStock traderMduserDfitcSOP \
+			femasPasswd
 
 libtradercmn_a_SOURCES=src/util/cmn_util.c \
 	src/util/cJSON.c \
@@ -257,3 +258,11 @@ traderMduserDfitcSOP_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
 	-L. -ltradercmn -lmduserapi\
 	-Ldfitc55 -ldfitcmduser -lDFITCSECMdApi
 
+femasPasswd_SOURCES=\
+	src/test/FemasTraderChangePassword.cpp
+
+femasPasswd_CPPFLAGS=-DFEMAS -Ifemas -I.
+
+femasPasswd_LDADD=\
+	-lc -lstdc++ -lm -lpthread -lresolv -ldl\
+	-Lfemas -lUSTPtraderapi
