@@ -523,10 +523,16 @@ void femas_trader_on_err_rtn_order_insert(void* arg, CUstpFtdcInputOrderField *p
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+    
+    CMN_WARN("报单失败\n");
+    CMN_WARN("pRspInfo->ErrorID[%d]\n"
+      "pRspInfo->ErrorMsg[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg
+      );
   }
   
   trader_order traderOrder;
-  CMN_WARN("报单失败\n");
 
   if(pInputOrder){
     CMN_INFO("pInputOrder->ExchangeID[%s]\n"
