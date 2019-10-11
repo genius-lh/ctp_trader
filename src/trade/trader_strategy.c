@@ -1289,6 +1289,8 @@ int trader_strategy_insert_t2_open(trader_strategy* self, trader_strategy_trade*
 
   // 创建订单
   trader_order* pOrder = (trader_order*)malloc(sizeof(trader_order));
+  pOrder->ExchangeID[0] = '\0';
+  pOrder->OrderSysID[0] = '\0';
   strcpy(pOrder->InstrumentID, self->T2);
   strcpy(pOrder->UserOrderLocalID, sLocalUserId);
   pOrder->Direction = strategy_trade->T2Direction;
@@ -1470,6 +1472,8 @@ int trader_strategy_t1_close_imp(trader_strategy* self, char long_short, char of
 
   // 创建订单
   trader_order* pOrder = (trader_order*)malloc(sizeof(trader_order));
+  pOrder->ExchangeID[0] = '\0';
+  pOrder->OrderSysID[0] = '\0';
   strcpy(pOrder->InstrumentID, self->T1);
   strcpy(pOrder->UserOrderLocalID, sLocalUserId);
   pOrder->Direction = cT1Direction;
@@ -1520,6 +1524,8 @@ int trader_strategy_t2_close_imp(trader_strategy* self, trader_strategy_trade* s
 
   // 创建订单
   trader_order* pOrder = (trader_order*)malloc(sizeof(trader_order));
+  pOrder->ExchangeID[0] = '\0';
+  pOrder->OrderSysID[0] = '\0';
   strcpy(pOrder->InstrumentID, self->T2);
   strcpy(pOrder->UserOrderLocalID, sLocalUserId);
   pOrder->Direction = strategy_trade->T2Direction;
