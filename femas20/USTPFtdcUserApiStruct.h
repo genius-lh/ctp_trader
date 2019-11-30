@@ -2039,6 +2039,16 @@ struct CUstpFtdcDSProxySubmitDataField
 	///终端采集信息
 	TUstpFtdcDSLocalSystemDataType	TerminalSystemData;
 };
+///穿透监管线下委托客户信息
+struct CUstpFtdcDSOfflineInfoField
+{
+	///AppID
+	TUstpFtdcDSAppIDType	AppID;
+	///投资者编号
+	TUstpFtdcInvestorIDType	InvestorID;
+	///投资者手机号
+	TUstpFtdcDSTelephoneType	InvestorTel;
+};
 ///查询保证金优惠参数请求
 struct CUstpFtdcReqQryMarginPrefParamField
 {
