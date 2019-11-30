@@ -4,7 +4,7 @@
  * 文件说明：定义接口所需的数据类型的头文件
  * 当前版本：1.6
  * 作者：XSpeed证券项目组
- * 发布日期：2016年08月
+ * 发布日期：2017年01月
  */
 
 #ifndef DFITCSECAPIDATATYPE_H
@@ -35,6 +35,11 @@ typedef char   DFITCSECAccountIDType[21];
 ///DFITCSECPasswordType 是一个密码类型
 /////////////////////////////////////////////////////////////////////////
 typedef char   DFITCSECPasswordType[17];
+
+/////////////////////////////////////////////////////////////////////////
+///DFITCSECAuthenticCodeType 是一个认证码类型
+/////////////////////////////////////////////////////////////////////////
+typedef char   DFITCSECAuthenticCodeType[17];
 
 /////////////////////////////////////////////////////////////////////////
 ///DFITCSECErrorIDType 是一个错误ID类型
@@ -752,8 +757,10 @@ typedef int    DFITCSECOpenCloseFlagType;
 #define DFITCSEC_OCF_Group                               19
 ///拆分
 #define DFITCSEC_OCF_Split                               20
-///转备对
+///转备兑
 #define DFITCSEC_OCF_ToPrePare                           21
+///转现金
+#define DFITCSEC_OCF_ToCash                              22
 
 /////////////////////////////////////////////////////////////////////////
 ///DFITCSECCoveredFlagType 是一个备兑标志类型
@@ -789,6 +796,11 @@ typedef int    DFITCSECOrderCategoryType;
 //#define DFITCSEC_OC_QuoteTriggOrder                      2
 ///自动强平单 
 #define DFITCSEC_OC_AutoCloseOrder                       8
+
+/////////////////////////////////////////////////////////////////////////
+///DFITCSECQuoteIDType 是一个询价编号类型
+/////////////////////////////////////////////////////////////////////////
+typedef int    DFITCSECQuoteIDType;
 
 /////////////////////////////////////////////////////////////////////////
 ///DFITCSECTDevIDType 是一个第三方开发商代码类型

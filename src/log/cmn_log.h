@@ -133,7 +133,8 @@ extern int cmn_log_clt_ini(cmn_log_clt* self, char* cfg_file, char* a_catalog);
 extern void cmn_log_clt_fini(cmn_log_clt* self);
 extern void cmn_log_clt_logger_msg(cmn_log_clt* self, int a_priority, const char* a_msg);
 
-extern void cmn_log( cmn_log_clt* self, int aiLevel, const cmn_log_location_info* location, const char *aFormat, ...);
+extern void cmn_log( cmn_log_clt* self, int aiLevel, const cmn_log_location_info* location, const char *aFormat, ...)
+  __attribute__((format(printf,4,5)));
 extern void cmn_log_hex( cmn_log_clt* self, int aiLevel, cmn_log_location_info* location, const char* a_data, int a_len);
 
 

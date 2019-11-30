@@ -7,7 +7,7 @@
 #include "DFITCSECApiStruct.h"
 #include "DFITCSECMdApi.h"
 
-#include "DFITCSECMduserHandler.h"
+#include "XSpeedMduserHandler.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -26,13 +26,11 @@ static void trader_mduser_api_xspeed_sop_login(trader_mduser_api* self);
 static void trader_mduser_api_xspeed_sop_logout(trader_mduser_api* self);
 static void trader_mduser_api_xspeed_sop_subscribe(trader_mduser_api* self, char* instrument);
 
-static dfitc_sec_mduser_api_cb* xspeed_mduser_api_cb_get();
+static xspeed_mduser_api_cb* xspeed_mduser_api_cb_get();
 
 static void xspeed_mduser_on_front_connected(void* arg);
 static void xspeed_mduser_on_front_disconnected(void* arg, int nReason);
-#ifndef DFITC55
 static void xspeed_mduser_on_rtn_notice(void* arg, DFITCSECRspNoticeField *pNotice);
-#endif
 static void xspeed_mduser_on_rsp_error(void* arg, DFITCSECRspInfoField *pRspInfo);
 static void xspeed_mduser_on_rsp_stockuserlogin(void* arg, DFITCSECRspUserLoginField * pRspUserLogin, DFITCSECRspInfoField * pRspInfo);
 static void xspeed_mduser_on_rsp_stockuserlogout(void* arg, DFITCSECRspUserLogoutField * pRspUsrLogout, DFITCSECRspInfoField * pRspInfo);
@@ -90,7 +88,7 @@ trader_mduser_api_method* trader_mduser_api_xspeed_sop_method_get()
 void trader_mduser_api_xspeed_start(trader_mduser_api* self)
 {
   DFITCSECMdApi* pUserApi = DFITCSECMdApi::CreateDFITCMdApi(self->pWorkspace);
-  CDfitcSecMduserHandler* pHandler = new CDfitcSecMduserHandler(xspeed_mduser_api_cb_get(), (void*)self);
+  CXSpeedMduserHandler* pHandler = new CXSpeedMduserHandler(xspeed_mduser_api_cb_get(), (void*)self);
 
   trader_mduser_api_xspeed* pImp = (trader_mduser_api_xspeed*)malloc(sizeof(trader_mduser_api_xspeed));
   pImp->pMdApi = (void*)pUserApi;
@@ -110,7 +108,7 @@ void trader_mduser_api_xspeed_stop(trader_mduser_api* self)
 {
   trader_mduser_api_xspeed* pImp = (trader_mduser_api_xspeed*)self->pUserApi;
   DFITCSECMdApi* pUserApi = (DFITCSECMdApi*)pImp->pMdApi;
-  CDfitcSecMduserHandler* pHandler = (CDfitcSecMduserHandler*)pImp->pHandler;
+  CXSpeedMduserHandler* pHandler = (CXSpeedMduserHandler*)pImp->pHandler;
 
   pUserApi->Release();
   delete pHandler;
@@ -158,7 +156,7 @@ void trader_mduser_api_xspeed_stock_subscribe(trader_mduser_api* self, char* ins
 
   char buff[31];
   char* contracts[1];
-  snprintf(buff, sizeof(buff), "%s%s", pImp->instPrefix, instrument);
+  strncpy(buff, instrument, sizeof(buff));
   contracts[0] = buff;
 
   pUserApi->SubscribeStockMarketData(contracts, 1, pImp->nRequestID++);
@@ -203,7 +201,7 @@ void trader_mduser_api_xspeed_sop_subscribe(trader_mduser_api* self, char* instr
 
   char buff[31];
   char* contracts[1];
-  snprintf(buff, sizeof(buff), "%s%s", pImp->instPrefix, instrument);
+  strncpy(buff, instrument, sizeof(buff));
   contracts[0] = buff;
 
   pUserApi->SubscribeSOPMarketData(contracts, 1, pImp->nRequestID++);
@@ -211,14 +209,12 @@ void trader_mduser_api_xspeed_sop_subscribe(trader_mduser_api* self, char* instr
 }
 
 
-dfitc_sec_mduser_api_cb* xspeed_mduser_api_cb_get()
+xspeed_mduser_api_cb* xspeed_mduser_api_cb_get()
 {
-  static dfitc_sec_mduser_api_cb dfitc_sec_mduser_api_cb_st ={
+  static xspeed_mduser_api_cb dfitc_sec_mduser_api_cb_st ={
     xspeed_mduser_on_front_connected,
     xspeed_mduser_on_front_disconnected,
-#ifndef DFITC55
     xspeed_mduser_on_rtn_notice,
-#endif
     xspeed_mduser_on_rsp_error,
     xspeed_mduser_on_rsp_stockuserlogin,
     xspeed_mduser_on_rsp_stockuserlogout,
@@ -277,11 +273,9 @@ void xspeed_mduser_on_front_disconnected(void* arg, int nReason)
 
 }
 
-#ifndef DFITC55
 void xspeed_mduser_on_rtn_notice(void* arg, DFITCSECRspNoticeField *pNotice)
 {
 }
-#endif
 
 void xspeed_mduser_on_rsp_error(void* arg, DFITCSECRspInfoField *pRspInfo)
 {  
@@ -474,7 +468,9 @@ void xspeed_mduser_on_stockmarketdata(void* arg, DFITCStockDepthMarketDataField 
   trader_tick oTick;
   memset(&oTick, 0, sizeof(trader_tick));
 
-  strcpy(oTick.InstrumentID, pMarketDataField->staticDataField.securityID);
+  snprintf(oTick.InstrumentID, sizeof(oTick.InstrumentID), "%s%s",
+    pMarketDataField->staticDataField.exchangeID,
+    pMarketDataField->staticDataField.securityID);
 
   sprintf(oTick.TradingDay, "%8d", pMarketDataField->staticDataField.tradingDay);
   memcpy(oTick.UpdateTime, &(pMarketDataField->sharedDataField.updateTime[0]), 8);
@@ -500,7 +496,9 @@ void xspeed_mduser_on_sopmarketdata(void* arg, DFITCSOPDepthMarketDataField * pM
   trader_tick oTick;
   memset(&oTick, 0, sizeof(trader_tick));
 
-  strcpy(oTick.InstrumentID, pMarketDataField->staticDataField.securityID);
+  snprintf(oTick.InstrumentID, sizeof(oTick.InstrumentID), "%s%s",
+    pMarketDataField->staticDataField.exchangeID,
+    pMarketDataField->staticDataField.securityID);
 
   sprintf(oTick.TradingDay, "%8d", pMarketDataField->staticDataField.tradingDay);
   memcpy(oTick.UpdateTime, &(pMarketDataField->sharedDataField.updateTime[0]), 8);

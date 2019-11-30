@@ -165,6 +165,13 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
 #include "trader_trader_api_femas.h"
   self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_femas_method_get());
 #endif
+
+#ifdef XSPEED
+    //XSPEED
+#include "trader_trader_api_xspeed.h"
+    self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_xspeed_sop_method_get());
+#endif
+
   self->pCtpTraderApi->pMethod->xSetFrontAddr(self->pCtpTraderApi, self->TrFrontAdd);
   self->pCtpTraderApi->pMethod->xSetAppID(self->pCtpTraderApi, self->appId);
   self->pCtpTraderApi->pMethod->xSetAuthCode(self->pCtpTraderApi, self->authCode);
