@@ -8,9 +8,9 @@
 extern "C" {
 #endif
 
-typedef struct dfitc_sec_mduser_api_cb_def dfitc_sec_mduser_api_cb;
+typedef struct xspeed_mduser_api_cb_def xspeed_mduser_api_cb;
 
-struct dfitc_sec_mduser_api_cb_def{
+struct xspeed_mduser_api_cb_def{
   /** 
    * 网络连接正常响应
    */
@@ -21,12 +21,11 @@ struct dfitc_sec_mduser_api_cb_def{
    */
  void (*xOnFrontDisconnected)(void* arg, int nReason);
 
-#ifndef DFITC55
   /**
    * SEC-消息通知
    */
  void (*xOnRtnNotice)(void* arg, DFITCSECRspNoticeField *pNotice);
-#endif
+
   /**
    * ERR-错误应答
    * @param pRspInfo:若请求失败，返回错误信息地址
@@ -142,7 +141,7 @@ struct dfitc_sec_mduser_api_cb_def{
 }
 #endif
 
-class CDfitcSecMduserHandler : public DFITCSECMdSpi
+class CXSpeedMduserHandler : public DFITCSECMdSpi
 {
 public:
   /** 
@@ -155,12 +154,10 @@ public:
    */
  void OnFrontDisconnected(int nReason);
 
-#ifndef DFITC55
   /**
    * SEC-消息通知
    */
  void OnRtnNotice(DFITCSECRspNoticeField *pNotice);
-#endif
   /**
    * ERR-错误应答
    * @param pRspInfo:若请求失败，返回错误信息地址
@@ -273,11 +270,11 @@ public:
  void OnRspUserMDPasswordUpdate(DFITCSECRspMDPasswordUpdateField *pMDPasswordUpdate,DFITCSECRspInfoField * pRspInfo);
   
 public:
-  CDfitcSecMduserHandler(dfitc_sec_mduser_api_cb *pUserCb, void * parent);
-  ~CDfitcSecMduserHandler();
+  CXSpeedMduserHandler(xspeed_mduser_api_cb *pUserCb, void * parent);
+  ~CXSpeedMduserHandler();
 
 private:
-  dfitc_sec_mduser_api_cb *m_pUserCb;
+  xspeed_mduser_api_cb *m_pUserCb;
   void * m_parent;
 };
 

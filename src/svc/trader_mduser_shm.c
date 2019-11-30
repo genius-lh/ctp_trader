@@ -33,7 +33,7 @@ trader_mduser_shm_header* trader_mduser_shm_header_init(char* key_file, int fiel
     if(-1 != nShmId){
       // 共享内存存在
       self = (trader_mduser_shm_header*)shmat(nShmId, NULL, 0);
-      if(-1 == self){
+      if((void*)-1 == self){
         SHM_TRACE("shmat error=%s\n", strerror(errno));
         break;
       }
@@ -64,7 +64,7 @@ trader_mduser_shm_header* trader_mduser_shm_header_init(char* key_file, int fiel
     }
     
     self = (trader_mduser_shm_header*)shmat(nShmId, NULL, 0);
-    if(-1 == self){
+    if((void*)-1 == self){
       SHM_TRACE("shmat error=%s\n", strerror(errno));
       break;
     }
@@ -98,7 +98,7 @@ trader_mduser_shm_header* trader_mduser_shm_header_at(char* key_file)
     }
     // 共享内存存在
     self = (trader_mduser_shm_header*)shmat(nShmId, NULL, SHM_RDONLY);
-    if(-1 == self){
+    if((void*)-1 == self){
       SHM_TRACE("shmat error=%s\n", strerror(errno));
       break;
     }

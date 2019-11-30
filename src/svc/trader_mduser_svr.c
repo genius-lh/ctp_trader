@@ -58,7 +58,7 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
 {
   trader_mduser_api_method* api_imp = NULL;
   int nRet = 0;
-  #ifdef LTS
+#ifdef LTS
   //LTS
 #include "trader_mduser_api_lts.h"
   api_imp = trader_mduser_api_lts_method_get();

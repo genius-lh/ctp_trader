@@ -7,45 +7,43 @@
 #include "DFITCSECApiStruct.h"
 #include "DFITCSECMdApi.h"
 
-#include "DFITCSECMduserHandler.h"
+#include "XSpeedMduserHandler.h"
 
-CDfitcSecMduserHandler::CDfitcSecMduserHandler(dfitc_sec_mduser_api_cb *pUserCb, void * parent)
+CXSpeedMduserHandler::CXSpeedMduserHandler(xspeed_mduser_api_cb *pUserCb, void * parent)
 	: m_pUserCb(pUserCb) , m_parent(parent)
 {
 }
 
-CDfitcSecMduserHandler::~CDfitcSecMduserHandler() 
+CXSpeedMduserHandler::~CXSpeedMduserHandler() 
 {
 }
 
 /** 
 * 网络连接正常响应
 */
-void CDfitcSecMduserHandler::OnFrontConnected(){
+void CXSpeedMduserHandler::OnFrontConnected(){
 m_pUserCb->xOnFrontConnected(m_parent);
 }
 
 /**
 * 网络连接不正常响应
 */
-void CDfitcSecMduserHandler::OnFrontDisconnected(int nReason){
+void CXSpeedMduserHandler::OnFrontDisconnected(int nReason){
 m_pUserCb->xOnFrontDisconnected(m_parent, nReason);
 }
 
-#ifndef DFITC55
 /**
 * SEC-消息通知
 */
-void CDfitcSecMduserHandler::OnRtnNotice(DFITCSECRspNoticeField *pNotice) {
+void CXSpeedMduserHandler::OnRtnNotice(DFITCSECRspNoticeField *pNotice) {
 m_pUserCb->xOnRtnNotice(m_parent, pNotice);
 }
-#endif
 
 /**
 * ERR-错误应答
 * @param pRspInfo:若请求失败，返回错误信息地址
 */
-void CDfitcSecMduserHandler::OnRspError(DFITCSECRspInfoField *pRspInfo) {
+void CXSpeedMduserHandler::OnRspError(DFITCSECRspInfoField *pRspInfo) {
 m_pUserCb->xOnRspError(m_parent, pRspInfo);
 }
 
@@ -54,7 +52,7 @@ m_pUserCb->xOnRspError(m_parent, pRspInfo);
 * @param pRspUserLogin:指针若非空,返回用户登录响应信息结构地址,表明登录请求成功
 * @param pRspInfo::指针若非空，返回错误信息地址，表明登录请求失败
 */
-void CDfitcSecMduserHandler::OnRspStockUserLogin(DFITCSECRspUserLoginField * pRspUserLogin, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspStockUserLogin(DFITCSECRspUserLoginField * pRspUserLogin, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspStockUserLogin(m_parent, pRspUserLogin, pRspInfo);
 }
 
@@ -63,7 +61,7 @@ m_pUserCb->xOnRspStockUserLogin(m_parent, pRspUserLogin, pRspInfo);
 * @param pRspUsrLogout:指针若非空,返回用户登出响应信息结构地址,表明登出请求成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明登出请求失败
 */
-void CDfitcSecMduserHandler::OnRspStockUserLogout(DFITCSECRspUserLogoutField * pRspUsrLogout, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspStockUserLogout(DFITCSECRspUserLogoutField * pRspUsrLogout, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspStockUserLogout(m_parent, pRspUsrLogout, pRspInfo);
 }
 
@@ -72,7 +70,7 @@ m_pUserCb->xOnRspStockUserLogout(m_parent, pRspUsrLogout, pRspInfo);
 * @param pRspUserLogin:指针若非空,返回用户登录响应信息结构地址,表明登录请求成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明登录请求失败
 */
-void CDfitcSecMduserHandler::OnRspSOPUserLogin(DFITCSECRspUserLoginField * pRspUserLogin, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspSOPUserLogin(DFITCSECRspUserLoginField * pRspUserLogin, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspSOPUserLogin(m_parent, pRspUserLogin, pRspInfo);
 }
 
@@ -81,7 +79,7 @@ m_pUserCb->xOnRspSOPUserLogin(m_parent, pRspUserLogin, pRspInfo);
 * @param pRspUsrLogout:指针若非空,返回用户登出响应信息结构地址,表明登出请求成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明登出请求失败
 */
-void CDfitcSecMduserHandler::OnRspSOPUserLogout(DFITCSECRspUserLogoutField * pRspUsrLogout, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspSOPUserLogout(DFITCSECRspUserLogoutField * pRspUsrLogout, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspSOPUserLogout(m_parent, pRspUsrLogout, pRspInfo);
 }
 
@@ -90,7 +88,7 @@ m_pUserCb->xOnRspSOPUserLogout(m_parent, pRspUsrLogout, pRspInfo);
 * @param pRspUserLogin:指针若非空,返回用户登录响应信息结构地址,表明登录请求成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明登录请求失败
 */
-void CDfitcSecMduserHandler::OnRspFASLUserLogin(DFITCSECRspUserLoginField * pRspUserLogin, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspFASLUserLogin(DFITCSECRspUserLoginField * pRspUserLogin, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspFASLUserLogin(m_parent, pRspUserLogin, pRspInfo);
 }
 
@@ -99,7 +97,7 @@ m_pUserCb->xOnRspFASLUserLogin(m_parent, pRspUserLogin, pRspInfo);
 * @param pRspUsrLogout:指针若非空,返回用户登出响应信息结构地址,表明登出请求成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明登出请求失败
 */
-void CDfitcSecMduserHandler::OnRspFASLUserLogout(DFITCSECRspUserLogoutField * pRspUsrLogout, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspFASLUserLogout(DFITCSECRspUserLogoutField * pRspUsrLogout, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspFASLUserLogout(m_parent, pRspUsrLogout, pRspInfo);
 }
 
@@ -108,7 +106,7 @@ m_pUserCb->xOnRspFASLUserLogout(m_parent, pRspUsrLogout, pRspInfo);
 * @param pSpecificInstrument:指针若非空,返回用户指定合约行情订阅响应结构地址,表明指定合约行情订阅成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明指定合约行情订阅失败
 */
-void CDfitcSecMduserHandler::OnRspStockSubMarketData(DFITCSECSpecificInstrumentField * pSpecificInstrument, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspStockSubMarketData(DFITCSECSpecificInstrumentField * pSpecificInstrument, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspStockSubMarketData(m_parent, pSpecificInstrument, pRspInfo);
 }
 
@@ -117,7 +115,7 @@ m_pUserCb->xOnRspStockSubMarketData(m_parent, pSpecificInstrument, pRspInfo);
 * @param pSpecificInstrument:指针若非空,返回用户指定合约行情取消订阅响应结构地址,表明指定合约行情取消订阅成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明指定合约行情取消订阅失败
 */
-void CDfitcSecMduserHandler::OnRspStockUnSubMarketData(DFITCSECSpecificInstrumentField * pSpecificInstrument, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspStockUnSubMarketData(DFITCSECSpecificInstrumentField * pSpecificInstrument, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspStockUnSubMarketData(m_parent, pSpecificInstrument, pRspInfo);
 }
 
@@ -126,7 +124,7 @@ m_pUserCb->xOnRspStockUnSubMarketData(m_parent, pSpecificInstrument, pRspInfo);
 * @param pSpecificInstrument:指针若非空,返回用户指定合约行情订阅响应结构地址,表明指定合约行情订阅成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明指定合约行情订阅失败
 */
-void CDfitcSecMduserHandler::OnRspSOPSubMarketData(DFITCSECSpecificInstrumentField * pSpecificInstrument, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspSOPSubMarketData(DFITCSECSpecificInstrumentField * pSpecificInstrument, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspSOPSubMarketData(m_parent, pSpecificInstrument, pRspInfo);
 }
 
@@ -135,7 +133,7 @@ m_pUserCb->xOnRspSOPSubMarketData(m_parent, pSpecificInstrument, pRspInfo);
 * @param pSpecificInstrument:指针若非空,返回用户指定合约行情取消订阅响应结构地址,表明指定合约行情取消订阅成功
 * @param pRspInfo:指针若非空，返回错误信息地址，表明指定合约行情取消订阅失败
 */
-void CDfitcSecMduserHandler::OnRspSOPUnSubMarketData(DFITCSECSpecificInstrumentField * pSpecificInstrument, DFITCSECRspInfoField * pRspInfo) {
+void CXSpeedMduserHandler::OnRspSOPUnSubMarketData(DFITCSECSpecificInstrumentField * pSpecificInstrument, DFITCSECRspInfoField * pRspInfo) {
 m_pUserCb->xOnRspSOPUnSubMarketData(m_parent, pSpecificInstrument, pRspInfo);
 }
 
@@ -143,7 +141,7 @@ m_pUserCb->xOnRspSOPUnSubMarketData(m_parent, pSpecificInstrument, pRspInfo);
 * STOCK-行情推送响应
 * @param pMarketDataField:指针若非空,返回行情推送响应结构地址
 */
-void CDfitcSecMduserHandler::OnStockMarketData(DFITCStockDepthMarketDataField * pMarketDataField) {
+void CXSpeedMduserHandler::OnStockMarketData(DFITCStockDepthMarketDataField * pMarketDataField) {
 m_pUserCb->xOnStockMarketData(m_parent, pMarketDataField);
 }
 
@@ -151,7 +149,7 @@ m_pUserCb->xOnStockMarketData(m_parent, pMarketDataField);
 * SOP-行情推送响应
 * @param pMarketDataField:指针若非空,返回行情推送响应结构地址
 */
-void CDfitcSecMduserHandler::OnSOPMarketData(DFITCSOPDepthMarketDataField * pMarketDataField) {
+void CXSpeedMduserHandler::OnSOPMarketData(DFITCSOPDepthMarketDataField * pMarketDataField) {
 m_pUserCb->xOnSOPMarketData(m_parent, pMarketDataField);
 }
 
@@ -161,7 +159,7 @@ m_pUserCb->xOnSOPMarketData(m_parent, pMarketDataField);
 * @param pRspInfo:指针若非空，返回错误信息地址，表明指定合约行情取消订阅失败
 * @param flag  为真是标示最后一条，为假时表示还有后续。
 */
-void CDfitcSecMduserHandler::OnRspStockAvailableQuot(DFITCRspQuotQryField * pAvailableQuotInfo, DFITCSECRspInfoField * pRspInfo, bool flag) {
+void CXSpeedMduserHandler::OnRspStockAvailableQuot(DFITCRspQuotQryField * pAvailableQuotInfo, DFITCSECRspInfoField * pRspInfo, bool flag) {
 m_pUserCb->xOnRspStockAvailableQuot(m_parent, pAvailableQuotInfo, pRspInfo, flag);
 }
 
@@ -171,7 +169,7 @@ m_pUserCb->xOnRspStockAvailableQuot(m_parent, pAvailableQuotInfo, pRspInfo, flag
 * @param pRspInfo:指针若非空，返回错误信息地址，表明指定合约行情取消订阅失败
 * @param flag  为真是标示最后一条，为假时表示还有后续。
 */
-void CDfitcSecMduserHandler::OnRspSopAvailableQuot(DFITCRspQuotQryField * pAvailableQuotInfo, DFITCSECRspInfoField * pRspInfo, bool flag) {
+void CXSpeedMduserHandler::OnRspSopAvailableQuot(DFITCRspQuotQryField * pAvailableQuotInfo, DFITCSECRspInfoField * pRspInfo, bool flag) {
 m_pUserCb->xOnRspSopAvailableQuot(m_parent, pAvailableQuotInfo, pRspInfo, flag);
 }
 
@@ -180,7 +178,7 @@ m_pUserCb->xOnRspSopAvailableQuot(m_parent, pAvailableQuotInfo, pRspInfo, flag);
 * @param pMDPasswordUpdate:指针若非空,返回用户行情密码响应信息结构地址,表明密码修改成功。
 * @param pRspInfo:指针若非空，返回错误信息地址，表明密码修改失败。
 */
-void CDfitcSecMduserHandler::OnRspUserMDPasswordUpdate(DFITCSECRspMDPasswordUpdateField *pMDPasswordUpdate,DFITCSECRspInfoField * pRspInfo){
+void CXSpeedMduserHandler::OnRspUserMDPasswordUpdate(DFITCSECRspMDPasswordUpdateField *pMDPasswordUpdate,DFITCSECRspInfoField * pRspInfo){
 m_pUserCb->xOnRspUserMDPasswordUpdate(m_parent, pMDPasswordUpdate, pRspInfo);
 }
 
