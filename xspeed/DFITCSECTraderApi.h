@@ -1,11 +1,11 @@
 /**
-* 版权所有(C)2012-2016, 大连飞创信息技术有限公司
-* 文件名称：DFITCSECTraderApi.h
-* 文件说明：定义接口所需的数据接口
-* 当前版本：1.6.73
-* 作者：XSpeed证券项目组
-* 发布日期：2016年09月
-*/
+ * 版权所有(C)2012-2016, 大连飞创信息技术有限公司
+ * 文件名称：DFITCSECTraderApi.h
+ * 文件说明：定义接口所需的数据接口
+ * 当前版本：1.6.83
+ * 作者：XSpeed证券项目组
+ * 发布日期：2018年8月
+ */
 #ifndef DFITCSECTRADERAPI_H_
 #define DFITCSECTRADERAPI_H_
 
@@ -241,6 +241,12 @@ public:
     * @param pRspInfo:指针若非空，返回错误信息地址，表明报单请求失败
     */
     virtual void OnRspSOPEntrustOrder(DFITCSOPRspEntrustOrderField *pData, DFITCSECRspInfoField *pRspInfo) {};
+    /**
+    * SOP-做市商报单响应
+    * @param pData:指针若非空,返回用户报价委托响应信息结构地址,表明做市商报单请求成功
+    * @param pRspInfo:指针若非空，返回错误信息地址，表明做市商报单请求失败
+    */
+    virtual void OnRspSOPQuoteEntrustOrder(DFITCSOPRspQuoteEntrustOrderField *pData, DFITCSECRspInfoField *pRspInfo) {};
     /**
     * SOP-组合拆分委托响应
     * @param pData:指针若非空,返回用户响应信息结构地址,表明组合拆分委托请求成功
@@ -810,7 +816,13 @@ public:
      * @param p:指向用户报单请求结构的地址
      * @return 0表示请求发送成功，其他值表示请求发送失败，具体错误请对照error.xml
      */
-    virtual int ReqSOPEntrustOrder(DFITCSOPReqEntrustOrderField *p) = 0;    
+    virtual int ReqSOPEntrustOrder(DFITCSOPReqEntrustOrderField *p) = 0;
+    /**
+     * SOP-做市商报单请求
+     * @param p:指向用户做市商报单请求结构的地址
+     * @return 0表示请求发送成功，其他值表示请求发送失败，具体错误请对照error.xml
+     */
+    virtual int ReqSOPQuoteEntrustOrder(DFITCSOPReqQuoteEntrustOrderField *p) = 0;
     /**
      * SOP-持仓组合拆分委托请求
      * @param p:指向用户交易所持仓组合拆分委托请求结构的地址

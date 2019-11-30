@@ -103,6 +103,9 @@
     <error id="NOT_FIND_GTWTH" value="-362" prompt="SECAPI:根据本地委托号找不到对应柜台委托号"/>
     <error id="INVAL_ZLSYZ" value="-363" prompt="SECAPI:增量索引值无效，该值应在0~2147483647之间"/>
     <error id="EMPTY_PRICE" value="-364" prompt="SECAPI:报单类型为限价时必须填写委托价格"/>
+    <error id="AUTHENTIC_CODE_NULL" value="-365" prompt="SECAPI:认证码为空"/>
+    <error id="INVALID_AUTHENTIC_CODE" value="-366" prompt="SECAPI:认证码无效"/>
+    <error id="NOT_MATCH_AUTHENTIC_CODE" value="-367" prompt="SECAPI:认证码不匹配"/>
     <error id="COMMISSION" value="-400" prompt="SECAPI:委托错误描述"/>
     <error id="NEGTIVE_LOCALID" value="-401" prompt="SECAPI:本地委托号不能为负值"/>
     <error id="DUP_LOCAL_ID" value="-402" prompt="SECAPI:本地委托号已经存在"/>
