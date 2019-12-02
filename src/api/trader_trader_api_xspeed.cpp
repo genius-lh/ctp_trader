@@ -1024,7 +1024,7 @@ void xspeed_on_rsp_sop_qry_contact_info(void* arg, DFITCSOPRspQryContactField* p
     DFITCSESecurityOptionIndexType      optionIndex;               //股票期权索引值
     DFITCSECMiniPriceChangeType         miniPriceChange;           //最小变动价位
     */
-    strncpy(traderInstrument.InstrumentID, pData->securityOptionID, sizeof(traderInstrument.InstrumentID));
+    snprintf(traderInstrument.InstrumentID, sizeof(traderInstrument.InstrumentID), "%s%s", pData->exchangeID, pData->securityOptionID);
     strncpy(traderInstrument.ExchangeID, pData->exchangeID, sizeof(traderInstrument.ExchangeID));
     traderInstrument.VolumeMultiple = pData->handQty;
     traderInstrument.PriceTick = pData->miniPriceChange;
