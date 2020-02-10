@@ -62,3 +62,4 @@ traderStrategy
 *.con
 trader_mduser_test
 trader_trader_test
+*.cfg
