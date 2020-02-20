@@ -16,8 +16,26 @@
   }while(0)
 
 
-trader_mduser_shm_header* trader_mduser_shm_header_init(char* key_file, int field_size, int max_field_num)
+static char* trader_mduser_shm_key_file_get();
+
+char* trader_mduser_shm_key_file_get()
 {
+  static char sShmKeyFile[256];
+
+  return sShmKeyFile;
+}
+
+void trader_mduser_shm_key_file(const char* key_file)
+{
+  char* pKeyFile = trader_mduser_shm_key_file_get();
+  strcpy(pKeyFile, key_file);
+  return ;
+}
+
+trader_mduser_shm_header* trader_mduser_shm_header_init(int field_size, int max_field_num)
+{
+  char* key_file = trader_mduser_shm_key_file_get();
+
   trader_mduser_shm_header* self;
   int nRet;
   do{
@@ -78,10 +96,13 @@ trader_mduser_shm_header* trader_mduser_shm_header_init(char* key_file, int fiel
   return (trader_mduser_shm_header*)NULL;
 }
 
-trader_mduser_shm_header* trader_mduser_shm_header_at(char* key_file)
+trader_mduser_shm_header* trader_mduser_shm_header_at()
 {
   trader_mduser_shm_header* self;
   int nRet;
+
+  char* key_file = trader_mduser_shm_key_file_get();
+    
   do{
     // 获取key值
     key_t key = ftok(key_file, 1);
@@ -97,7 +118,7 @@ trader_mduser_shm_header* trader_mduser_shm_header_at(char* key_file)
       break;
     }
     // 共享内存存在
-    self = (trader_mduser_shm_header*)shmat(nShmId, NULL, SHM_RDONLY);
+    self = (trader_mduser_shm_header*)shmat(nShmId, NULL, 0);
     if((void*)-1 == self){
       SHM_TRACE("shmat error=%s\n", strerror(errno));
       break;
@@ -125,4 +146,62 @@ void* trader_mduser_shm_header_calloc(trader_mduser_shm_header* self, int field_
   self->nFieldNum = field_num;
   return (void*)self->pData;
 }
+
+int trader_mduser_shm_sort(trader_mduser_shm_header* self, trader_mduser_shm_cmp_callback cmp_func)
+{
+  int i;
+  int j;
+  int c;
+  void* p;
+  void* q;
+
+  char* tmp = (char*)malloc(self->nFieldSize);
+
+  for(i = 0; i < self->nFieldNum; i++){
+    p = (void*)(self->pData + i * self->nFieldSize);
+    for(j = i; j < self->nFieldNum; j++){
+      q = (void*)(self->pData + j * self->nFieldSize);
+      c = cmp_func(p, q);
+      if(c > 0){
+        memcpy(tmp, p, self->nFieldSize);
+        memcpy(p, q, self->nFieldSize);
+        memcpy(q, tmp, self->nFieldSize);
+      }
+    }
+  }
+
+  free(tmp);
+  
+  return 0;
+
+}
+
+void* trader_mduser_shm_bsearch(trader_mduser_shm_header* self, void* data, trader_mduser_shm_cmp_callback cmp_func)
+{
+  int h;
+  int l;
+  int m;
+  int c;
+  h = self->nFieldNum - 1;
+  l = 0;
+  m = self->nFieldNum / 2;
+
+  void* p;
+
+  while (l <= h) {
+    m = (l + h) / 2;
+    p = (void*)(self->pData + m * self->nFieldSize);
+    c = cmp_func(p, data);
+    if(0 == c){
+      return (void*)p;
+    }else if(c > 0) {
+      h = m - 1;
+    }else{
+      l = m + 1;
+    }
+  }
+  return (void*)NULL;
+
+}
+
 

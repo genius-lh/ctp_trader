@@ -5,8 +5,7 @@
 
 #include <event2/util.h>
 
-#include "cmn_util.h"
-
+#include "hiredis.h"
 #include "trader_mduser_api.h"
 
 trader_mduser_api* trader_mduser_api_new(evutil_socket_t fd, trader_mduser_api_method* method)
@@ -42,6 +41,64 @@ void trader_mduser_api_set_front_addr(trader_mduser_api* self, char* addr)
 void trader_mduser_api_set_workspace(trader_mduser_api* self, char* ws)
 {
   self->pWorkspace = ws;
+}
+
+int trader_mduser_api_load_instruments(const char* configFile, const char* section, mduser_instrument** insts)
+{
+  char pRedisIp[14+1];
+  int nRedisPort = 0;
+  char pInstrumentKey[32];
+  
+  int nCount = 0;
+  mduser_instrument* ppInstruments;
+  
+  redisContext* pRedisCtx;
+  
+  redisReply* reply;
+  redisReply* r;
+  
+  int nRet = -1;
+  int i;
+
+  
+  // 读取配置文件
+  nRet = glbPflGetString(section, "REDIS_ADDR", configFile, pRedisIp);
+  nRet = glbPflGetInt(section, "REDIS_PORT", configFile, &nRedisPort);
+  nRet = glbPflGetString(section, "REDIS_INST_KEY", configFile, pInstrumentKey);
+
+  struct timeval tv = {
+    5, 0
+  };
+  
+  pRedisCtx = redisConnectWithTimeout(pRedisIp, nRedisPort, tv);
+  if(!pRedisCtx){
+    return -1;
+  }
+
+  // 查询key列表
+  
+  reply = (redisReply*)redisCommand(pRedisCtx, "SMEMBERS %s", pInstrumentKey);
+  
+  do {
+    if(REDIS_REPLY_ARRAY == reply->type){
+      nRet = 0;
+      nCount = reply->elements;
+      ppInstruments = (mduser_instrument*)malloc(nCount * sizeof(mduser_instrument));
+      for(i = 0; i < nCount; i++){
+        r = reply->element[i];
+        strncpy(ppInstruments[i], r->str, sizeof(mduser_instrument));
+      }
+      break;
+    }
+  }while(0);
+  
+  freeReplyObject(reply);
+  
+  redisFree(pRedisCtx);
+
+  *insts = ppInstruments;
+
+  return nCount;
 }
 
 void trader_mduser_api_on_front_connected(trader_mduser_api* self)

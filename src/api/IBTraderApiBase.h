@@ -54,9 +54,8 @@ public:
 
   void RegisterClientId(int clientId);
 
-  void RegisterConfig(const char* config);
-
   IBFutureContract* GetFutureContract(const char* contract);
+  IBFutureContract* GetFutureContract(long ticker_id);
 
 protected:
   EClientSocket* Api();
@@ -74,7 +73,6 @@ private:
   IBFutureContractFactory* m_contractFactory;
   
   std::string m_szFrontAddress;
-  std::string m_configFilename;
   CIbTraderSpi* m_traderSpi;
   
   //! [socket_declare]

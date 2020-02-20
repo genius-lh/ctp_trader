@@ -12,6 +12,8 @@
 #include "trader_mduser_boardcast.h"
 #include "hiredis.h"
 
+#include "trader_mduser_shm.h"
+
 typedef struct trader_mduser_svr_def trader_mduser_svr;
 typedef struct trader_mduser_svr_method_def trader_mduser_svr_method;
 struct trader_mduser_svr_def {
@@ -22,8 +24,14 @@ struct trader_mduser_svr_def {
 
   redisContext* pRedisCtx;
 
+  trader_mduser_shm_header* pShmHdr;
+
   trader_mduser_cnn* pCnnMain;
   trader_mduser_cnn* pCnnBackup;
+
+#ifdef IB
+  trader_mduser_cnn* pCnnIB;
+#endif
 
   trader_mduser_boardcast* pBoardcast;
   

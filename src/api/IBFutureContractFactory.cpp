@@ -5,8 +5,54 @@
 
 #include "IBFutureContractFactory.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "cmn_log.h"
+static int ib_future_contract_make(char* instrument, long tick_id, IBFutureContract* future);
+#ifdef __cplusplus
+}
+#endif
+
+
+const long TICK_ID_BASE = 1001;
+
+typedef char mduser_instrument[32];
+
+int ib_future_contract_make(char* instrument, long tick_id, IBFutureContract* future)
+{
+  char* savePtr;
+  char* symbol;
+  char* localSymbol;
+
+  strncpy(future->instrument, instrument, sizeof(future->instrument));
+  
+  symbol = strtok_r(instrument, ".", &savePtr);
+  if (NULL == symbol) {
+   return -1;
+  }
+
+  localSymbol = strtok_r(NULL, ".", &savePtr);
+
+  future->tickId = tick_id;
+  strncpy(future->symbol, symbol, sizeof(future->symbol));
+  strncpy(future->localSymbol, localSymbol, sizeof(future->localSymbol));
+  strncpy(future->secType, "FUT", sizeof(future->secType));
+  strncpy(future->currency, "USD", sizeof(future->currency));
+  if(0 == memcmp(future->symbol, "COIL", 4)){
+    strncpy(future->exchange, "QBALGOIEU", sizeof(future->exchange));
+  }else if (0 == memcmp(future->symbol, "ZM", 2)){
+    strncpy(future->exchange, "ECBOT", sizeof(future->exchange));
+  }else{
+    strncpy(future->exchange, "NYMEX", sizeof(future->exchange));
+  }
+  return 0;
+}
+
+
 IBFutureContractFactory* IBFutureContractFactory::GetInstance()
 {
+  static IBFutureContractFactory* instance = (IBFutureContractFactory*)NULL;
   if(NULL == instance){
     instance = new IBFutureContractFactory();
   }
@@ -16,6 +62,8 @@ IBFutureContractFactory* IBFutureContractFactory::GetInstance()
 
 void IBFutureContractFactory::Release()
 {
+  IBFutureContractFactory* instance = IBFutureContractFactory::GetInstance();
+
   if(NULL == instance){
     return ;
   }
@@ -44,38 +92,40 @@ IBFutureContract* IBFutureContractFactory::Search(const char* contract)
   int i = 0;
   for(i = 0; i < this->count; i++){
     iter = &this->futureContract[i];
-    if(0 == strcmp(contract, iter->localSymbol)){
+    if(0 == strcmp(contract, iter->instrument)){
       return iter;
     }
   }
   return (IBFutureContract*)NULL;
-
 }
 
-int IBFutureContractFactory::Init(const char* configFile)
+IBFutureContract* IBFutureContractFactory::Search(long tick_id)
 {
-  //TODO
-  IBFutureContract future = {
-    1001,
-    "CL",
-    "FUT",
-    "202002",
-    "NYMEX",
-    "USD",
-    "CLH0"
-  };
-  this->futureContract = (IBFutureContract*)malloc(sizeof(IBFutureContract));
-  this->count = 1;
-  memcpy(this->futureContract, &future, sizeof(IBFutureContract));
+  int idx = tick_id - TICK_ID_BASE;
+
+  if((idx < 0) || (idx >= this->count)){
+    return (IBFutureContract*)NULL;
+  }
+
+  return &this->futureContract[idx];
+}
+
+int IBFutureContractFactory::Init(int count, void* instruments)
+{
+  int i;
+  int nRet;
+  
+  mduser_instrument* ppInstruments = (mduser_instrument*)instruments;
+  
+  this->count = count;
+  this->futureContract = (IBFutureContract*)malloc(this->count * sizeof(IBFutureContract));
+
+  for(i = 0; i < this->count; i++){
+    nRet = ::ib_future_contract_make(ppInstruments[i], i + TICK_ID_BASE, &this->futureContract[i]);
+    CMN_DEBUG("ib_future_contract_make nRet[%d]\n", nRet);
+  }
+
   return 0;
 }
-
-
-  
-
-
-
-
-
 
 

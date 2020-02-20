@@ -6,11 +6,12 @@
 #include "trader_mduser_shm.h"
 #include "trader_data.h"
 
-#define SHM_TEST_FILE "SHM_TEST_FILE"
+#define SHM_TEST_FILE "IB.MDUSER.INSTRUMENTS"
 
 void test1(int size)
 {
-  trader_mduser_shm_header* hdr = trader_mduser_shm_header_init(SHM_TEST_FILE, sizeof(trader_tick), size);
+  trader_mduser_shm_key_file(SHM_TEST_FILE);
+  trader_mduser_shm_header* hdr = trader_mduser_shm_header_init(sizeof(trader_tick), size);
   printf("hdr=%x\n", hdr); 
   printf("hdr->nShmId=%ld\n", hdr->nShmId);
   printf("hdr->nFieldNum=%ld\n", hdr->nFieldNum);
@@ -39,6 +40,7 @@ void test1(int size)
 
 void test2()
 {
+  trader_mduser_shm_key_file(SHM_TEST_FILE);
   trader_mduser_shm_header* hdr = trader_mduser_shm_header_at(SHM_TEST_FILE);
   printf("hdr=%x\n", hdr);
   printf("hdr->nShmId=%ld\n", hdr->nShmId);

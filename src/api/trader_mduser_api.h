@@ -62,6 +62,7 @@ extern void trader_mduser_api_set_front_addr(trader_mduser_api* self, char* addr
 extern void trader_mduser_api_set_workspace(trader_mduser_api* self, char* ws);
 
 extern void trader_mduser_api_on_front_connected(trader_mduser_api* self);
+
 extern void trader_mduser_api_on_front_disconnected(trader_mduser_api* self, int err_cd, char* err_msg);
 extern void trader_mduser_api_on_rsp_user_login(trader_mduser_api* self, int err_cd, char* err_msg);
 extern void trader_mduser_api_on_rsp_user_logout(trader_mduser_api* self, int err_cd, char* err_msg);
@@ -69,6 +70,10 @@ extern void trader_mduser_api_on_rsp_error(trader_mduser_api* self, int err_cd, 
 extern void trader_mduser_api_on_rsp_sub_market_data(trader_mduser_api* self, int err_cd, char* err_msg);
 extern void trader_mduser_api_on_rsp_un_sub_market_data(trader_mduser_api* self, int err_cd, char* err_msg);
 extern void trader_mduser_api_on_rtn_depth_market_data(trader_mduser_api* self, trader_tick* tick);
+
+typedef char mduser_instrument[32];
+
+extern int trader_mduser_api_load_instruments(const char* configFile, const char* section, mduser_instrument** insts);
 
 
 #endif // _TRADER_MDUSER_API_H_

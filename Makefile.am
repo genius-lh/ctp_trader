@@ -5,9 +5,11 @@ noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 noinst_PROGRAMS=libctpmduser.so libctptrader.so \
 				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so\
 				libfemasmduserAF.so libfemastraderAF.so \
-				libxspeedmduser.so libxspeedtrader.so
+				libxspeedmduser.so libxspeedtrader.so \
+				libIBtraderApiBase.so libibmduser.so
 
 bin_PROGRAMS=\
+			traderMduserIB \
 			traderMduserCtp traderStrategyCtp \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
@@ -17,7 +19,9 @@ bin_PROGRAMS=\
 			femasPasswd
 
 # static library
-libtradercmn_a_SOURCES=src/util/cmn_util.c \
+libtradercmn_a_SOURCES=\
+	src/svc/trader_mduser_shm.c \
+	src/util/cmn_util.c \
 	src/util/cJSON.c \
 	src/cfg/glbProfile.c \
 	src/cfg/cmn_cfg.c \
@@ -28,7 +32,7 @@ libtradercmn_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
 	
 libmduserapi_a_SOURCES=src/api/trader_mduser_api.c
 libmduserapi_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
-	-Isrc/util
+	-Isrc/util -Ihiredis
 	
 libtraderapi_a_SOURCES=src/api/trader_trader_api.c
 libtraderapi_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
@@ -82,6 +86,17 @@ libxspeedtrader_so_SOURCES=src/api/trader_trader_api_xspeed.cpp\
 	src/api/XSpeedTraderHandler.cpp
 libxspeedtrader_so_CPPFLAGS=-fPIC -Ixspeed -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libxspeedtrader_so_LDFLAGS=-shared -fPIC
+
+# libIBtraderApiBase.so
+libIBtraderApiBase_so_SOURCES=src/api/IBTraderApiBase.cpp src/api/IBFutureContractFactory.cpp
+libIBtraderApiBase_so_CPPFLAGS=-Iib -Ihiredis -Isrc/cfg -Isrc/log -fPIC -std=c++11
+libIBtraderApiBase_so_LDFLAGS=-shared -fPIC
+
+libibmduser_so_SOURCES=src/api/trader_mduser_api_ib.cpp\
+	src/api/IBMduserHandler.cpp\
+	src/api/IBMduserApi.cpp
+libibmduser_so_CPPFLAGS=-fPIC -Iib -Isrc/svc -Ihiredis -Ilibevent -Ilibevent/compat/sys -std=c++11
+libibmduser_so_LDFLAGS=-shared -fPIC
 
 # exec
 # traderMduserCtp traderStrategyCtp
@@ -252,6 +267,22 @@ traderStrategyXSpeedSOP_LDADD=\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
         -Lxspeed -lxspeedtrader -lDFITCSECTraderApi
+
+# traderMduserIB	
+traderMduserIB_SOURCES=src/svc/trader_mduser_boardcast.c \
+        src/svc/trader_mduser_cnn.c \
+        src/svc/trader_mduser_svr.c
+
+traderMduserIB_CFLAGS=-DCTP -DIB\
+        -Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+        -Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserIB_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
+		-Lib/build -lTwsSocketClient \
+		-L. -libmduser -lIBtraderApiBase \
+        -ltradercmn -lmduserapi\
+        -Lctp -lctpmduser -lthostmduserapi_se
+
 
 testMduserClient_SOURCES=\
         src/test/trader_mduser_client_test.c\

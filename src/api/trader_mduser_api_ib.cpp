@@ -2,17 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-//#include "ThostFtdcUserApiDataType.h"
-//#include "ThostFtdcMdApi.h"
-
-//#include "CtpMduserHandler.h"
-
-#include "EWrapper.h"
-#include "EClientSocket.h"
-#include "EReader.h"
+#include <unistd.h>
 
 #include "IBMduserHandler.h"
+#include "IBFutureContractFactory.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +14,7 @@ extern "C" {
 #include "trader_data.h"
 #include "trader_mduser_api.h"
 #include "trader_mduser_api_ib.h"
-
+#include "trader_mduser_shm.h"
 
 static void trader_mduser_api_ib_start(trader_mduser_api* self);
 static void trader_mduser_api_ib_stop(trader_mduser_api* self);
@@ -29,10 +22,16 @@ static void trader_mduser_api_ib_login(trader_mduser_api* self);
 static void trader_mduser_api_ib_logout(trader_mduser_api* self);
 static void trader_mduser_api_ib_subscribe(trader_mduser_api* self, char* instrument);
 
-static void ib_mduser_on_tick_bid_price(void* arg, long tickerId, double price);
-static void ib_mduser_on_tick_ask_price(void* arg, long tickerId, double price);
-static void ib_mduser_on_tick_bid_size(void* arg, long tickerId, int size);
-static void ib_mduser_on_tick_ask_size(void* arg, long tickerId, int size);
+static void ib_mduser_on_tick_bid_price(void* arg, const char* instrument, double price);
+static void ib_mduser_on_tick_ask_price(void* arg, const char* instrument, double price);
+static void ib_mduser_on_tick_bid_size(void* arg, const char* instrument, int size);
+static void ib_mduser_on_tick_ask_size(void* arg, const char* instrument, int size);
+static void ib_mduser_on_connected(void* arg);
+static void ib_mduser_on_disconnected(void* arg);
+
+static void* trader_mduser_api_ib_tick_search(trader_mduser_api* self, const char* instrument);
+static int trader_mduser_api_ib_tick_cmp(void* data1, void* data2);
+
 
 static ib_mduser_api_cb* ib_mduser_api_cb_get();
 
@@ -61,40 +60,23 @@ void trader_mduser_api_ib_start(trader_mduser_api* self)
 {
   trader_mduser_api_ib* pImp = (trader_mduser_api_ib*)malloc(sizeof(trader_mduser_api_ib));
   self->pUserApi = (void*)pImp;
+  CIBMduserApi* pUserApi = CIBMduserApi::CreateIBMduserApi(self->pWorkspace);
   CIBMduserHandler* pHandler = new CIBMduserHandler(ib_mduser_api_cb_get(), (void*)self);
-  EReaderOSSignal* pOSSignal = new EReaderOSSignal(2000);
-  EClientSocket* pClientSocket = new EClientSocket(pHandler, pOSSignal);
 
-  char* host = "127.0.0.1";
-  int port = atoi(self->pAddress);
-  int clientId = atoi(self->pBrokerID);
+  trader_mduser_shm_header* pShmHeader = trader_mduser_shm_header_at();
+
+  pImp->pHandler = (void*)pHandler;
+  pImp->pMdApi = (void*)pUserApi;
+  pImp->pShmHeader = (void*)pShmHeader;
+
+  pImp->marketDataType = 3;
   
-
-  do{
-    //! [connect]
-    bool bRes = pClientSocket->eConnect( host, port, clientId, false);
-    //! [connect]
-
-    if (!bRes) {
-      printf( "Cannot connect to %s:%d clientId:%d\n", pClientSocket->host().c_str(), pClientSocket->port(), clientId);
-
-    }
-    printf( "Connected to %s:%d clientId:%d\n", pClientSocket->host().c_str(), pClientSocket->port(), clientId);
-    //! [ereader]
-    EReader* pReader = new EReader(pClientSocket, pOSSignal);
-    pReader->start();
-    //! [ereader]
-    pImp->pHandler = (void*)pHandler;
-    pImp->pSignal = (void*)pOSSignal;
-    pImp->pClient = (void*)pClientSocket;
-    pImp->pReader = (void*)pReader;
-
-    pImp->tickId = 0;
-    pImp->reqId = 0;
-
-    self->pUserApi = (void*)pImp;
-
-  }while(0);
+  // 连接交易服务器
+  pUserApi->RegisterFront(self->pAddress);
+  pUserApi->RegisterSpi(pHandler);
+  pUserApi->RegisterClientId(atoi(self->pBrokerID));
+  
+  pUserApi->Init();
   
   return ;
 }
@@ -107,34 +89,33 @@ void trader_mduser_api_ib_stop(trader_mduser_api* self)
     return ;
   }
 
-  EClientSocket* pClientSocket = (EClientSocket*)pImp->pClient;
+  CIBMduserApi* pUserApi = (CIBMduserApi*)pImp->pMdApi;
+  CIBMduserHandler* pHandler = (CIBMduserHandler*)pImp->pHandler;
 
-	pClientSocket->eDisconnect();
+  pUserApi->Release();
+  delete pHandler;
 
-	printf ( "Disconnected\n");
-
-   
-  if(pImp->pReader){
-    delete pImp->pReader;
-  }
-  if(pImp->pClient){
-    delete pImp->pClient;
-  }
-  if(pImp->pSignal){
-    delete pImp->pSignal;
-  }
-  if(pImp->pHandler){
-    delete pImp->pHandler;
-  }
-
+  trader_mduser_shm_header* pShmHeader = (trader_mduser_shm_header*)pImp->pShmHeader;
+  trader_mduser_shm_header_dt(pShmHeader);
   free(pImp);
+  self->pUserApi = (void*)NULL;
   
   return ;
 }
 
 void trader_mduser_api_ib_login(trader_mduser_api* self)
 {
+  trader_mduser_api_ib* pImp = (trader_mduser_api_ib*)self->pUserApi;
+  CIBMduserApi* pUserApi = (CIBMduserApi*)pImp->pMdApi;
+  int errNo = 0;
+  char* errMsg = NULL;
+  
+  sleep(2);
 
+  pUserApi->ReqMarketDataType(pImp->marketDataType);
+
+  trader_mduser_api_on_rsp_user_login(self, errNo, errMsg);
+  
   return ;
 }
 
@@ -147,10 +128,13 @@ void trader_mduser_api_ib_logout(trader_mduser_api* self)
 void trader_mduser_api_ib_subscribe(trader_mduser_api* self, char* instrument)
 {
   trader_mduser_api_ib* pImp = (trader_mduser_api_ib*)self->pUserApi;
+  
+  CIBMduserApi* pUserApi = (CIBMduserApi*)pImp->pMdApi;
 
-  EClientSocket* pClientSocket = (EClientSocket*)pImp->pClient;
+  char* contracts[1];
+  contracts[0] = instrument;
 
-	pClientSocket->reqMktData(pImp->tickId, CIBTraderHandler::getContractById(instrument), "", false, false, TagValueListSPtr());
+  pUserApi->SubMarketData(contracts, 1);
 
   return ;
 }
@@ -162,100 +146,110 @@ ib_mduser_api_cb* ib_mduser_api_cb_get()
     ib_mduser_on_tick_bid_price,
     ib_mduser_on_tick_ask_price,
     ib_mduser_on_tick_bid_size,
-    ib_mduser_on_tick_ask_size
+    ib_mduser_on_tick_ask_size,
+    ib_mduser_on_connected,
+    ib_mduser_on_disconnected
   };
 
   return &ib_mduser_api_cb_st;
 }
 
-ContractInfo::ContractInfo()
+void* trader_mduser_api_ib_tick_search(trader_mduser_api* self, const char* instrument)
 {
+  trader_tick tmp;
+  trader_mduser_api_ib* pImp = (trader_mduser_api_ib*)self->pUserApi;
+  trader_mduser_shm_header* pShmHeader = (trader_mduser_shm_header*)pImp->pShmHeader;
 
+  strncpy(tmp.InstrumentID, instrument, sizeof(tmp.InstrumentID));
+  return trader_mduser_shm_bsearch(pShmHeader, (void *)&tmp, trader_mduser_api_ib_tick_cmp);
 }
 
-
-void ContractInfo::setContractInfo(long tickerid, char* symbol, char* secType, char* currency, char* exchange, void* tickerdata)
+int trader_mduser_api_ib_tick_cmp(void* data1, void* data2)
 {
-  this.tickerId = tickerid;
-  this.contract.symbol = symbol;
-  this.contract.secType = secType;
-  this.contract.currency = currency;
-  this.contract.exchange = exchange;
-  this.tickerData = tickerdata;
+  return strncmp(((trader_tick*)data1)->InstrumentID, ((trader_tick*)data2)->InstrumentID, sizeof(((trader_tick*)NULL)->InstrumentID));
 }
 
-Contract ContractInfo::getContract()
+void ib_mduser_on_tick_bid_price(void* arg, const char* instrument, double price)
 {
-  return this.contract;
-}
+  trader_mduser_api* self = (trader_mduser_api*)arg;
 
-TickerId ContractInfo::getTickerId()
-{
-  return this.tickerId;
-}
-
-void* ContractInfo::getTickerData()
-{
-  return this.tickerData;
-}
-
-
-static ContractMap* ContractMap::getInstance()
-{
-  if(!instance){
-    instance = new ContractMap();
-    instance.load();
+  trader_tick* pTick = (trader_tick*)trader_mduser_api_ib_tick_search(self, instrument);
+  if(NULL == pTick){
+    return ;
   }
-
-  return instance;
+  pTick->BidPrice1 = price;
+  return ;
 }
 
-
-bool ContractMap::getContractInfo(char* instrument, ContractInfo& contractInfo)
+void ib_mduser_on_tick_ask_price(void* arg, const char* instrument, double price)
 {
-  bool ret = false;
-  int i = 0;
-  for(i = 0; i < this.number; i++){
-    Contract contract = this.contracts[i].getContract();
-    if(0 == strcmp(instrument, contract.symbol.c_str())){
-      contractInfo = this.contracts[i];
-      return true;
-    }
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+
+  trader_tick* pTick = (trader_tick*)trader_mduser_api_ib_tick_search(self, instrument);
+  if(NULL == pTick){
+    return ;
   }
+  pTick->AskPrice1 = price;
+  return ;
+}
+
+void ib_mduser_on_tick_bid_size(void* arg, const char* instrument, int size)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+
+  trader_tick* pTick = (trader_tick*)trader_mduser_api_ib_tick_search(self, instrument);
+  if(NULL == pTick){
+    return ;
+  }
+  pTick->BidVolume1 = size;
+  return ;
+}
+
+void ib_mduser_on_tick_ask_size(void* arg, const char* instrument, int size)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+
+  trader_tick* pTick = (trader_tick*)trader_mduser_api_ib_tick_search(self, instrument);
+  if(NULL == pTick){
+    return ;
+  }
+  pTick->AskVolume1 = size;
+  return ;
+}
+
+void ib_mduser_on_connected(void* arg)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+  int errNo = 0;
+  char* errMsg = NULL;
+
+  trader_mduser_api_on_front_connected(self);
+}
+
+void ib_mduser_on_disconnected(void* arg)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+  int errNo = 0;
+  char* errMsg = NULL;
   
-  return ret;
+  trader_mduser_api_on_front_disconnected(self, errNo, errMsg);
 }
 
-void* ContractMap::getTickerData(TickerId tickerId)
+void ib_future_contract_factory_init(const char* config_file, const char* section)
 {
-  return this.contracts[tickerId - TICKER_ID_BASE].getTickerData();
-}
+  mduser_instrument* ppInstruments;
+  int nCount = 0;
 
-void ContractMap::addContractInfo(int index, char* symbol, char* secType, char* currency, char* exchange, void* tickerdata)
-{
-  ContractInfo contractInfo = this.contracts[index];
-  contractInfo.setContractInfo(TICKER_ID_BASE + index, symbol, secType, currency, exchange, tickerdata);
-  this.number++;
+  nCount = trader_mduser_api_load_instruments(config_file, section, &ppInstruments);
+  if(nCount < 0){
+    return ;
+  }
 
-}
-
-ContractMap::ContractMap(int default_size = 8)
-{
-  this.number = 0;
-  this.size = default_size;
-  this.contracts = new ContractInfo[this.size];
-}
-
-ContractMap::~ContractMap()
-{
-  delete [] contracts;
-}
-
-void ContractMap::load(const char* contract_cfg)
-{
-
+  IBFutureContractFactory* factory = IBFutureContractFactory::GetInstance();
+  factory->Init(nCount, (void*)ppInstruments);
+  
+  free(ppInstruments);
 
 }
-
 
 

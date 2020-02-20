@@ -7,10 +7,10 @@ struct IBFutureContractDef{
   long tickId;
 	char symbol[32];
   char secType[4];
-	char lastTradeDateOrContractMonth[8];
-	char exchange[8];
+	char exchange[16];
 	char currency[4];
 	char localSymbol[32];
+  char instrument[64];
 };
 
 class IBFutureContractFactory
@@ -18,12 +18,11 @@ class IBFutureContractFactory
 public:
   static IBFutureContractFactory* GetInstance();
   static void Release();
-private:
-  static IBFutureContractFactory* instance;
   
 public:
-  int Init(const char* configFile);
+  int Init(int count, void* instruments);
   IBFutureContract* Search(const char* contract);
+  IBFutureContract* Search(long tick_id);
   
 private:
   IBFutureContractFactory();

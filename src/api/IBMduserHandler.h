@@ -2,6 +2,9 @@
 #define _IB_MDUSER_HANDLER_H_
 
 #include "EWrapper.h"
+#include "IBMduserApi.h"
+#include "IBFutureContractFactory.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -9,10 +12,12 @@ extern "C" {
 typedef struct ib_mduser_api_cb_def ib_mduser_api_cb;
 
 struct ib_mduser_api_cb_def{
-  void (*xOnTickBidPrice)(void* arg, long tickerId, double price);
-  void (*xOnTickAskPrice)(void* arg, long tickerId, double price);
-  void (*xOnTickBidSize)(void* arg, long tickerId, int size);
-  void (*xOnTickAskSize)(void* arg, long tickerId, int size);
+  void (*xOnTickBidPrice)(void* arg, const char* instrument, double price);
+  void (*xOnTickAskPrice)(void* arg, const char* instrument, double price);
+  void (*xOnTickBidSize)(void* arg, const char* instrument, int size);
+  void (*xOnTickAskSize)(void* arg, const char* instrument, int size);
+  void (*xOnFrontConnected)(void* arg);
+  void (*xOnFrontDisconnected)(void* arg);
 };
 #ifdef __cplusplus
 }
@@ -41,6 +46,7 @@ public:
 private:
   ib_mduser_api_cb* m_cb;
   void * m_parent;
+  IBFutureContractFactory* m_contractFactory;
 };
 #endif //_IB_MDUSER_HANDLER_H_
 

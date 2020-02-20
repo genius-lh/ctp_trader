@@ -22,8 +22,13 @@
 #include "trader_mduser_boardcast.h"
 
 #include "trader_mduser_svr.h"
+#ifdef IB
+#include "trader_mduser_api_ib.h"
+#endif
 
 #define MDUSER_INSTRUMENTS "MDUSER.INSTRUMENTS"
+
+#define MDUSER_SHM_SIZE 256
 
 static int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[]);
 static int trader_mduser_svr_run(trader_mduser_svr* self);
@@ -78,12 +83,12 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
 
 #ifdef XSPEED_STOCK
 #include "trader_mduser_api_xspeed.h"
-    api_imp = trader_mduser_api_xspeed_stock_method_get();
+  api_imp = trader_mduser_api_xspeed_stock_method_get();
 #endif
 
 #ifdef XSPEED
 #include "trader_mduser_api_xspeed.h"
-      api_imp = trader_mduser_api_xspeed_sop_method_get();
+  api_imp = trader_mduser_api_xspeed_sop_method_get();
 #endif
 
   self->pCnnMain->pMethod->xInit(self->pCnnMain, self->pBase,
@@ -91,6 +96,18 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
     trader_mduser_svr_tick_cb, self,
     self->instruments, self->instrumentNumber,
     api_imp);
+
+#ifdef IB
+#include "trader_mduser_api_ib.h"
+
+  api_imp = trader_mduser_api_ib_method_get();
+  self->pCnnIB->pMethod->xInit(self->pCnnIB, self->pBase,
+    self->backupBrokerId, self->backupUser, self->backupPasswd, self->backupAddr, self->backupWorkspace,
+    trader_mduser_svr_tick_cb, self,
+    self->instruments, self->instrumentNumber,
+    api_imp);
+ #endif
+
 
   if(!self->pCnnBackup){
     return 0;
@@ -133,7 +150,7 @@ int trader_mduser_svr_init_instruments(trader_mduser_svr* self)
       nRet = 0;
       self->instrumentNumber = reply->elements;
       self->instruments = (trader_instrument_id_type*)malloc(self->instrumentNumber * sizeof(trader_instrument_id_type));
-      self->ticks = (trader_tick*)malloc(self->instrumentNumber * sizeof(trader_tick));
+      self->ticks = (trader_tick*)trader_mduser_shm_header_calloc(self->pShmHdr, self->instrumentNumber);
       for(i = 0; i < self->instrumentNumber; i++){
         r = reply->element[i];
         strncpy(self->instruments[i], r->str, sizeof(trader_instrument_id_type));
@@ -239,6 +256,11 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   self->pSigIntEvt = evsignal_new(self->pBase, SIGINT, trader_mduser_svr_signal_cb, (void *)self);
   CMN_ASSERT(self->pSigIntEvt);
   
+  CMN_DEBUG("self->pShmHdr\n");
+  trader_mduser_shm_key_file(self->redisInstrumentKey);
+  self->pShmHdr = trader_mduser_shm_header_init(sizeof(trader_tick), MDUSER_SHM_SIZE);
+  CMN_ASSERT(self->pShmHdr);
+
   CMN_DEBUG("self->pSigTermEvt\n");
   self->pSigTermEvt = evsignal_new(self->pBase, SIGTERM, trader_mduser_svr_signal_cb, (void *)self);
   CMN_ASSERT(self->pSigTermEvt);
@@ -246,6 +268,15 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   CMN_DEBUG("self->pCnnMain\n");
   self->pCnnMain = trader_mduser_cnn_new();
   CMN_ASSERT(self->pCnnMain);
+
+#ifdef IB
+  CMN_DEBUG("self->pCnnIB\n");
+  self->pCnnIB = trader_mduser_cnn_new();
+  CMN_ASSERT(self->pCnnIB);
+
+  // 初始化合约工厂
+  ib_future_contract_factory_init(argv[1], "RUN_CONFIG");
+#endif  
   
   CMN_DEBUG("self->pCnnBackup\n");
   self->pCnnBackup = (trader_mduser_cnn*)NULL;
@@ -253,6 +284,7 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
     self->pCnnBackup = trader_mduser_cnn_new();
     CMN_ASSERT(self->pCnnBackup);
   }
+
 
   CMN_DEBUG("self->pBoardcast\n");
   self->pBoardcast = trader_mduser_boardcast_new();
@@ -296,9 +328,21 @@ int trader_mduser_svr_run(trader_mduser_svr* self)
   if(self->pCnnBackup){
     self->pCnnBackup->pMethod->xStart(self->pCnnBackup);
   }
-  
+
+#ifdef IB
+  if(self->pCnnIB){
+    self->pCnnIB->pMethod->xStart(self->pCnnIB);
+  }
+#endif
+
   nRet = event_base_dispatch(self->pBase);
 
+#ifdef IB
+  if(self->pCnnIB){
+    self->pCnnIB->pMethod->xStop(self->pCnnIB);
+  }
+#endif
+  
   if(self->pCnnMain){
     self->pCnnMain->pMethod->xStop(self->pCnnMain);
   }
@@ -367,13 +411,20 @@ void trader_mduser_svr_free(trader_mduser_svr* self)
     }
     
     if(self->ticks){
-      free(self->ticks);
+      self->ticks = (trader_tick*)NULL;
+      trader_mduser_shm_header_dt(self->pShmHdr);
     }
     
     if(self->pCnnMain){
       trader_mduser_cnn_free(self->pCnnMain);
     }
-    
+
+#ifdef IB
+    if(self->pCnnIB){
+      trader_mduser_cnn_free(self->pCnnIB);
+    }
+#endif
+
     if(self->pCnnBackup){
       trader_mduser_cnn_free(self->pCnnBackup);
     }

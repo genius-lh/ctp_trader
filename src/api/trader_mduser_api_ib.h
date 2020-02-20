@@ -10,58 +10,20 @@ extern "C" {
 
 typedef struct trader_mduser_api_ib_def  trader_mduser_api_ib;
 struct trader_mduser_api_ib_def {
+  void* pMdApi;
   void* pHandler;
-	//! [socket_declare]
-	void* pSignal;
-	void* pClient;
-	void* pReader;
-	//! [socket_declare]
+  void* pShmHeader;
 
-  void* contractMap;
-
-  long tickId;
-  int reqId;
+  int marketDataType;
 };
 
 extern trader_mduser_api_method* trader_mduser_api_ib_method_get();
 
+extern void ib_future_contract_factory_init(const char* config_file, const char* section);
+
 #ifdef __cplusplus
 }
 #endif
-
-#include "EWraper.h"
-#include "Contract.h"
-
-#include<vector>
-
-typedef struct contract_info
-{
-  Contract contract;
-  TickerId tickerId;
-  void* tickerData;
-}ContractInfo;
-
-class ContractMap
-{
-public:
-  static ContractMap* getInstance();
-  bool getContractInfo(char* instrument, ContractInfo& contractInfo);
-  void* getTickerData(TickerId tickerId);
-  void addContractInfo(long tickerId, char* symbol, char* secType, char* currency, char* exchange, void* tickerdata);
-  
-private:
-  static ContractMap* instance = NULL;
-  const int TICKER_ID_BASE = 1000;
-private:
-  ContractMap();
-  ~ContractMap();
-
-  void load();
-
-  vector<ContractInfo*> contracts;
-};
-
-
 
 #endif //_TRADER_MDUSER_API_IB_H_
 

@@ -56,8 +56,6 @@ void CIbTraderApiBase::Init()
   char host[256];
   int port = 0;
 
-  m_contractFactory->Init(m_configFilename.c_str());
-
   ret = PraseUrl(this->m_szFrontAddress.c_str(), host, &port);
   if(ret < 0){
     printf( "PraseUrl %s failed!\n", this->m_szFrontAddress.c_str());
@@ -111,14 +109,14 @@ void CIbTraderApiBase::RegisterFront(const char *pszFrontAddress)
   m_szFrontAddress = pszFrontAddress;
 }
 
-void CIbTraderApiBase::RegisterConfig(const char *config)
-{
-  m_configFilename = config;
-}
-
 IBFutureContract* CIbTraderApiBase::GetFutureContract(const char* contract)
 {
   return m_contractFactory->Search(contract);
+}
+
+IBFutureContract* CIbTraderApiBase::GetFutureContract(long ticker_id)
+{
+  return m_contractFactory->Search(ticker_id);
 }
 
 EClientSocket* CIbTraderApiBase::Api()
