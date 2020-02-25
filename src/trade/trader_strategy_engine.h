@@ -10,6 +10,8 @@
 
 #include "trader_strategy_limit.h"
 
+#include "trader_mduser_shm.h"
+
 #include <event2/util.h>
 #include <event2/event.h>
 
@@ -42,6 +44,11 @@ struct trader_strategy_engine_def {
   // 交易API
   trader_trader_api* pCtpTraderApi;
 
+  // IB API
+#ifdef IB
+  trader_trader_api* pIBTraderApi;
+#endif
+
   // 数据库API
   trader_db* pTraderDb;
   
@@ -51,6 +58,9 @@ struct trader_strategy_engine_def {
 
   // 持仓信息
   trader_strategy_limit* pTraderStrategyLimit;
+
+  // 共享内存
+  trader_mduser_shm_header* pShmHdr;
   
   // 外部接口
   trader_strategy_engine_method* pMethod;

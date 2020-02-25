@@ -6,6 +6,7 @@
 #include <event2/util.h>
 
 #include "cmn_util.h"
+#include "hiredis.h"
 
 #include "trader_trader_api.h"
 
@@ -109,7 +110,7 @@ void trader_trader_api_on_front_disconnected(trader_trader_api* self, int nReaso
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
 
-void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, char* err_msg)
+void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPERROR;
@@ -302,6 +303,64 @@ void trader_trader_api_on_rtn_instrument_status(trader_trader_api* self, instrum
   memcpy(&(oEvent.Body.InstrumentStatusRsp), status, sizeof(oEvent.Body.InstrumentStatusRsp));
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 
+}
+
+int trader_trader_api_load_instruments(const char* configFile, const char* section, mduser_instrument** insts)
+{
+  char pRedisIp[14+1];
+  int nRedisPort = 0;
+  char pInstrumentKey[32];
+  
+  int nCount = 0;
+  mduser_instrument* ppInstruments;
+  
+  redisContext* pRedisCtx;
+  
+  redisReply* reply;
+  redisReply* r;
+  
+  int nRet = -1;
+  int i;
+
+  
+  // 读取配置文件
+  nRet = glbPflGetString(section, "REDIS_ADDR", configFile, pRedisIp);
+  nRet = glbPflGetInt(section, "REDIS_PORT", configFile, &nRedisPort);
+  nRet = glbPflGetString(section, "REDIS_INST_KEY", configFile, pInstrumentKey);
+
+  struct timeval tv = {
+    5, 0
+  };
+  
+  pRedisCtx = redisConnectWithTimeout(pRedisIp, nRedisPort, tv);
+  if(!pRedisCtx){
+    return -1;
+  }
+
+  // 查询key列表
+  
+  reply = (redisReply*)redisCommand(pRedisCtx, "SMEMBERS %s", pInstrumentKey);
+  
+  do {
+    if(REDIS_REPLY_ARRAY == reply->type){
+      nRet = 0;
+      nCount = reply->elements;
+      ppInstruments = (mduser_instrument*)malloc(nCount * sizeof(mduser_instrument));
+      for(i = 0; i < nCount; i++){
+        r = reply->element[i];
+        strncpy(ppInstruments[i], r->str, sizeof(mduser_instrument));
+      }
+      break;
+    }
+  }while(0);
+  
+  freeReplyObject(reply);
+  
+  redisFree(pRedisCtx);
+
+  *insts = ppInstruments;
+
+  return nCount;
 }
 
 

@@ -17,6 +17,8 @@ extern "C" {
 #include "trader_trader_api_ib.h"
 #include "cmn_log.h"
 
+#include "trader_order_mapper.h"
+
 static int trader_trader_api_ib_get_trading_day(trader_trader_api* self, char* tradingday);
 static int trader_trader_api_ib_get_max_order_local_id(trader_trader_api* self, long* local_id);
 
@@ -33,9 +35,34 @@ static int trader_trader_api_ib_qry_user_investor(trader_trader_api* self);
 static int trader_trader_api_ib_qry_investor_position(trader_trader_api* self);
 static int trader_trader_api_ib_qry_trading_account(trader_trader_api* self);
 
+static ib_trader_api_cb* ib_trader_api_cb_get();
+
+static void ib_trader_on_front_connected(void* arg);
+static void ib_trader_on_front_disconnected(void* arg);
+static void ib_trader_on_position(void* arg, const char* account, const char* contract, int position, double avg_cost);
+static void ib_trader_on_order(void* arg, long orderId, const char* status, int filled, int remaining,
+   double avgFillPrice, int permId, double lastFillPrice, int clientId, double mktCapPrice);
+static void ib_trader_on_next_valid_id(void* arg, long orderId);
+static void ib_trader_on_error(void* arg, int errorCode, const char* errorMsg);
+
+
 #ifdef __cplusplus
 }
 #endif
+
+ib_trader_api_cb* ib_trader_api_cb_get()
+{
+  static ib_trader_api_cb ib_trader_api_cb_st = {
+    ib_trader_on_front_connected,
+    ib_trader_on_front_disconnected,
+    ib_trader_on_position,
+    ib_trader_on_order,
+    ib_trader_on_next_valid_id,
+    ib_trader_on_error
+  };
+
+  return &ib_trader_api_cb_st;
+}
 
 trader_trader_api_method* trader_trader_api_ib_method_get()
 {
@@ -66,9 +93,8 @@ trader_trader_api_method* trader_trader_api_ib_method_get()
 int trader_trader_api_ib_get_trading_day(trader_trader_api* self, char* tradingday)
 {
   trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-
-  strcpy(tradingday, pTraderApi->GetTradingDay());
+  //TODO
+  
   return 0;
 }
 
@@ -81,30 +107,23 @@ int trader_trader_api_ib_get_max_order_local_id(trader_trader_api* self, long* l
 
 void trader_trader_api_ib_start(trader_trader_api* self)
 {
-  CUstpFtdcTraderApi* pTraderApi = CUstpFtdcTraderApi::CreateFtdcTraderApi(self->pWorkspace);
-  CFemasTraderHandler* pTraderHandler = new CFemasTraderHandler(ib_trader_api_cb_get(), (void*)self);
-  
   trader_trader_api_ib* pImp = (trader_trader_api_ib*)malloc(sizeof(trader_trader_api_ib));
-  pImp->pTraderApi = (void*)pTraderApi;
-  pImp->pTraderHandler = (void*)pTraderHandler;
-
-  pImp->nTraderRequestID = 0;
-
   self->pUserApi = (void*)pImp;
-  
-  self->timeCondition = USTP_FTDC_TC_GFD;
-  self->hedgeFlag = USTP_FTDC_CHF_Speculation;
-  
-  pTraderApi->SubscribePrivateTopic(USTP_TERT_RESUME);
+  CIBTraderApi* pUserApi = CIBTraderApi::CreateIBTraderApi(self->pWorkspace);
+  CIBTraderHandler* pHandler = new CIBTraderHandler(ib_trader_api_cb_get(), (void*)self);
 
-  pTraderApi->SubscribePublicTopic(USTP_TERT_RESUME);
+  trader_order_mapper* pTraderOrderMapper = trader_order_mapper_new();
   
-  // 交易
-  pTraderApi->RegisterSpi(pTraderHandler);
-  pTraderApi->RegisterFront(self->pAddress);
+  pImp->pTraderHandler = (void*)pHandler;
+  pImp->pTraderApi = (void*)pUserApi;
+  pImp->pTraderOrderMapper = (void*)pTraderOrderMapper;
   
   // 连接交易服务器
-  pTraderApi->Init();
+  pUserApi->RegisterFront(self->pAddress);
+  pUserApi->RegisterSpi(pHandler);
+  pUserApi->RegisterClientId(atoi(self->pBrokerID));
+  
+  pUserApi->Init();
 
   return;
 
@@ -113,48 +132,40 @@ void trader_trader_api_ib_start(trader_trader_api* self)
 void trader_trader_api_ib_stop(trader_trader_api* self)
 {
   trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-  CFemasTraderHandler* pTraderHandler = (CFemasTraderHandler*)pImp->pTraderHandler;
+  if(!pImp){
+    printf ( "ERROR! pImp == NULL \n");
+    return ;
+  }
+
+  CIBTraderApi* pUserApi = (CIBTraderApi*)pImp->pTraderApi;
+  CIBTraderHandler* pHandler = (CIBTraderHandler*)pImp->pTraderHandler;
+
+  pUserApi->Release();
+  delete pHandler;
   
-  pTraderApi->RegisterSpi(NULL);
-  pTraderApi->Release();
-  delete pTraderHandler;
-  
+  trader_order_mapper* pTraderOrderMapper = (trader_order_mapper*)pImp->pTraderOrderMapper;
+  trader_order_mapper_free(pTraderOrderMapper);
+
   free(pImp);
   self->pUserApi = (void*)NULL;
   
-  return;
+  return ;
 }
 
 void trader_trader_api_ib_login(trader_trader_api* self)
 {
-  trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-  CUstpFtdcDSUserInfoField reqDSUserInfoField;
+  int errNo = 0;
+  char* errMsg = NULL;
   
-  memset(&reqDSUserInfoField, 0, sizeof(reqDSUserInfoField));
-  strncpy(reqDSUserInfoField.AppID, self->pAppID, sizeof(reqDSUserInfoField.AppID));
-  strncpy(reqDSUserInfoField.AuthCode, self->pAuthCode, sizeof(reqDSUserInfoField.AuthCode));
-  reqDSUserInfoField.EncryptType = '1';
+  sleep(2);
 
-  CMN_DEBUG("reqDSUserInfoField.AppID[%s]\n", reqDSUserInfoField.AppID);
-  CMN_DEBUG("reqDSUserInfoField.AuthCode[%s]\n", reqDSUserInfoField.AuthCode);
-
-  pTraderApi->ReqDSUserCertification(&reqDSUserInfoField, pImp->nTraderRequestID++);
+  trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+  
+  return ;
 }
 
 void trader_trader_api_ib_logout(trader_trader_api* self)
 {
-  trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-
-  CUstpFtdcReqUserLogoutField userLogoutField;
-  
-  memset(&userLogoutField, 0, sizeof(userLogoutField));
-  strcpy(userLogoutField.BrokerID, self->pBrokerID);
-  strcpy(userLogoutField.UserID, self->pUser);
-  pTraderApi->ReqUserLogout(&userLogoutField, pImp->nTraderRequestID++);
-
   return;
 }
 
@@ -162,156 +173,263 @@ void trader_trader_api_ib_logout(trader_trader_api* self)
 int trader_trader_api_ib_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
 {
   trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-
-  CUstpFtdcInputOrderField inputOrderField;
-
-  memset(&inputOrderField, 0, sizeof(inputOrderField));
-	///经纪公司代码
-	strcpy(inputOrderField.BrokerID, self->pBrokerID);
-	///交易所代码
-	strcpy(inputOrderField.ExchangeID, "CFFEX");
-	///投资者代码
-	strcpy(inputOrderField.InvestorID, pImp->sInvestorID);
-	///合约代码
-	strcpy(inputOrderField.InstrumentID, inst);
-	///报单引用
-	strcpy(inputOrderField.UserOrderLocalID, local_id);
-	///用户代码
-	strcpy(inputOrderField.UserID, self->pUser);
-	///报单价格条件
-	inputOrderField.OrderPriceType = USTP_FTDC_OPT_LimitPrice;
-	///买卖方向
-	inputOrderField.Direction = buy_sell;
-	///组合开平标志
-	inputOrderField.OffsetFlag = open_close;
-	///组合投机套保标志
-	inputOrderField.HedgeFlag = self->hedgeFlag;
-	///价格
-	inputOrderField.LimitPrice = price;
-	///数量
-	inputOrderField.Volume = vol;
-	///有效期类型
-	inputOrderField.TimeCondition = self->timeCondition;
-	///成交量类型
-	inputOrderField.VolumeCondition = USTP_FTDC_VC_AV;
-	///最小成交量
-	inputOrderField.MinVolume = 1;
-	///强平原因
-	inputOrderField.ForceCloseReason = USTP_FTDC_FCR_NotForceClose;
-	///自动挂起标志
-	inputOrderField.IsAutoSuspend = 0;
-
-  pTraderApi->ReqOrderInsert(&inputOrderField, pImp->nTraderRequestID++);
-
+  CIBTraderApi* pTraderApi = (CIBTraderApi*)pImp->pTraderApi;
   
+  trader_order_mapper* pTraderOrderMapper = (trader_order_mapper*)pImp->pTraderOrderMapper;
+
+  long userLocalOrderId = atol(local_id);
+  long sysOrderId = userLocalOrderId / 10;
+
+  pTraderOrderMapper->pMethod->xInsertOrder(pTraderOrderMapper, inst, sysOrderId, userLocalOrderId, buy_sell, open_close, vol);
+
+  CIBInputOrderField inputOrderField;
+  memset(&inputOrderField, 0, sizeof(inputOrderField));
+  strncpy(inputOrderField.InstrumentID, inst, sizeof(inputOrderField.InstrumentID));
+  inputOrderField.LimitPrice = price;
+  inputOrderField.Direction = buy_sell;
+  inputOrderField.UserOrderLocalID = sysOrderId;
+  inputOrderField.Volume = vol;
+
+  pTraderApi->ReqOrderInsert(&inputOrderField);
+
+  return 0;
 }
 
 int trader_trader_api_ib_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
 {
   trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+  CIBTraderApi* pTraderApi = (CIBTraderApi*)pImp->pTraderApi;
 
-  CUstpFtdcOrderActionField inputOrderActionField;
-  
+  CIBOrderActionField inputOrderActionField;
   memset(&inputOrderActionField, 0, sizeof(inputOrderActionField));
-
-	///经纪公司代码
-	strcpy(inputOrderActionField.BrokerID, self->pBrokerID);
-	///投资者代码
-	strcpy(inputOrderActionField.InvestorID, pImp->sInvestorID);
-	///报单操作引用
-	strcpy(inputOrderActionField.UserOrderActionLocalID, local_id);
-	///报单引用
-	strcpy(inputOrderActionField.UserOrderLocalID, org_local_id);
-	///前置编号
-	//inputOrderActionField.FrontID = front_id;
-	///会话编号
-	//inputOrderActionField.SessionID = session_id;
-	///交易所代码
-	strcpy(inputOrderActionField.ExchangeID, "CFFEX");
-	///操作标志
-	inputOrderActionField.ActionFlag = USTP_FTDC_AF_Delete;
-	///用户代码
-	strcpy(inputOrderActionField.UserID, self->pUser);
   
-  pTraderApi->ReqOrderAction(&inputOrderActionField, pImp->nTraderRequestID++);
+  long userLocalOrderId = atol(org_local_id);
+  long sysOrderId = userLocalOrderId / 10;
 
+	///报单引用
+	inputOrderActionField.UserOrderActionLocalID = sysOrderId;
+  
+  pTraderApi->ReqOrderAction(&inputOrderActionField);
+
+  return 0;
 }
 
  
 int trader_trader_api_ib_qry_instrument(trader_trader_api* self)
 {
-  trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-
-  CUstpFtdcQryInstrumentField qryInstrumentField;
-  
-  memset(&qryInstrumentField, 0, sizeof(qryInstrumentField));
-	///合约代码
-	//TUstpFtdcInstrumentIDType	InstrumentID;
-	///交易所代码
-	//TUstpFtdcExchangeIDType	ExchangeID;
-	strcpy(qryInstrumentField.ExchangeID, "CFFEX");
-
-  pTraderApi->ReqQryInstrument(&qryInstrumentField, pImp->nTraderRequestID++);
-
+  return 0;
 }
 
 int trader_trader_api_ib_qry_user_investor(trader_trader_api* self)
 {
   trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+  CIBTraderApi* pTraderApi = (CIBTraderApi*)pImp->pTraderApi;
 
-  CUstpFtdcQryUserInvestorField qryInvestorField;
+  //TODO
 
-  memset(&qryInvestorField, 0, sizeof(qryInvestorField));
-	///经纪公司代码
-	strcpy(qryInvestorField.BrokerID, self->pBrokerID);
-	///用户代码
-	strcpy(qryInvestorField.UserID, self->pUser);  
-  
-  pTraderApi->ReqQryUserInvestor(&qryInvestorField, pImp->nTraderRequestID++);
-
+  return 0;
 }
 
 int trader_trader_api_ib_qry_investor_position(trader_trader_api* self)
 {
   trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+  CIBTraderApi* pTraderApi = (CIBTraderApi*)pImp->pTraderApi;
 
-  CUstpFtdcQryInvestorPositionField qryInvestorPositionField;
-  memset(&qryInvestorPositionField, 0, sizeof(qryInvestorPositionField));
+  pTraderApi->ReqPositions();
 
-	///经纪公司代码
-	strcpy(qryInvestorPositionField.BrokerID, self->pBrokerID);
-	///用户代码
-	strcpy(qryInvestorPositionField.UserID, self->pUser);  
-	///投资者代码
-	strcpy(qryInvestorPositionField.InvestorID, pImp->sInvestorID);
-	///合约代码
-	//TUstpFtdcInstrumentIDType	InstrumentID;
-
-  pTraderApi->ReqQryInvestorPosition(&qryInvestorPositionField, pImp->nTraderRequestID++);
-
+  return 0;
 }
 
 int trader_trader_api_ib_qry_trading_account(trader_trader_api* self)
 {
   trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-  
-  CUstpFtdcQryInvestorAccountField qryTradingAccountField;
-  memset(&qryTradingAccountField, 0, sizeof(qryTradingAccountField));
+  CIBTraderApi* pTraderApi = (CIBTraderApi*)pImp->pTraderApi;
 
-	///经纪公司代码
-	strcpy(qryTradingAccountField.BrokerID, self->pBrokerID);
-	///用户代码
-	strcpy(qryTradingAccountField.UserID, self->pUser);  
-	///投资者代码
-	strcpy(qryTradingAccountField.InvestorID, pImp->sInvestorID);
+  //TODO
 
-  pTraderApi->ReqQryInvestorAccount(&qryTradingAccountField, pImp->nTraderRequestID++);
+  return 0;
+}
+
+void ib_trader_on_front_connected(void* arg)
+{
+  trader_trader_api* self = (trader_trader_api*)arg;
+  int errNo = 0;
+  char* errMsg = NULL;
+
+  trader_trader_api_on_front_connected(self);
 
 }
+
+void ib_trader_on_front_disconnected(void* arg)
+{
+  trader_trader_api* self = (trader_trader_api*)arg;
+  int errNo = 0;
+
+  trader_trader_api_on_front_disconnected(self, errNo);
+}
+
+void ib_trader_on_position(void* arg, const char* account, const char* contract, int position, double avg_cost)
+{
+  trader_trader_api* self = (trader_trader_api*)arg;
+  trader_position traderPosition;
+  memset(&traderPosition, 0, sizeof(traderPosition));
+  
+  int errNo = 0;
+  char* errMsg = NULL;
+  
+  strcpy(traderPosition.InstrumentID, contract);
+  traderPosition.PositionDate = '1';
+  traderPosition.PosiDirection = TRADER_POSITION_LONG;
+  traderPosition.YdPosition = position;
+  if(position < 0){
+    traderPosition.PosiDirection = TRADER_POSITION_SHORT;
+    traderPosition.YdPosition = -position;
+  }
+  traderPosition.IsSHFE = 0;
+  
+  traderPosition.TodayPosition = 0;
+  traderPosition.Position = traderPosition.YdPosition;
+  traderPosition.LongFrozen = 0;
+  
+  trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, 0);
+
+  return ;
+}
+
+void ib_trader_on_order(void* arg, long orderId, const char* status, int filled, int remaining,
+   double avgFillPrice, int permId, double lastFillPrice, int clientId, double mktCapPrice)
+{
+  trader_trader_api* self = (trader_trader_api*)arg;
+  trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;  
+  trader_order_mapper* pTraderOrderMapper = (trader_order_mapper*)pImp->pTraderOrderMapper;
+  trader_order_view* orderView;
+  int nRet = 0;
+  trader_trade traderTrade;
+  trader_order traderOrder;
+
+  nRet = pTraderOrderMapper->pMethod->xFindOrder(pTraderOrderMapper, orderId, &orderView);
+  if(nRet < 0){
+    // not found!
+    return ;
+  }
+
+  if(filled > orderView->filled){
+    memset(&traderTrade, 0, sizeof(traderTrade));
+    ///合约代码
+    strncpy(traderTrade.InstrumentID, orderView->contract, sizeof(traderTrade.InstrumentID));
+    ///本地报单编号
+    snprintf(traderTrade.UserOrderLocalID, sizeof(traderTrade.UserOrderLocalID), "%08ld", orderView->localUserOrderId);
+    ///交易日
+    //strcpy(traderTrade.TradingDay, pTrade->TradingDay);
+    strcpy(traderTrade.TradingDay, "");
+    ///成交时间
+    //strcpy(traderTrade.TradeTime, pTrade->TradeTime);
+    strcpy(traderTrade.TradeTime, "");
+    ///买卖方向
+    traderTrade.Direction = orderView->direction;
+    ///开平标志
+    traderTrade.OffsetFlag = orderView->offsetFlag;
+    ///成交价格
+    traderTrade.TradePrice = lastFillPrice;
+    ///成交数量
+    traderTrade.TradeVolume = (filled - orderView->filled);
+    //成交编号
+    snprintf(traderTrade.TradeID, sizeof(traderTrade.TradeID), "%d", permId);
+
+    trader_trader_api_on_rtn_trade(self, &traderTrade);
+  }
+
+  do{
+    memset(&traderOrder, 0, sizeof(traderOrder));
+    ///交易所代码
+    strcpy(traderOrder.ExchangeID, "IB");
+    ///系统报单编号
+    snprintf(traderOrder.OrderSysID, sizeof(traderOrder.OrderSysID), "%ld", orderId);
+    // 合约代码
+    strncpy(traderOrder.InstrumentID, orderView->contract, sizeof(traderOrder.InstrumentID));
+    // 本地报单编号
+    snprintf(traderOrder.UserOrderLocalID, sizeof(traderOrder.UserOrderLocalID), "%08ld", orderView->localUserOrderId);
+    // 买卖
+    traderOrder.Direction = orderView->direction;
+    // 开平
+    traderOrder.OffsetFlag = orderView->offsetFlag;
+    ///投机套保标志
+    traderOrder.HedgeFlag = '0';
+    // 报单价格
+    traderOrder.LimitPrice = avgFillPrice;
+    // 报单手数
+    traderOrder.VolumeOriginal = orderView->total;
+    // 成交手数
+    traderOrder.VolumeTraded = filled;
+    // 订单状态
+    if(0 == strcmp("ApiPending", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_UNKNOW;
+    }else if(0 == strcmp("PendingSubmit", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_UNKNOW;
+    }else if(0 == strcmp("PendingCancel", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_UNKNOW;
+    }else if(0 == strcmp("PreSubmitted", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_BEGIN;
+    }else if(0 == strcmp("Submitted", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_NOTRADEQUEUEING;
+    }else if(0 == strcmp("ApiCancelled", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_NOTRADENOTQUEUEING;
+    }else if(0 == strcmp("Cancelled", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_CANCELED;
+    }else if(0 == strcmp("Filled", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_ALLTRADED;
+    }else if(0 == strcmp("Inactive", status)){
+      traderOrder.OrderStatus = TRADER_ORDER_OS_FAILED;
+    }else{
+      traderOrder.OrderStatus = TRADER_ORDER_OS_UNKNOW;
+    }
+    ///插入时间
+    strcpy(traderOrder.InsertTime, "");
+    //strcpy(traderOrder.InsertTime, pOrder->InsertTime);
+
+    trader_trader_api_on_rtn_order(self, &traderOrder);
+  }while(0);
+  
+  return ;
+}
+
+void ib_trader_on_next_valid_id(void* arg, long orderId)
+{
+  trader_trader_api* self = (trader_trader_api*)arg;
+  trader_trader_api_ib* pImp = (trader_trader_api_ib*)self->pUserApi;
+  
+  self->userLocalId = orderId;
+  
+  trader_order_mapper* pTraderOrderMapper = (trader_order_mapper*)pImp->pTraderOrderMapper;
+
+  pTraderOrderMapper->pMethod->xInit(pTraderOrderMapper, orderId, TRADER_ORDER_DEFAULT_SIZE);
+
+  return ;
+}
+
+void ib_trader_on_error(void* arg, int errorCode, const char* errorMsg)
+{
+  trader_trader_api* self = (trader_trader_api*)arg;
+  int errNo = errorCode;
+  const char* errMsg = errorMsg;
+  
+  trader_trader_api_on_rsp_error(self, errNo, errMsg);
+
+}
+
+void ib_future_contract_factory_init(const char* config_file, const char* section)
+{
+  mduser_instrument* ppInstruments;
+  int nCount = 0;
+  nCount = trader_trader_api_load_instruments(config_file, section, &ppInstruments);
+  if(nCount < 0){
+    return ;
+  }
+
+  IBFutureContractFactory* factory = IBFutureContractFactory::GetInstance();
+  factory->Init(nCount, (void*)ppInstruments);
+
+  free(ppInstruments);
+}
+
 

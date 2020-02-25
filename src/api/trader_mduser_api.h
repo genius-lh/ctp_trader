@@ -71,8 +71,6 @@ extern void trader_mduser_api_on_rsp_sub_market_data(trader_mduser_api* self, in
 extern void trader_mduser_api_on_rsp_un_sub_market_data(trader_mduser_api* self, int err_cd, char* err_msg);
 extern void trader_mduser_api_on_rtn_depth_market_data(trader_mduser_api* self, trader_tick* tick);
 
-typedef char mduser_instrument[32];
-
 extern int trader_mduser_api_load_instruments(const char* configFile, const char* section, mduser_instrument** insts);
 
 

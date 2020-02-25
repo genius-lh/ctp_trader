@@ -6,11 +6,12 @@ typedef struct IBFutureContractDef IBFutureContract;
 struct IBFutureContractDef{
   long tickId;
 	char symbol[32];
-  char secType[4];
+  char secType[8];
 	char exchange[16];
 	char currency[4];
 	char localSymbol[32];
   char instrument[64];
+  double priceTick;
 };
 
 class IBFutureContractFactory

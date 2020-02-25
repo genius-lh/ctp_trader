@@ -153,7 +153,9 @@ int trader_mduser_svr_init_instruments(trader_mduser_svr* self)
       self->ticks = (trader_tick*)trader_mduser_shm_header_calloc(self->pShmHdr, self->instrumentNumber);
       for(i = 0; i < self->instrumentNumber; i++){
         r = reply->element[i];
+        
         strncpy(self->instruments[i], r->str, sizeof(trader_instrument_id_type));
+        
         memset(&self->ticks[i], 0, sizeof(trader_tick));
         strncpy(self->ticks[i].InstrumentID, r->str, sizeof(trader_instrument_id_type));
       }

@@ -42,6 +42,7 @@ void test2()
 {
   trader_mduser_shm_key_file(SHM_TEST_FILE);
   trader_mduser_shm_header* hdr = trader_mduser_shm_header_at(SHM_TEST_FILE);
+  int i;
   printf("hdr=%x\n", hdr);
   printf("hdr->nShmId=%ld\n", hdr->nShmId);
   printf("hdr->nFieldNum=%ld\n", hdr->nFieldNum);
@@ -50,18 +51,14 @@ void test2()
   printf("hdr->pData=%x\n", hdr->pData);
   
   trader_tick* tick = (trader_tick*)hdr->pData;
-  printf("InstrumentID[%s]\n", tick->InstrumentID);
-  printf("BidPrice1[%lf]\n", tick->BidPrice1);
-  printf("BidVolume1[%d]\n", tick->BidVolume1);
-  printf("AskPrice1[%lf]\n", tick->AskPrice1);
-  printf("AskVolume1[%d]\n", tick->AskVolume1);
-  
-  tick++;
-  printf("InstrumentID[%s]\n", tick->InstrumentID);
-  printf("BidPrice1[%lf]\n", tick->BidPrice1);
-  printf("BidVolume1[%d]\n", tick->BidVolume1);
-  printf("AskPrice1[%lf]\n", tick->AskPrice1);
-  printf("AskVolume1[%d]\n", tick->AskVolume1);
+  for(i = 0; i < hdr->nFieldNum; i++){    
+    printf("InstrumentID[%s]\n", tick->InstrumentID);
+    printf("BidPrice1[%lf]\n", tick->BidPrice1);
+    printf("BidVolume1[%d]\n", tick->BidVolume1);
+    printf("AskPrice1[%lf]\n", tick->AskPrice1);
+    printf("AskVolume1[%d]\n", tick->AskVolume1);
+    tick++;
+  }
   trader_mduser_shm_header_dt(hdr);
 }
 
@@ -69,6 +66,7 @@ int main(int argc, char* argv[])
 {
   if(argc < 2){
     printf("usage: testMduserShm [1|2|3]\n");
+    return -1;
   }
 
   if(argv[1][0] == '1'){

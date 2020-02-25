@@ -61,6 +61,7 @@ protected:
   EClientSocket* Api();
 
 private:
+  bool Connect();
   bool Connect(const char *host, int port, int clientId);
   void Disconnect();
   void StartThread();
@@ -87,6 +88,8 @@ private:
   
   bool m_extraAuth;
   int m_clientId;
+  std::string m_host;
+  int m_port;
 };
 
 #endif

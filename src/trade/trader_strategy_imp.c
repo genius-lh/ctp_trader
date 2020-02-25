@@ -113,7 +113,7 @@ int trader_strategy_judge_t2_wait(trader_strategy* self,  trader_order* order_da
 
 int trader_strategy_judge_buy_open(trader_strategy* self)
 {
-  trader_tick* t2 = &self->oT2Tick;
+  trader_tick* t2 = self->pT2Tick;
   double diff;
   double th;
   int nRet = 0;
@@ -165,7 +165,7 @@ int trader_strategy_judge_buy_close(trader_strategy* self)
 
 int trader_strategy_judge_sell_open(trader_strategy* self)
 {
-  trader_tick* t2 = &self->oT2Tick;
+  trader_tick* t2 = self->pT2Tick;
   double diff;
   double th;
   int nRet = 0;
@@ -217,7 +217,7 @@ int trader_strategy_judge_sell_close(trader_strategy* self)
 
 double trader_strategy_buy_price_diff(trader_strategy* self)
 {
-  trader_tick* t1 = &self->oT1Tick;
+  trader_tick* t1 = self->pT1Tick;
   
   double t1set = t1->BidPrice1;
   double t2set = trader_strategy_t2_sell_price(self);
@@ -237,7 +237,7 @@ double trader_strategy_buy_price_diff(trader_strategy* self)
 
 double trader_strategy_sell_price_diff(trader_strategy* self)
 {
-  trader_tick* t1 = &self->oT1Tick;
+  trader_tick* t1 = self->pT1Tick;
 
   double t1set = t1->AskPrice1;
   double t2set = trader_strategy_t2_buy_price(self);
@@ -306,7 +306,7 @@ char trader_strategy_t2_direction(trader_strategy* self, char long_short, char o
 
 double trader_strategy_t1_price(trader_strategy* self, char long_short, char open_close)
 {
-  trader_tick* t1 = &self->oT1Tick;
+  trader_tick* t1 = self->pT1Tick;
   double t1set;
   double setVal;
   char cBuySell = TRADER_POSITION_BUY;
@@ -369,7 +369,7 @@ double trader_strategy_t1_price(trader_strategy* self, char long_short, char ope
 
 double trader_strategy_t2_price(trader_strategy* self, char long_short, char open_close)
 {
-  trader_tick* t2 = &self->oT2Tick;
+  trader_tick* t2 = self->pT2Tick;
   double t2set;
 
   char cBuySell = TRADER_POSITION_BUY;
@@ -429,7 +429,7 @@ double trader_strategy_t2_price(trader_strategy* self, char long_short, char ope
 double trader_strategy_t2_price_opponent(trader_strategy* self, char buy_sell)
 {
   char cBuySell = buy_sell;
-  trader_tick* t2 = &self->oT2Tick;
+  trader_tick* t2 = self->pT2Tick;
   
   double t2set;
 
@@ -453,7 +453,7 @@ double trader_strategy_t2_price_opponent(trader_strategy* self, char buy_sell)
 
 int trader_strategy_check_t1_price(trader_strategy* self, double price)
 {
-  trader_tick* t1 = &self->oT1Tick;
+  trader_tick* t1 = self->pT1Tick;
 
   if(price <= t1->LowerLimitPrice){
     CMN_ERROR("price[%lf] <= LowerLimitPrice[%lf]\n", price, t1->LowerLimitPrice); 
@@ -470,7 +470,7 @@ int trader_strategy_check_t1_price(trader_strategy* self, double price)
 
 int trader_strategy_check_t2_price(trader_strategy* self, double price)
 {
-  trader_tick* t2 = &self->oT2Tick;
+  trader_tick* t2 = self->pT2Tick;
 
   if(price < t2->LowerLimitPrice){
     CMN_ERROR("price[%lf] < LowerLimitPrice[%lf]\n", price, t2->LowerLimitPrice); 
@@ -529,6 +529,9 @@ double trader_strategy_t1_buy_price(trader_strategy* self, double diff)
   }else{
     t1set = (diff + t2set * self->T2Weight) / self->T1Weight;
   }
+
+  // 数据向下取整
+  t1set = ((int)(t1set / self->PriceTick - 0.5)) * self->PriceTick;
   
   CMN_INFO("t1set[%.4lf]diff[%.4lf]t2set[%.4lf]T2Weight[%.4lf]T1Weight[%.4lf]\n", 
     t1set, diff, t2set, self->T2Weight, self->T1Weight);
@@ -538,7 +541,7 @@ double trader_strategy_t1_buy_price(trader_strategy* self, double diff)
 
 double trader_strategy_t2_buy_price(trader_strategy* self)
 {
-  trader_tick* t2 = &self->oT2Tick;
+  trader_tick* t2 = self->pT2Tick;
 
   double t2set = t2->AskPrice1;
 
@@ -564,6 +567,9 @@ double trader_strategy_t1_sell_price(trader_strategy* self, double diff)
     t1set = (diff + t2set * self->T2Weight) / self->T1Weight;
   }
   
+  // 数据向上取整
+  t1set = ((int)(t1set / self->PriceTick + 0.5)) * self->PriceTick;
+  
   CMN_INFO("t1set[%.4lf]diff[%.4lf]t2set[%.4lf]T2Weight[%.4lf]T1Weight[%.4lf]\n", 
     t1set, diff, t2set, self->T2Weight, self->T1Weight);
 
@@ -572,7 +578,7 @@ double trader_strategy_t1_sell_price(trader_strategy* self, double diff)
 
 double trader_strategy_t2_sell_price(trader_strategy* self)
 {
-  trader_tick* t2 = &self->oT2Tick;
+  trader_tick* t2 = self->pT2Tick;
   
   double t2set = t2->BidPrice1;
 

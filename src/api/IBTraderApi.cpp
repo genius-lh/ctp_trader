@@ -39,6 +39,7 @@ int CIBTraderApi::ReqOrderInsert(CIBInputOrderField *pInputOrder)
 	order.totalQuantity = (double)pInputOrder->Volume;
 	order.lmtPrice = pInputOrder->LimitPrice;
 
+  // TODO
   OrderId orderId = pInputOrder->UserOrderLocalID;
 
   Api()->placeOrder(orderId, contract, order);
@@ -62,6 +63,11 @@ void CIBTraderApi::ReqOrderId()
 {
 	Api()->reqIds(-1);
 
+}
+
+void CIBTraderApi::ReqPositions()
+{
+  Api()->reqPositions();
 }
 
 const char* CIBTraderApi::ConvOrderAction(char direction)

@@ -2,6 +2,8 @@
 #define _IB_TRADER_HANDLER_H_
 
 #include "EWrapper.h"
+#include "IBTraderApi.h"
+#include "IBFutureContractFactory.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,10 +12,14 @@ extern "C" {
 typedef struct ib_trader_api_cb_def ib_trader_api_cb;
 
 struct ib_trader_api_cb_def{
-  void (*xOnTickBidPrice)(void* arg, long tickerId, double price);
-  void (*xOnTickAskPrice)(void* arg, long tickerId, double price);
-  void (*xOnTickBidSize)(void* arg, long tickerId, int size);
-  void (*xOnTickAskSize)(void* arg, long tickerId, int size);
+  void (*xOnFrontConnected)(void* arg);
+  void (*xOnFrontDisconnected)(void* arg);
+  void (*xOnPosition)(void* arg, const char* account, const char* contract, int position, double avg_cost);
+  void (*xOnOrder)(void* arg, long orderId, const char* status, int filled, int remaining,
+     double avgFillPrice, int permId, double lastFillPrice, int clientId, double mktCapPrice);
+  void (*xOnNextValidId)(void* arg, long orderId);
+  void (*xOnError)(void* arg, int errorCode, const char* errorMsg);
+  
 };
 #ifdef __cplusplus
 }
@@ -41,15 +47,16 @@ public:
   
   void openOrderEnd();
 
-  void completedOrder(const Contract& contract, const Order& order, const OrderState& orderState);
-
-  void completedOrdersEnd() ;
-
   void nextValidId( OrderId orderId);
+  
+  void position( const std::string& account, const Contract& contract, double position, double avgCost);
+
+  void positionEnd();
 
 private:
   ib_trader_api_cb* m_cb;
   void * m_parent;
+  IBFutureContractFactory* m_contractFactory;
 };
 
 #endif //_IB_TRADER_HANDLER_H_

@@ -46,6 +46,8 @@ public:
 
   void ReqOrderId();
 
+  void ReqPositions();
+
 private:
   inline const char* ConvOrderAction(char direction);
 

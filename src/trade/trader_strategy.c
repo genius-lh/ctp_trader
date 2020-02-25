@@ -86,12 +86,7 @@ trader_strategy_method* trader_strategy_method_get()
 }
 
 int trader_strategy_init(trader_strategy* self)
-{
-  // T1 行情
-  memset(&self->oT1Tick, 0, sizeof(self->oT1Tick));
-  // T2 行情
-  memset(&self->oT2Tick, 0, sizeof(self->oT2Tick));
-  
+{  
   // 订单队列
   self->mapOrder = cmn_util_map_new();
   
@@ -128,70 +123,29 @@ int trader_strategy_init(trader_strategy* self)
 int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
 {
   
-  if(!strcmp(self->T1, tick_data->InstrumentID)){
-    memcpy(&self->oT1Tick, tick_data, sizeof(self->oT1Tick));
-  }else if(!strcmp(self->T2, tick_data->InstrumentID)){
-    memcpy(&self->oT2Tick, tick_data, sizeof(self->oT2Tick));
-  }else{
+  if((0 != strcmp(self->T1, tick_data->InstrumentID))
+  && (0 != strcmp(self->T2, tick_data->InstrumentID))){
     // 非本策略关注合约，直接忽略
     //CMN_DEBUG("Not Focused[%s]!\n", tick_data->InstrumentID);
     return 0;
   }
 
-  if((0 == self->oT1Tick.AskVolume1)
-  || (0 == self->oT1Tick.BidVolume1)
-  || (0 == self->oT2Tick.AskVolume1)
-  || (0 == self->oT2Tick.BidVolume1)){
+  trader_tick* t1 = self->pT1Tick;
+  trader_tick* t2 = self->pT2Tick;
+
+  if((0 == t1->AskVolume1)
+  || (0 == t1->BidVolume1)
+  || (0 == t2->AskVolume1)
+  || (0 == t2->BidVolume1)){
     // 行情不正常
     CMN_INFO("T1.AskVolume1=[%d]T1.BidVolume1=[%d]T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
-      self->oT1Tick.AskVolume1,
-      self->oT1Tick.BidVolume1,
-      self->oT2Tick.AskVolume1,
-      self->oT2Tick.BidVolume1);
+      t1->AskVolume1,
+      t1->BidVolume1,
+      t2->AskVolume1,
+      t2->BidVolume1);
     return 0;
   }
-  
-  // 不报单时段
-  /*
-  if((0 == memcmp(tick_data->UpdateTime, "11:29:57", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "11:29:58", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "11:29:59", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "11:30:00", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "14:59:57", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "14:59:58", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "14:59:59", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "15:00:00", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "00:59:57", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "00:59:58", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "00:59:59", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "01:00:00", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "02:29:57", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "02:29:58", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "02:29:59", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "02:30:00", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "22:59:57", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "22:59:58", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "22:59:59", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "23:00:00", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "23:29:57", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "23:29:58", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "23:29:59", 8))
-  ||(0 == memcmp(tick_data->UpdateTime, "23:30:00", 8))
-  ){
-    return 0;
-  }
-  */
-  
 
-/*
-  if(strcmp(self->oT1Tick.TradingDay, self->oT2Tick.TradingDay) 
-  ||strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime)
-  ||(self->oT1Tick.UpdateMillisec != self->oT2Tick.UpdateMillisec)){
-    // 等待第二个合约的信息
-    CMN_DEBUG("Waiting for another tick[%s]!\n", tick_data->InstrumentID);
-    return 0;
-  }
-*/
   if(self->used){
     CMN_INFO("SID[%02d]tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", self->idx, tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
   }
@@ -316,6 +270,9 @@ int trader_strategy_on_status(trader_strategy* self, instrument_status* status_d
     return 0;
   }
   
+  trader_tick* t1 = self->pT1Tick;
+  trader_tick* t2 = self->pT2Tick;
+  
   int nT1Len = strnlen(self->T1, sizeof(self->T1));
   int nT2Len = strnlen(self->T2, sizeof(self->T2));
   int nIIDLen = strnlen(status_data->InstrumentID, sizeof(status_data->InstrumentID));
@@ -341,16 +298,16 @@ int trader_strategy_on_status(trader_strategy* self, instrument_status* status_d
     return 0;
   }while(0);
   
-  if((0 == self->oT1Tick.AskVolume1)
-  || (0 == self->oT1Tick.BidVolume1)
-  || (0 == self->oT2Tick.AskVolume1)
-  || (0 == self->oT2Tick.BidVolume1)){
+  if((0 == t1->AskVolume1)
+  || (0 == t1->BidVolume1)
+  || (0 == t2->AskVolume1)
+  || (0 == t2->BidVolume1)){
     // 行情不正常
     CMN_INFO("T1.AskVolume1=[%d]T1.BidVolume1=[%d]T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
-      self->oT1Tick.AskVolume1,
-      self->oT1Tick.BidVolume1,
-      self->oT2Tick.AskVolume1,
-      self->oT2Tick.BidVolume1);
+      t1->AskVolume1,
+      t1->BidVolume1,
+      t2->AskVolume1,
+      t2->BidVolume1);
     return 0;
   }
   
@@ -637,8 +594,8 @@ int trader_strategy_tick_open(trader_strategy* self)
   double lBuyDiff;
   double lSellDiff;
   char cLongShort;
-  trader_tick* pT1MduserInf = &self->oT1Tick;
-  trader_tick* pT2MduserInf = &self->oT2Tick;
+  trader_tick* pT1MduserInf = self->pT1Tick;
+  trader_tick* pT2MduserInf = self->pT2Tick;
   
   // 开仓判断
   // 操作方向判断
@@ -1685,8 +1642,8 @@ int trader_strategy_release_order(trader_strategy* self, char* user_order_id)
 
 int trader_strategy_print_tick(trader_strategy* self)
 {
-  trader_tick* t1 = &self->oT1Tick;
-  trader_tick* t2 = &self->oT2Tick;
+  trader_tick* t1 = self->pT1Tick;
+  trader_tick* t2 = self->pT2Tick;
   CMN_INFO("InstrumentID[%s]\n", t1->InstrumentID);
   CMN_INFO("BidPrice1[%lf]\n", t1->BidPrice1);
   CMN_INFO("BidVolume1[%d]\n", t1->BidVolume1);
@@ -1788,11 +1745,13 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
 
 int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
 {
+  trader_tick* t1 = self->pT1Tick;
+  trader_tick* t2 = self->pT2Tick;
 
   if(0 == self->TriggerType){
     self->TriggerType = 2;
-    if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
-    && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
+    if((0 == strcmp(t1->UpdateTime, t2->UpdateTime))
+    && (t1->UpdateMillisec == t2->UpdateMillisec)){  
       if(0 == strcmp(self->T1, tick_data->InstrumentID)){
         self->TriggerType = 1;
       }
@@ -1813,7 +1772,7 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
   }
 
   if(3 == self->TriggerType){
-    if((self->oT1Tick.AskVolume1 + self->oT1Tick.BidVolume1) > (self->oT2Tick.AskVolume1 + self->oT2Tick.BidVolume1)){
+    if((t1->AskVolume1 + t1->BidVolume1) > (t2->AskVolume1 + t2->BidVolume1)){
       // T1 为主力合约
       if(0 == strcmp(self->T1, tick_data->InstrumentID)){
         return 1;

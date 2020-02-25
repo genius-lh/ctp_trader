@@ -116,9 +116,10 @@ struct trader_strategy_def{
   int TriggerType;
 
   // T1 行情
-  trader_tick oT1Tick;
+  trader_tick* pT1Tick;
+  
   // T2 行情
-  trader_tick oT2Tick;
+  trader_tick* pT2Tick;
   
   // 订单队列
   cmn_util_map* mapOrder;

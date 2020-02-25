@@ -28,6 +28,7 @@ static void ib_mduser_on_tick_bid_size(void* arg, const char* instrument, int si
 static void ib_mduser_on_tick_ask_size(void* arg, const char* instrument, int size);
 static void ib_mduser_on_connected(void* arg);
 static void ib_mduser_on_disconnected(void* arg);
+static void ib_mduser_on_rsp_error(void* arg, int errorId, const char* errorMsg);
 
 static void* trader_mduser_api_ib_tick_search(trader_mduser_api* self, const char* instrument);
 static int trader_mduser_api_ib_tick_cmp(void* data1, void* data2);
@@ -148,7 +149,8 @@ ib_mduser_api_cb* ib_mduser_api_cb_get()
     ib_mduser_on_tick_bid_size,
     ib_mduser_on_tick_ask_size,
     ib_mduser_on_connected,
-    ib_mduser_on_disconnected
+    ib_mduser_on_disconnected,
+    ib_mduser_on_rsp_error
   };
 
   return &ib_mduser_api_cb_st;
@@ -233,6 +235,15 @@ void ib_mduser_on_disconnected(void* arg)
   char* errMsg = NULL;
   
   trader_mduser_api_on_front_disconnected(self, errNo, errMsg);
+}
+
+void ib_mduser_on_rsp_error(void* arg, int errorId, const char* errorMsg)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+  int errNo = errorId;
+  char* errMsg = (char*)errorMsg;
+  
+  trader_mduser_api_on_rsp_error(self, errNo, errMsg);
 }
 
 void ib_future_contract_factory_init(const char* config_file, const char* section)

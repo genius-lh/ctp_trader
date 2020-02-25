@@ -11,11 +11,17 @@ extern "C" {
 typedef struct trader_trader_api_ib_def trader_trader_api_ib;
 
 struct trader_trader_api_ib_def {
+  void* pTraderApi;
   void* pTraderHandler;
+
+  void* pTraderOrderMapper;
 };
 
 
 extern trader_trader_api_method* trader_trader_api_ib_method_get();
+
+extern void ib_future_contract_factory_init(const char* config_file, const char* section);
+
 
 #ifdef __cplusplus
 }

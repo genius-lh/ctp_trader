@@ -10,6 +10,8 @@
 #include "trader_msg_struct.h"
 #include "trader_trader_api.h"
 
+#include "trader_mduser_shm.h"
+
 #include "trader_strategy_engine.h"
 
 static int trader_strategy_engine_init(trader_strategy_engine* self);
@@ -43,6 +45,13 @@ static trader_strategy_engine_method* trader_strategy_engine_method_get();
 
 static void  trader_strategy_engine_timeout_cb(evutil_socket_t fd, short event, void *arg);
 
+static int trader_strategy_engine_tick_cmp(void* data1, void* data2);
+static void* trader_strategy_engine_tick_search(trader_strategy_engine* self, const char* instrument);
+
+#ifdef IB
+static int trader_strategy_engine_ib_judge(char* contract);
+#endif
+
 trader_strategy_engine_method* trader_strategy_engine_method_get()
 {
   static trader_strategy_engine_method trader_strategy_engine_method_st = {
@@ -73,6 +82,8 @@ trader_strategy_engine_method* trader_strategy_engine_method_get()
 
 int trader_strategy_engine_init(trader_strategy_engine* self)
 {
+  trader_mduser_shm_header* pShmHeader = trader_mduser_shm_header_at();
+  self->pShmHdr = pShmHeader;
   return 0;
 }
 
@@ -156,6 +167,9 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     strcpy(pStrategy->oBuyPosition.T2, pStrategy->T2);
     strcpy(pStrategy->oSellPosition.T1, pStrategy->T1);
     strcpy(pStrategy->oSellPosition.T2, pStrategy->T2);
+
+    pStrategy->pT1Tick = trader_strategy_engine_tick_search(self, pStrategy->T1);
+    pStrategy->pT2Tick = trader_strategy_engine_tick_search(self, pStrategy->T2);
 
   }
   
@@ -304,9 +318,18 @@ int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strat
   );
   
   // ÏÂµ¥
+#ifdef IB
+  if(trader_strategy_engine_ib_judge(contract)){
+    self->pIBTraderApi->pMethod->xOrderInsert(self->pIBTraderApi, 
+      contract, user_local_id, direction, offset, price, volume);
+  }else{
+#endif
   self->pCtpTraderApi->pMethod->xOrderInsert(self->pCtpTraderApi, 
     contract, user_local_id, direction, offset, price, volume);
-  
+#ifdef IB
+  }
+#endif
+
   self->orderStrategyMap->pMethod->xPut(self->orderStrategyMap, user_local_id, (void*)strategy);
 
   return 0;
@@ -315,8 +338,17 @@ int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strat
 int trader_strategy_engine_cancel_order(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char* exchange_id, char* order_sys_id)
 {
   // ³·µ¥
+#ifdef IB
+  if(trader_strategy_engine_ib_judge(contract)){
+    self->pIBTraderApi->pMethod->xOrderAction(self->pIBTraderApi, 
+      contract, user_local_id, org_user_local_id, exchange_id, order_sys_id);
+  }else{
+#endif
   self->pCtpTraderApi->pMethod->xOrderAction(self->pCtpTraderApi, 
     contract, user_local_id, org_user_local_id, exchange_id, order_sys_id);
+#ifdef IB
+  }
+#endif
 
   CMN_DEBUG("OUT\n");
 
@@ -484,7 +516,6 @@ int trader_strategy_engine_init_investor_position(trader_strategy_engine* self, 
   return 0;
 }
 
-
 void trader_strategy_engine_timeout_cb(evutil_socket_t fd, short event, void* arg)
 {
   trader_strategy_engine_action_param* param = (trader_strategy_engine_action_param*)arg;
@@ -508,6 +539,20 @@ void trader_strategy_engine_timeout_cb(evutil_socket_t fd, short event, void* ar
   free(param);
 
   return;
+}
+
+int trader_strategy_engine_tick_cmp(void* data1, void* data2)
+{
+  return strncmp(((trader_tick*)data1)->InstrumentID, ((trader_tick*)data2)->InstrumentID, sizeof(((trader_tick*)NULL)->InstrumentID));
+}
+
+void* trader_strategy_engine_tick_search(trader_strategy_engine* self, const char* instrument)
+{
+  trader_tick tmp;
+  trader_mduser_shm_header* pShmHeader = (trader_mduser_shm_header*)self->pShmHdr;
+
+  strncpy(tmp.InstrumentID, instrument, sizeof(tmp.InstrumentID));
+  return trader_mduser_shm_bsearch(pShmHeader, (void *)&tmp, trader_strategy_engine_tick_cmp);
 }
 
 trader_strategy_engine* trader_strategy_engine_new()
@@ -539,6 +584,9 @@ trader_strategy_engine* trader_strategy_engine_new()
 
 void trader_strategy_engine_free(trader_strategy_engine* self)
 {  
+  trader_mduser_shm_header* pShmHeader = (trader_mduser_shm_header*)self->pShmHdr;
+  trader_mduser_shm_header_dt(pShmHeader);
+
   if(self->orderStrategyMap){
     cmn_util_map_free(self->orderStrategyMap);
   }
@@ -555,5 +603,14 @@ void trader_strategy_engine_free(trader_strategy_engine* self)
   }
   
 }
+
+#ifdef IB
+int trader_strategy_engine_ib_judge(char* contract)
+{
+  char* p = strchr(contract, '.');
+  return (p != NULL);
+}
+#endif
+
 
 

@@ -60,15 +60,9 @@ void CIbTraderApiBase::Init()
   if(ret < 0){
     printf( "PraseUrl %s failed!\n", this->m_szFrontAddress.c_str());
   }
-  
-  while(false == res){
-    res = Connect(host, port, m_clientId);
-    if(!res){
-      std::this_thread::sleep_for(std::chrono::seconds(2));
-    }
-  }
-  
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  m_host = host;
+  m_port = port;
 
   StartThread();
 
@@ -124,6 +118,10 @@ EClientSocket* CIbTraderApiBase::Api()
   return m_pClient;
 }
 
+bool CIbTraderApiBase::Connect()
+{
+  return Connect(m_host.c_str(), m_port, m_clientId);
+}
 
 bool CIbTraderApiBase::Connect(const char *host, int port, int clientId)
 {
@@ -179,7 +177,7 @@ int CIbTraderApiBase::PraseUrl(const char* url, char* host, int* port)
 
   // 获取host
   memcpy(host, p, q - p);
-  p[q-p] = '\0';
+  host[q-p] = '\0';
 
   //移动1个字符
   q++;
@@ -199,19 +197,32 @@ void CIbTraderApiBase::StartThread()
 void* CIbTraderApiBase::ProcessThread(void * lpParam)
 {
 	CIbTraderApiBase *pThis = reinterpret_cast<CIbTraderApiBase *>(lpParam);
-
-  while(pThis->m_threadLoop){
-	  pThis->ProcessMessage();
-  }
+  pThis->ProcessMessage();
 	return 0;
 
 }
 
 void CIbTraderApiBase::ProcessMessage()
 {
-	m_osSignal.waitForSignal();
-	errno = 0;
-	m_pReader->processMsgs();
+  bool res = false;
+  while(m_threadLoop){
+    //建立连接
+    res = Connect();
+    if(!res){
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+      continue;
+    }
+    
+    // 收取数据
+    while(m_pClient->isSocketOK()){
+    	m_osSignal.waitForSignal();
+    	errno = 0;
+    	m_pReader->processMsgs();
+    }
+
+    delete m_pReader;
+    m_pReader = (EReader*)NULL;
+  }
 }
 
 

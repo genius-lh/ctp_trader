@@ -165,7 +165,7 @@ extern int trader_trader_api_get_max_order_local_id(trader_trader_api* self, cha
 
 extern void trader_trader_api_on_front_connected(trader_trader_api* self);
 extern void trader_trader_api_on_front_disconnected(trader_trader_api* self, int nReason);
-extern void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, char* err_msg);
+extern void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, const char* err_msg);
 extern void trader_trader_api_on_rsp_user_login(trader_trader_api* self, int err_cd, char* err_msg);
 extern void trader_trader_api_on_rsp_user_logout(trader_trader_api* self, int err_cd, char* err_msg);
 extern void trader_trader_api_on_rsp_order_insert(trader_trader_api* self, int err_cd, char* err_msg);
@@ -181,6 +181,7 @@ extern void trader_trader_api_on_rsp_qry_investor_position(trader_trader_api* se
 extern void trader_trader_api_on_rsp_qry_trading_account(trader_trader_api* self, trader_account *pTradingAcount, int err_cd, char* err_msg, int is_last);
 extern void trader_trader_api_on_rtn_instrument_status(trader_trader_api* self, instrument_status* status);
 
+extern int trader_trader_api_load_instruments(const char* configFile, const char* section, mduser_instrument** insts);
 
 #endif //_TRADER_TRADER_API_H_
 

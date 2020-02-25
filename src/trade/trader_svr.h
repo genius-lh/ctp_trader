@@ -62,6 +62,13 @@ struct trader_svr_def {
   //ctp_trader_api* pCtpTraderApi;
   trader_trader_api* pCtpTraderApi;
   
+#ifdef IB
+  struct bufferevent *pIBBufTrader;
+  trader_trader_api* pIBTraderApi;
+  char sIBAddress[100];
+  char nClientId[8];
+#endif
+  
   //ÄÚÖÃÊı¾İ¿â
   trader_db* pTraderDB;
 
@@ -126,8 +133,6 @@ struct trader_svr_method_def {
   int (*xExit)(trader_svr* self);
   int (*xOnClientRecv)(trader_svr* self);
   int (*xOnClientSend)(trader_svr* self);
-  int (*xOnTraderRecv)(trader_svr* self);
-  int (*xOnMduserRecv)(trader_svr* self);
 };
 
 extern trader_svr* trader_svr_new();

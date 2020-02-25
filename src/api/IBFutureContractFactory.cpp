@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "trader_data.h"
 #include "IBFutureContractFactory.h"
 
 #ifdef __cplusplus
@@ -17,34 +18,44 @@ static int ib_future_contract_make(char* instrument, long tick_id, IBFutureContr
 
 const long TICK_ID_BASE = 1001;
 
-typedef char mduser_instrument[32];
-
 int ib_future_contract_make(char* instrument, long tick_id, IBFutureContract* future)
 {
   char* savePtr;
   char* symbol;
   char* localSymbol;
+  char contract[64];
 
-  strncpy(future->instrument, instrument, sizeof(future->instrument));
+  strncpy(contract, instrument, sizeof(future->instrument));
   
-  symbol = strtok_r(instrument, ".", &savePtr);
+  symbol = strtok_r(contract, ".", &savePtr);
   if (NULL == symbol) {
    return -1;
   }
 
   localSymbol = strtok_r(NULL, ".", &savePtr);
+  if (NULL == localSymbol) {
+   return -2;
+  }
 
+  strncpy(future->instrument, instrument, sizeof(future->instrument));
   future->tickId = tick_id;
   strncpy(future->symbol, symbol, sizeof(future->symbol));
-  strncpy(future->localSymbol, localSymbol, sizeof(future->localSymbol));
-  strncpy(future->secType, "FUT", sizeof(future->secType));
-  strncpy(future->currency, "USD", sizeof(future->currency));
-  if(0 == memcmp(future->symbol, "COIL", 4)){
-    strncpy(future->exchange, "QBALGOIEU", sizeof(future->exchange));
-  }else if (0 == memcmp(future->symbol, "ZM", 2)){
-    strncpy(future->exchange, "ECBOT", sizeof(future->exchange));
+  if(0 == strcmp(symbol, "USD")){
+    strncpy(future->secType, "CASH", sizeof(future->secType));
+    strncpy(future->currency, localSymbol, sizeof(future->currency));
+    strncpy(future->exchange, "IDEALPRO", sizeof(future->exchange));
+    strncpy(future->localSymbol, instrument, sizeof(future->localSymbol));
   }else{
-    strncpy(future->exchange, "NYMEX", sizeof(future->exchange));
+    strncpy(future->localSymbol, localSymbol, sizeof(future->localSymbol));
+    strncpy(future->secType, "FUT", sizeof(future->secType));
+    strncpy(future->currency, "USD", sizeof(future->currency));
+    if(0 == memcmp(future->symbol, "COIL", 4)){
+      strncpy(future->exchange, "QBALGOIEU", sizeof(future->exchange));
+    }else if (0 == memcmp(future->symbol, "ZM", 2)){
+      strncpy(future->exchange, "ECBOT", sizeof(future->exchange));
+    }else{
+      strncpy(future->exchange, "NYMEX", sizeof(future->exchange));
+    }
   }
   return 0;
 }
@@ -121,6 +132,7 @@ int IBFutureContractFactory::Init(int count, void* instruments)
   this->futureContract = (IBFutureContract*)malloc(this->count * sizeof(IBFutureContract));
 
   for(i = 0; i < this->count; i++){
+    memset(&this->futureContract[i], 0, sizeof(IBFutureContract));
     nRet = ::ib_future_contract_make(ppInstruments[i], i + TICK_ID_BASE, &this->futureContract[i]);
     CMN_DEBUG("ib_future_contract_make nRet[%d]\n", nRet);
   }

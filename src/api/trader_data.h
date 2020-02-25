@@ -185,6 +185,7 @@ struct instrument_status_def{
 #define TRADER_POSITION_TYPE_OPEN_T2_ACTION '6'
 #define TRADER_POSITION_TYPE_CLOSE_T2_ACTION '7'
 
+typedef char mduser_instrument[32];
 
 #endif //_TRADER_DATA_H_
 

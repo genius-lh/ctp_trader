@@ -18,6 +18,7 @@ struct ib_mduser_api_cb_def{
   void (*xOnTickAskSize)(void* arg, const char* instrument, int size);
   void (*xOnFrontConnected)(void* arg);
   void (*xOnFrontDisconnected)(void* arg);
+  void (*xOnRspError)(void* arg, int errorId, const char* errorMsg);
 };
 #ifdef __cplusplus
 }
@@ -34,9 +35,7 @@ public:
   void tickPrice( TickerId tickerId, TickType field, double price, const TickAttrib& attrib);
   
   void tickSize( TickerId tickerId, TickType field, int size);
-  
-  void tickString(TickerId tickerId, TickType tickType, const std::string& value);
-  
+    
   void error(int id, int errorCode, const std::string& errorString);
 
   void connectAck();
