@@ -27,7 +27,7 @@ static void trader_trader_api_femas_stop(trader_trader_api* self);
 static void trader_trader_api_femas_login(trader_trader_api* self);
 static void trader_trader_api_femas_logout(trader_trader_api* self);
   
-static int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol);
+static int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol, char* exchange_id);
 static int trader_trader_api_femas_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id);
  
 static int trader_trader_api_femas_qry_instrument(trader_trader_api* self);
@@ -182,7 +182,7 @@ void trader_trader_api_femas_logout(trader_trader_api* self)
 }
 
   
-int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
+int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol, char* exchange_id)
 {
   trader_trader_api_femas* pImp = (trader_trader_api_femas*)self->pUserApi;
   CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;

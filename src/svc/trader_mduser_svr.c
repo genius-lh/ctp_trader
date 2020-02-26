@@ -343,6 +343,8 @@ int trader_mduser_svr_run(trader_mduser_svr* self)
   if(self->pCnnIB){
     self->pCnnIB->pMethod->xStop(self->pCnnIB);
   }
+  
+  ib_future_contract_factory_fini();
 #endif
   
   if(self->pCnnMain){

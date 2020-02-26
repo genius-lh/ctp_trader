@@ -98,8 +98,10 @@ struct trader_strategy_def{
 
   double PriceTick;
   int IsSHFE;
+  char T1ExchangeID[9];
   double T2PriceTick;
   int T2IsSHFE;
+  char T2ExchangeID[9];
   
   int AutoType;
   double AutoKTOpen;

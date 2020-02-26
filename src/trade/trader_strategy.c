@@ -270,6 +270,11 @@ int trader_strategy_on_status(trader_strategy* self, instrument_status* status_d
     return 0;
   }
   
+  if(!self->used){
+    CMN_DEBUG("not used!\n");
+    return 0;
+  }
+
   trader_tick* t1 = self->pT1Tick;
   trader_tick* t2 = self->pT2Tick;
   
@@ -1117,7 +1122,8 @@ int trader_strategy_insert_t1_open(trader_strategy* self, char long_short)
   
   // 下单
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  self->T1,
-   cT1Direction, TRADER_POSITION_OPEN, pStrategyPlan->fT1Price, pStrategyPlan->nPlanVol, sLocalUserId);
+    cT1Direction, TRADER_POSITION_OPEN, pStrategyPlan->fT1Price, pStrategyPlan->nPlanVol, sLocalUserId, 
+    self->T1ExchangeID);
 
   // 创建订单
   trader_order* pOrder = (trader_order*)malloc(sizeof(trader_order));
@@ -1181,31 +1187,38 @@ int trader_strategy_insert_t1_close(trader_strategy* self, char long_short)
   nSize3 = 0;
   
   char cT1Direction = trader_strategy_t1_direction(self, cLongShort, TRADER_POSITION_CLOSE);
-  trader_strategy_limit* pTraderStrategyLimit = self->pEngine->pTraderStrategyLimit;
-  nSize2 = pTraderStrategyLimit->pMethod->xGetAvailable(pTraderStrategyLimit, 
-    self->T1, cT1Direction, &nSize3);
 
-  CMN_INFO("isSHFE[%d]Plan[%d]Available[%d]YdPosition[%d]\n",
-    self->IsSHFE,
-    nSize1,
-    nSize2,
-    nSize3);
+  do{
+    if('\0' == self->T1ExchangeID[0]){
+      break;
+    }
+    
+    trader_strategy_limit* pTraderStrategyLimit = self->pEngine->pTraderStrategyLimit;
+    nSize2 = pTraderStrategyLimit->pMethod->xGetAvailable(pTraderStrategyLimit, 
+      self->T1, cT1Direction, &nSize3);
 
-  if(nSize1 > nSize2){
-    nSize1 = nSize2;
-  }
-
-  if(nSize2 == 0){
-    CMN_ERROR("isSHFE[%d]\n"
-      "Plan[%d]\n"
-      "Available[%d]\n"
-      "YdPosition[%d]\n",
+    CMN_INFO("isSHFE[%d]Plan[%d]Available[%d]YdPosition[%d]\n",
       self->IsSHFE,
       nSize1,
       nSize2,
       nSize3);
-    return -1;
-  }
+
+    if(nSize1 > nSize2){
+      nSize1 = nSize2;
+    }
+
+    if(nSize2 == 0){
+      CMN_ERROR("isSHFE[%d]\n"
+        "Plan[%d]\n"
+        "Available[%d]\n"
+        "YdPosition[%d]\n",
+        self->IsSHFE,
+        nSize1,
+        nSize2,
+        nSize3);
+      return -1;
+    }
+  }while(0);
   
 
   // 下单
@@ -1239,7 +1252,8 @@ int trader_strategy_insert_t2_open(trader_strategy* self, trader_strategy_trade*
   // 下单
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  self->T2,
     strategy_trade->T2Direction, TRADER_POSITION_OPEN, 
-    strategy_trade->T2Price, strategy_trade->TradeVolume, sLocalUserId);
+    strategy_trade->T2Price, strategy_trade->TradeVolume, sLocalUserId,    
+    self->T2ExchangeID);
 
   // 加入T1队列
   self->mapHalfTraded->pMethod->xPut(self->mapHalfTraded, sLocalUserId, strategy_trade);
@@ -1291,29 +1305,37 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
   
   trader_strategy_trade* pStrategyTrade;
 
-  trader_strategy_limit* pTraderStrategyLimit = self->pEngine->pTraderStrategyLimit;
-  nSize2 = pTraderStrategyLimit->pMethod->xGetAvailable(pTraderStrategyLimit, 
-    self->T2, cT2Direction, &nSize3);
-
-  CMN_INFO("isSHFE[%d]Plan[%d]Available[%d]YdPosition[%d]\n",
-    self->T2IsSHFE,
-    nSize1,
-    nSize2,
-    nSize3);
-
-  
-  if(nSize1 > nSize2){
-    CMN_ERROR("isSHFE[%d]\n"
-      "Plan[%d]\n"
-      "Available[%d]\n"
-      "YdPosition[%d]\n"
-      "TdPosition[%d]\n",
+  do{
+    if('\0' == self->T2ExchangeID[0]){
+      break;
+    }
+    
+    trader_strategy_limit* pTraderStrategyLimit = self->pEngine->pTraderStrategyLimit;
+    nSize2 = pTraderStrategyLimit->pMethod->xGetAvailable(pTraderStrategyLimit, 
+      self->T2, cT2Direction, &nSize3);
+    
+    CMN_INFO("isSHFE[%d]Plan[%d]Available[%d]YdPosition[%d]\n",
       self->T2IsSHFE,
       nSize1,
       nSize2,
       nSize3);
-    return -1;
-  }
+    
+    
+    if(nSize1 > nSize2){
+      CMN_ERROR("isSHFE[%d]\n"
+        "Plan[%d]\n"
+        "Available[%d]\n"
+        "YdPosition[%d]\n"
+        "TdPosition[%d]\n",
+        self->T2IsSHFE,
+        nSize1,
+        nSize2,
+        nSize3);
+      return -1;
+    }
+  }while(0);
+
+
 
   // 下单
   if(self->T2IsSHFE){
@@ -1425,7 +1447,8 @@ int trader_strategy_t1_close_imp(trader_strategy* self, char long_short, char of
   // 下单
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  self->T1,
     cT1Direction, cCloseType,  pStrategyPlan->fT1Price, 
-    pStrategyPlan->nPlanVol, sLocalUserId);
+    pStrategyPlan->nPlanVol, sLocalUserId, 
+    self->T1ExchangeID);
 
   // 创建订单
   trader_order* pOrder = (trader_order*)malloc(sizeof(trader_order));
@@ -1474,7 +1497,8 @@ int trader_strategy_t2_close_imp(trader_strategy* self, trader_strategy_trade* s
   // 下单
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  self->T2,
     strategy_trade->T2Direction, strategy_trade->T2Offset, 
-    strategy_trade->T2Price, strategy_trade->TradeVolume, sLocalUserId);
+    strategy_trade->T2Price, strategy_trade->TradeVolume, sLocalUserId, 
+    self->T2ExchangeID);
 
   // 加入T1队列
   self->mapHalfTraded->pMethod->xPut(self->mapHalfTraded, sLocalUserId, strategy_trade);

@@ -75,7 +75,7 @@ struct trader_strategy_engine_method_def {
   int (*xUpdateOrder)(trader_strategy_engine* self, trader_order* order_data);
   int (*xUpdateStatus)(trader_strategy_engine* self, instrument_status* status_data);
   int (*xSendOrder)(trader_strategy_engine* self, struct trader_strategy_def* strategy, 
-    char* contract, char direction, char offset, double price, int volume, char* user_local_id);
+    char* contract, char direction, char offset, double price, int volume, char* user_local_id, char* exchange_id);
   int (*xCancelOrder)(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
   int (*xSetTimer)(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
 

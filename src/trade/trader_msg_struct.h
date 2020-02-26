@@ -85,6 +85,8 @@ struct trader_cmd_update_req_def {
     int IsSHFE; // 是否是上期
     double T2PriceTick; // 一跳价格
     int T2IsSHFE; // 是否是上期
+    char T1ExchangeID[9];
+    char T2ExchangeID[9];
   } stage[TRADER_CMD_UPDATE_NUM];
 };
 

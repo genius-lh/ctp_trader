@@ -318,6 +318,8 @@ int trader_svr_exit(trader_svr* self)
   if(self->pIBBufTrader){
     bufferevent_free(self->pIBBufTrader);
   }
+
+  ib_future_contract_factory_fini();
 #endif
 
   if(self->pTraderDB){
@@ -750,8 +752,8 @@ int trader_svr_proc_trader3(trader_svr* self, trader_trader_evt* msg)
   case TRADERONRSPUSERLOGIN:
     //TODO 
     //for test
-    CMN_DEBUG("µÇÂ¼!\n", pMsg->ErrorCd);
-    trader_svr_client_notify_login(self, pMsg->ErrorCd, pMsg->ErrorMsg);
+    //CMN_DEBUG("µÇÂ¼!\n", pMsg->ErrorCd);
+    //trader_svr_client_notify_login(self, pMsg->ErrorCd, pMsg->ErrorMsg);
     if(pMsg->ErrorCd){
       // µÇÂ½Ê§°Ü
       trader_svr_client_notify_login(self, pMsg->ErrorCd, pMsg->ErrorMsg);
@@ -886,9 +888,11 @@ int trader_svr_proc_client_update(trader_svr* self, trader_msg_req_struct* req)
       if(!strcmp(pUpdate->stage[i].T1, iter->contract)){
         pUpdate->stage[i].PriceTick = iter->PriceTick;
         pUpdate->stage[i].IsSHFE = iter->isSHFE;
+        strncpy(pUpdate->stage[i].T1ExchangeID,  iter->ExchangeID, sizeof(pUpdate->stage[i].T1ExchangeID));
       }else if(!strcmp(pUpdate->stage[i].T2, iter->contract)){
         pUpdate->stage[i].T2PriceTick = iter->PriceTick;
         pUpdate->stage[i].T2IsSHFE = iter->isSHFE;
+        strncpy(pUpdate->stage[i].T2ExchangeID,  iter->ExchangeID, sizeof(pUpdate->stage[i].T2ExchangeID));
       }
     }
   }
@@ -1440,6 +1444,7 @@ trader_contract* trader_svr_get_contract(trader_svr* self, char* contract_id)
     iter = (trader_contract*)malloc(sizeof(trader_contract));
     memset(iter, 0, sizeof(trader_contract));
     strcpy(iter->contract,  contract_id);
+    iter->PriceTick = 0.01;
     
     self->nContractNum++;
     TAILQ_INSERT_TAIL(&self->listTraderContract, iter, next);

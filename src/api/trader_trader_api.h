@@ -141,7 +141,7 @@ struct trader_trader_api_method_def{
   void (*xLogin)(trader_trader_api* self);
   void (*xLogout)(trader_trader_api* self);
   
-  int (*xOrderInsert)(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol);
+  int (*xOrderInsert)(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol, char* exchange_id);
   int (*xOrderAction)(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id);
   
   int (*xQryInstrument)(trader_trader_api* self);

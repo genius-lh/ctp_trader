@@ -117,7 +117,7 @@ void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, const c
   oEvent.ErrorCd = err_cd;
   oEvent.ErrorMsg[0] = '\0';
   if(err_msg){
-    strcpy(oEvent.ErrorMsg, err_msg);
+    strncpy(oEvent.ErrorMsg, err_msg, sizeof(oEvent.ErrorMsg)-1);
   }
   oEvent.IsLast = 1;
 

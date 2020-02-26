@@ -90,8 +90,6 @@ void CIbTraderApiBase::Release()
     m_pReader = NULL;
   }
   delete m_pClient;
-  
-  IBFutureContractFactory::Release();
 }
 
 ///×¢²áÇ°ÖÃ»úÍøÂçµØÖ·

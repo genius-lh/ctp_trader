@@ -157,7 +157,7 @@ void trader_mduser_api_on_rsp_error(trader_mduser_api* self, int err_cd, char* e
   oEvent.Type = MDUSERONRSPERROR;
   oEvent.ErrorCd = err_cd;
   if(err_msg){
-    strcpy(oEvent.ErrorMsg, err_msg);
+    strncpy(oEvent.ErrorMsg, err_msg, sizeof(oEvent.ErrorMsg)-1);
   }
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));

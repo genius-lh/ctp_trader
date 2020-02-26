@@ -26,7 +26,7 @@ static void trader_trader_api_ctp_stop(trader_trader_api* self);
 static void trader_trader_api_ctp_login(trader_trader_api* self);
 static void trader_trader_api_ctp_logout(trader_trader_api* self);
   
-static int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol);
+static int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol, char* exchange_id);
 static int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id);
  
 static int trader_trader_api_ctp_qry_instrument(trader_trader_api* self);
@@ -177,7 +177,7 @@ void trader_trader_api_ctp_logout(trader_trader_api* self)
 }
 
   
-int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
+int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol, char* exchange_id)
 {
   trader_trader_api_ctp* pImp = (trader_trader_api_ctp*)self->pUserApi;
   CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)pImp->pTraderApi;
@@ -221,6 +221,8 @@ int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char
 	inputOrderField.IsAutoSuspend = 0;
 	///用户强评标志
 	inputOrderField.UserForceClose = 0;
+	///交易所代码
+	strncpy(inputOrderField.ExchangeID, exchange_id, sizeof(inputOrderField.ExchangeID));
 
   pTraderApi->ReqOrderInsert(&inputOrderField, pImp->nTraderRequestID++);
 

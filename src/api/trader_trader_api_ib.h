@@ -21,6 +21,7 @@ struct trader_trader_api_ib_def {
 extern trader_trader_api_method* trader_trader_api_ib_method_get();
 
 extern void ib_future_contract_factory_init(const char* config_file, const char* section);
+extern void ib_future_contract_factory_fini();
 
 
 #ifdef __cplusplus

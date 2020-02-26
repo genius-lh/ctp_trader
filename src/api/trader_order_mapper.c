@@ -74,6 +74,7 @@ int trader_order_mapper_insert_order(trader_order_mapper* self, char* contract, 
     return -1;
   }
   
+  pOrderView->used = 1;
   pOrderView->sysOrderId = sysOrderId;
   pOrderView->localUserOrderId = localUserOrderId;
   pOrderView->status = '-';

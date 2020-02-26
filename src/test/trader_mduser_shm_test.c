@@ -62,6 +62,35 @@ void test2()
   trader_mduser_shm_header_dt(hdr);
 }
 
+void test3(char* t1, char* t2, char* weight)
+{
+  trader_mduser_shm_key_file(SHM_TEST_FILE);
+  trader_mduser_shm_header* hdr = trader_mduser_shm_header_at(SHM_TEST_FILE);
+  int i;
+  trader_tick* t1Tick = NULL;
+  trader_tick* t2Tick = NULL;
+  double t2Weight = atof(weight);
+  
+  trader_tick* tick = (trader_tick*)hdr->pData;
+  for(i = 0; i < hdr->nFieldNum; i++){
+    if(!strcmp(tick->InstrumentID, t1)){
+      t1Tick = tick;
+    }else if(!strcmp(tick->InstrumentID, t2)){
+      t2Tick = tick;
+    }
+    tick++;
+  }
+
+  if(t1Tick && t2Tick){
+    printf("%s-%s*%s ask[%lf] bid[%lf]\n", t1, t2, weight, 
+      t1Tick->AskPrice1 - t2Weight * t2Tick->AskPrice1,
+      t1Tick->BidPrice1 - t2Weight * t2Tick->BidPrice1);
+  }
+
+  
+  trader_mduser_shm_header_dt(hdr);
+}
+
 int main(int argc, char* argv[])
 {
   if(argc < 2){
@@ -78,9 +107,10 @@ int main(int argc, char* argv[])
   }
 
   if(argv[1][0] == '3'){
-    test1(256);
+    if(argc == 5){
+      test3(argv[2], argv[3], argv[4]);
+    }
   }
-
   return 0;
 }
 

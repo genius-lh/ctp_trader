@@ -204,6 +204,7 @@ void ib_mduser_on_tick_bid_size(void* arg, const char* instrument, int size)
     return ;
   }
   pTick->BidVolume1 = size;
+  pTick->LowerLimitPrice = 0.0001;
   return ;
 }
 
@@ -216,6 +217,7 @@ void ib_mduser_on_tick_ask_size(void* arg, const char* instrument, int size)
     return ;
   }
   pTick->AskVolume1 = size;
+  pTick->UpperLimitPrice = 9999;
   return ;
 }
 
@@ -263,4 +265,8 @@ void ib_future_contract_factory_init(const char* config_file, const char* sectio
 
 }
 
+void ib_future_contract_factory_fini()
+{
+  IBFutureContractFactory::Release();
+}
 

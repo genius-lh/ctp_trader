@@ -40,6 +40,8 @@ void CIBTraderHandler::orderStatus(OrderId orderId, const std::string& status, d
     double remaining, double avgFillPrice, int permId, int parentId,
     double lastFillPrice, int clientId, const std::string& whyHeld, double mktCapPrice)
 {
+	printf("OrderStatus. Id: %ld, Status: %s, Filled: %g, Remaining: %g, AvgFillPrice: %g, PermId: %d, LastFillPrice: %g, ClientId: %d, WhyHeld: %s, MktCapPrice: %g\n", 
+    orderId, status.c_str(), filled, remaining, avgFillPrice, permId, lastFillPrice, clientId, whyHeld.c_str(), mktCapPrice);
   m_cb->xOnOrder(m_parent, orderId, status.c_str(), filled, remaining, avgFillPrice, permId, lastFillPrice, clientId, mktCapPrice);
 }
 

@@ -20,7 +20,8 @@ static int trader_strategy_engine_update_tick(trader_strategy_engine* self, trad
 static int trader_strategy_engine_update_trade(trader_strategy_engine* self, trader_trade* trade_data);
 static int trader_strategy_engine_update_order(trader_strategy_engine* self, trader_order* order_data);
 static int trader_strategy_engine_update_status(trader_strategy_engine* self, instrument_status* status_data);
-static int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strategy* strategy, char* contract, char direction, char offset, double price, int volume, char* user_local_id);
+static int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strategy* strategy, 
+  char* contract, char direction, char offset, double price, int volume, char* user_local_id, char*exchange_id);
 static int trader_strategy_engine_cancel_order(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
 static int trader_strategy_engine_set_timer(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char*exchange_id, char* order_sys_id);
 
@@ -130,6 +131,8 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
   	CMN_INFO("IsSHFE[%d]\n", pUpdate->stage[i].IsSHFE);
   	CMN_INFO("T2PriceTick[%lf]\n", pUpdate->stage[i].T2PriceTick);
   	CMN_INFO("T2IsSHFE[%d]\n", pUpdate->stage[i].T2IsSHFE);
+  	CMN_INFO("T1ExchangeID[%s]\n", pUpdate->stage[i].T1ExchangeID);
+  	CMN_INFO("T2ExchangeID[%s]\n", pUpdate->stage[i].T2ExchangeID);
     
     pStrategy->idx = pUpdate->stage[i].StageId;
     strcpy(pStrategy->T1, pUpdate->stage[i].T1);
@@ -162,6 +165,8 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->IsSHFE = pUpdate->stage[i].IsSHFE;
     pStrategy->T2PriceTick = pUpdate->stage[i].T2PriceTick;
     pStrategy->T2IsSHFE = pUpdate->stage[i].T2IsSHFE;
+    strncpy(pStrategy->T1ExchangeID, pUpdate->stage[i].T1ExchangeID, sizeof(pStrategy->T1ExchangeID));
+    strncpy(pStrategy->T2ExchangeID, pUpdate->stage[i].T2ExchangeID, sizeof(pStrategy->T2ExchangeID));
 
     strcpy(pStrategy->oBuyPosition.T1, pStrategy->T1);
     strcpy(pStrategy->oBuyPosition.T2, pStrategy->T2);
@@ -300,7 +305,8 @@ int trader_strategy_engine_update_status(trader_strategy_engine* self, instrumen
 }
 
 
-int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strategy* strategy, char* contract, char direction, char offset, double price, int volume, char* user_local_id)
+int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strategy* strategy, char* contract, 
+  char direction, char offset, double price, int volume, char* user_local_id, char* exchange_id)
 {
   CMN_INFO("报单数据\n"
     "\tInstrument[%s]\n"
@@ -321,11 +327,11 @@ int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strat
 #ifdef IB
   if(trader_strategy_engine_ib_judge(contract)){
     self->pIBTraderApi->pMethod->xOrderInsert(self->pIBTraderApi, 
-      contract, user_local_id, direction, offset, price, volume);
+      contract, user_local_id, direction, offset, price, volume, exchange_id);
   }else{
 #endif
   self->pCtpTraderApi->pMethod->xOrderInsert(self->pCtpTraderApi, 
-    contract, user_local_id, direction, offset, price, volume);
+    contract, user_local_id, direction, offset, price, volume, exchange_id);
 #ifdef IB
   }
 #endif

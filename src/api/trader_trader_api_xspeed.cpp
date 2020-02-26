@@ -27,7 +27,7 @@ static void trader_trader_api_xspeed_logout(trader_trader_api* self);
 static int trader_trader_api_xspeed_get_trading_day(trader_trader_api* self, char* tradingday);
 static int trader_trader_api_xspeed_get_max_order_local_id(trader_trader_api* self, long* local_id);
 
-static int trader_trader_api_xspeed_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol);
+static int trader_trader_api_xspeed_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol, char* exchange_id);
 static int trader_trader_api_xspeed_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id);
  
 static int trader_trader_api_xspeed_qry_instrument(trader_trader_api* self);
@@ -244,7 +244,7 @@ int trader_trader_api_xspeed_get_max_order_local_id(trader_trader_api* self, lon
   return 0;
 }
 
-int trader_trader_api_xspeed_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
+int trader_trader_api_xspeed_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol, char* exchange_id)
 {
   trader_trader_api_xspeed* pImp = (trader_trader_api_xspeed*)self->pUserApi;
   DFITCSECTraderApi* pTraderApi = (DFITCSECTraderApi*)pImp->pTraderApi;
