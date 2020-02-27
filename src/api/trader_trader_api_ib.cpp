@@ -203,8 +203,7 @@ int trader_trader_api_ib_order_action(trader_trader_api* self, char* inst, char*
   CIBOrderActionField inputOrderActionField;
   memset(&inputOrderActionField, 0, sizeof(inputOrderActionField));
   
-  long userLocalOrderId = atol(org_local_id);
-  long sysOrderId = userLocalOrderId / 10;
+  long sysOrderId = atol(order_sys_id);
 
 	///报单引用
 	inputOrderActionField.UserOrderActionLocalID = sysOrderId;
@@ -339,6 +338,7 @@ void ib_trader_on_order(void* arg, long orderId, const char* status, int filled,
     trader_trader_api_on_rtn_trade(self, &traderTrade);
   }
 
+
   do{
     memset(&traderOrder, 0, sizeof(traderOrder));
     ///交易所代码
@@ -390,6 +390,8 @@ void ib_trader_on_order(void* arg, long orderId, const char* status, int filled,
     trader_trader_api_on_rtn_order(self, &traderOrder);
   }while(0);
   
+  nRet = pTraderOrderMapper->pMethod->xUpdateOrder(pTraderOrderMapper, orderId, filled, remaining, traderOrder.OrderStatus);
+
   return ;
 }
 
