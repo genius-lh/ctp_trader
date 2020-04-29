@@ -9,6 +9,9 @@
 
 #include "CtpTraderHandler.h"
 
+#ifdef SOPCTP
+using namespace ctp_sopt;
+#endif
 
 CCtpTraderHandler::CCtpTraderHandler(ctp_trader_api_cb* cb, void* arg)
 :m_TraderCb(cb), m_Arg(arg)

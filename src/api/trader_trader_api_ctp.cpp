@@ -60,6 +60,10 @@ static ctp_trader_api_cb* ctp_trader_api_cb_get();
 }
 #endif
 
+#ifdef SOPCTP
+using namespace ctp_sopt;
+#endif
+
 trader_trader_api_method* trader_trader_api_ctp_method_get()
 {
   static trader_trader_api_method trader_trader_api_method_st = {

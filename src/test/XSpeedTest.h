@@ -279,7 +279,7 @@ public:
   * @param pRspInfo:指针若非空，返回错误信息地址，表明持仓查询请求失败
   * @param bIsLast:返回值表明是否是最后一笔响应信息(0-否,1-是)
   */
-  virtual void OnRspSOPQryPosition(DFITCSOPRspQryPositionField *pData, DFITCSECRspInfoField *pRspInfo, bool bIsLast) {};
+  void OnRspSOPQryPosition(DFITCSOPRspQryPositionField *pData, DFITCSECRspInfoField *pRspInfo, bool bIsLast);
   /**
   * SOP-客户担保持仓查询响应
   * @param pData:指针若非空,返回用户客户担保持仓查询响应信息结构地址,表明客户担保持仓查询请求成功
@@ -600,9 +600,6 @@ public:
   virtual void OnFASLWithdrawOrderRtn(DFITCStockWithdrawOrderRtnField *pData){};
 
 public:
-  char* m_AppID;
-  char* m_AuthCode;
-  char* m_BrokerID;
   char* m_UserId;
   char* m_OldPasswd;
   char* m_NewPasswd;
@@ -636,6 +633,7 @@ public:
   void LogOut();
   void Query();
   void Withdraw();
+  void QueryPosition();
 
 };
 

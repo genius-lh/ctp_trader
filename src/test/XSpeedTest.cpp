@@ -15,31 +15,34 @@
 int main(int argc, char* argv[])
 {
   char sAddress[128];
-  char sAppId[128];
-  char sAuthCode[128];
-  char sBrokerID[128];
   char sUserId[128];
   char sOldPassword[128];
+  char sFilename[128];
   int bLoop = 1;
+  int i = 1;
 
-  strncpy(sAddress, "", sizeof(sAddress));
-  strncpy(sAppId, "", sizeof(sAppId));
-  strncpy(sAuthCode, "", sizeof(sAuthCode));
-  strncpy(sBrokerID, "", sizeof(sBrokerID));
-
-  printf("input username:\n");
-  scanf("%s", sUserId);
-  printf("input password:\n");
-  scanf("%s", sOldPassword);
+  if(argc < 5){
+    printf("input address:\n");
+    scanf("%s", sAddress);
+    printf("input username:\n");
+    scanf("%s", sUserId);
+    printf("input password:\n");
+    scanf("%s", sOldPassword);
+    printf("input sFilename:\n");
+    scanf("%s", sFilename);
+  }else{
+    strncpy(sAddress, argv[i++], sizeof(sAddress));
+    strncpy(sUserId, argv[i++], sizeof(sUserId));
+    strncpy(sOldPassword, argv[i++], sizeof(sOldPassword));
+    strncpy(sFilename, argv[i++], sizeof(sFilename));
+  }
 
   DFITCSECTraderApi* pTraderApi = DFITCSECTraderApi::CreateDFITCSECTraderApi();
   CXSpeedTraderHandler* pTraderHandler = new CXSpeedTraderHandler();
   // 初始化变量
-  pTraderHandler->m_AppID = sAppId;
-  pTraderHandler->m_AuthCode = sAuthCode;
-  pTraderHandler->m_BrokerID = sBrokerID;
   pTraderHandler->m_UserId = sUserId;
   pTraderHandler->m_OldPasswd = sOldPassword;
+  pTraderHandler->m_NewPasswd = sFilename;
   pTraderHandler->m_Loop = &bLoop;
   
   pTraderHandler->m_Arg = (void*)pTraderApi;
@@ -50,7 +53,7 @@ int main(int argc, char* argv[])
   // 连接交易服务器
   pTraderApi->Init(sAddress, pTraderHandler);
 
-  sleep(10);
+  sleep(3);
   while(bLoop){
     pTraderHandler->Loop();
     sleep(1);
@@ -491,7 +494,7 @@ void CXSpeedTraderHandler::OnRspSOPQryEntrustOrder(DFITCSOPRspQryEntrustOrderFie
       "pData->orderType=[%d]"
       "pData->incQryIndex=[%s]"
       "pData->capitalID=[%s]"
-      "pData->orderExpiryDate=[%d]",
+      "pData->orderExpiryDate=[%d]\n",
       pData->requestID,
       pData->accountID,
       pData->spdOrderID,
@@ -536,6 +539,53 @@ void CXSpeedTraderHandler::OnRspSOPQryEntrustOrder(DFITCSOPRspQryEntrustOrderFie
   return ;
 
 }
+
+void CXSpeedTraderHandler::OnRspSOPQryPosition(DFITCSOPRspQryPositionField *pData, DFITCSECRspInfoField *pRspInfo, bool bIsLast)
+{
+  XSPEED_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    XSPEED_LOG("pRspInfo->requestID=[%ld]\n"
+      "pRspInfo->sessionID=[%ld]\n"
+      "pRspInfo->accountID=[%s]\n"
+      "pRspInfo->errorID=[%ld]\n"
+      "pRspInfo->localOrderID=[%ld]\n"
+      "pRspInfo->spdOrderID=[%d]\n"
+      "pRspInfo->errorMsg=[%s]\n",
+      pRspInfo->requestID,
+      pRspInfo->sessionID,
+      pRspInfo->accountID,
+      pRspInfo->errorID,
+      pRspInfo->localOrderID,
+      pRspInfo->spdOrderID,
+      pRspInfo->errorMsg);
+  }
+  
+  if(pData){    
+    XSPEED_LOG("pData->requestID=[%ld]"
+      "pData->accountID=[%s]"
+      "pData->exchangeID=[%s]"
+      "pData->securityOptionID=[%s]"
+      "pData->contractID=[%s]"
+      "pData->contractName=[%s]"
+      "pData->entrustDirection=[%d]"
+      "pData->coveredFlag=[%d]"
+      "pData->executeDate=[%d]"
+      "pData->totalQty=[%d]"
+      "pData->availableQty=[%d]\n",
+      pData->requestID,
+      pData->accountID,
+      pData->exchangeID,
+      pData->securityOptionID,
+      pData->contractID,
+      pData->contractName,
+      pData->entrustDirection,
+      pData->coveredFlag,
+      pData->executeDate,
+      pData->totalQty,
+      pData->availableQty);
+  }
+}
+
 
 /**
 * SOP-撤单回报响应
@@ -632,6 +682,9 @@ void CXSpeedTraderHandler::Loop()
   case 15:
     Withdraw();
     break;
+  case 16:
+    QueryPosition();
+    break;
   case 0:
     LogOut();
     sleep(1);
@@ -662,6 +715,7 @@ int CXSpeedTraderHandler::ShowMenu()
         "13-认沽行权\n"
         "14-订单查询\n"
         "15-撤单\n"
+        "16-查询持仓\n"
         "0-退出\n"
         "**********************\n"
         "请选择："
@@ -773,7 +827,7 @@ void CXSpeedTraderHandler::QueryOrder(int sys_order_id)
   memset(&data3, 0, sizeof(data3));
   data3.requestID = m_RequestId++;
   strcpy(data3.accountID, m_UserId);
-  data3.spdOrderID = sys_order_id;
+  //data3.spdOrderID = sys_order_id;
 
   pTraderApi->ReqSOPQryEntrustOrder(&data3);
 
@@ -959,6 +1013,21 @@ void CXSpeedTraderHandler::Query()
   scanf("%d", &sysOrderId);
   QueryOrder(sysOrderId);
 }
+
+void CXSpeedTraderHandler::QueryPosition()
+{
+  DFITCSECTraderApi* pTraderApi = (DFITCSECTraderApi*)m_Arg;
+  struct DFITCSOPReqQryPositionField data3;
+  memset(&data3, 0, sizeof(data3));
+  data3.requestID=m_RequestId++;
+  strcpy(data3.accountID, m_UserId);
+  strcpy(data3.exchangeID, "SZ");
+
+  pTraderApi->ReqSOPQryPosition(&data3);
+
+  return ;
+}
+
 void CXSpeedTraderHandler::Withdraw()
 {
   XSPEED_LOG("15-撤单\n");
