@@ -315,10 +315,18 @@ int trader_strategy_on_status(trader_strategy* self, instrument_status* status_d
   if(INSTRUMENT_STATUS_CONTINOUS != status_data->InstrumentStatus){
     return 0;
   }
-  
+
+  if(!self->used){
+    return 0;
+  }
+
   int nT1Len = strnlen(self->T1, sizeof(self->T1));
   int nT2Len = strnlen(self->T2, sizeof(self->T2));
   int nIIDLen = strnlen(status_data->InstrumentID, sizeof(status_data->InstrumentID));
+
+  if((0 == nT1Len) || (0 == nT2Len)){
+    return 0;
+  }
   
   do{
     if(nIIDLen < nT1Len){

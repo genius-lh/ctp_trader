@@ -91,6 +91,10 @@ void trader_mduser_api_femas_start(trader_mduser_api* self)
   pUserApi->RegisterSpi(pHandler);
   
 #ifndef FEMAS_UDP
+  #ifdef FEMAS20
+  pUserApi->SubscribeMarketDataTopic (21001, USTP_TERT_RESUME);
+  #endif
+
   pUserApi->SubscribeMarketDataTopic (100, USTP_TERT_RESUME);
 
   pUserApi->RegisterFront(self->pAddress);

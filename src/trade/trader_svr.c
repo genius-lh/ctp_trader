@@ -899,10 +899,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     self->pStrategyEngine->pMethod->xUpdateTrade(self->pStrategyEngine, pTrade);
     break;
   case TRADERONRTNINSTRUMENTSTATUS:
-    CMN_INFO("InstrumentStatus!\n");
-    CMN_INFO("InstrumentID[%s]\n", pInstrumentStatus->InstrumentID);
-    CMN_INFO("InstrumentStatus[%c]\n", pInstrumentStatus->InstrumentStatus);
-    
+    CMN_INFO("InstrumentID[%s]InstrumentStatus[%c]\n", pInstrumentStatus->InstrumentID, pInstrumentStatus->InstrumentStatus);
     self->pStrategyEngine->pMethod->xUpdateStatus(self->pStrategyEngine, pInstrumentStatus);
     break;
   case TRADERONRSPERROR:
