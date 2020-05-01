@@ -756,7 +756,7 @@ void femas_query_on_rsp_qry_trading_account(void* arg, CUstpFtdcRspInvestorAccou
 
   if(pTradingAccount) {
     strcpy(traderAccount.AccountID, pTradingAccount->AccountID);
-    CMN_DEBUG(
+    CMN_INFO(
       "pTradingAccount->BrokerID[%s]\n"
       "pTradingAccount->InvestorID[%s]\n"
       "pTradingAccount->AccountID[%s]\n"
