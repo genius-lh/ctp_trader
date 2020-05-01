@@ -52,7 +52,8 @@ config.status
 config
 configure
 configure.ac
-sqlite3
+sqlite3/
+etc/
 stamp-h1
 *.log
 traderExport
