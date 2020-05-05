@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "std_strategy_struct.h"
+#include "stg_strategy_struct.h"
 
 #include "stg_mysql_sys.h"
 
@@ -234,7 +234,6 @@ int strategy_market_data_tick_select1(strategy_market_data_tick_t* db_struct, in
 }
 
 static void* strategy_market_data_tick_insert1_prepare(int* sql_code);
-static int strategy_market_data_tick_insert1(strategy_market_data_tick_t* db_struct, int* sql_code);
 
 
 void* strategy_market_data_tick_insert1_prepare(int* sql_code)
@@ -247,7 +246,7 @@ void* strategy_market_data_tick_insert1_prepare(int* sql_code)
   // ??SQL
   const char sql[] = ""
     "INSERT INTO "
-    "  `strategy_market_data_tick` "
+    "  `strategy_market_data_tick_01` "
     "( "
     "  `instrumentid`, "
     "  `exchangeid`, "
@@ -318,17 +317,6 @@ int strategy_market_data_tick_insert1(strategy_market_data_tick_t* db_struct, in
 
   if(ret){
     return -2;
-  }
-
-  ret = stg_mysql_commit(sql_code);
-
-  if(ret){
-    return -3;
-  }
-
-  ret = stg_mysql_stmt_affected_rows(stmt);
-  if(1 != ret){
-    return -4;
   }
 
   return 0;
@@ -420,7 +408,6 @@ int strategy_market_data_tick_update1(strategy_market_data_tick_t* db_struct, in
 }
 
 static void* strategy_market_data_tick_delete1_prepare(int* sql_code);
-static int strategy_market_data_tick_delete1(strategy_market_data_tick_t* db_struct, int* sql_code);
 
 
 void* strategy_market_data_tick_delete1_prepare(int* sql_code)
@@ -433,7 +420,7 @@ void* strategy_market_data_tick_delete1_prepare(int* sql_code)
   // ??SQL
   const char sql[] = ""
     "DELETE FROM "
-    "  `strategy_market_data_tick` "
+    "  `strategy_market_data_tick_01` "
     "WHERE "
     "  `instrumentid` = ? AND "
     "  `exchangeid` = ? AND "
@@ -478,17 +465,6 @@ int strategy_market_data_tick_delete1(strategy_market_data_tick_t* db_struct, in
 
   if(ret){
     return -2;
-  }
-
-  ret = stg_mysql_commit(sql_code);
-
-  if(ret){
-    return -3;
-  }
-
-  ret = stg_mysql_stmt_affected_rows(stmt);
-  if(1 != ret){
-    return -4;
   }
 
   return 0;

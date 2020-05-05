@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mysql.h"
+#include <mysql/mysql.h>
 
 #include "stg_mysql_sys.h"
 

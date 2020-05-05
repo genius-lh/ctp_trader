@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#include "mysql.h"
+#include <mysql/mysql.h>
 
 extern int stg_mysql_connect(char* db_name, char* db_usr, char* db_pwd, char* db_host, unsigned int db_port, int* sql_code);
 extern int stg_mysql_disconnect(int* sql_code);
