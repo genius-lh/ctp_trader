@@ -193,7 +193,11 @@ int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, ch
 	///经纪公司代码
 	strcpy(inputOrderField.BrokerID, self->pBrokerID);
 	///交易所代码
-	strcpy(inputOrderField.ExchangeID, "CFFEX");
+	if('I' == inst[0]){
+  	strcpy(inputOrderField.ExchangeID, "CFFEX");
+  }else{
+  	strcpy(inputOrderField.ExchangeID, "SHFE");
+  }
 	///投资者代码
 	strcpy(inputOrderField.InvestorID, pImp->sInvestorID);
 	///合约代码
@@ -252,7 +256,7 @@ int trader_trader_api_femas_order_action(trader_trader_api* self, char* inst, ch
 	///会话编号
 	//inputOrderActionField.SessionID = session_id;
 	///交易所代码
-	strcpy(inputOrderActionField.ExchangeID, "CFFEX");
+	strncpy(inputOrderActionField.ExchangeID, exchange_id, sizeof(inputOrderActionField.ExchangeID));
 	///操作标志
 	inputOrderActionField.ActionFlag = USTP_FTDC_AF_Delete;
 	///用户代码
@@ -275,7 +279,7 @@ int trader_trader_api_femas_qry_instrument(trader_trader_api* self)
 	//TUstpFtdcInstrumentIDType	InstrumentID;
 	///交易所代码
 	//TUstpFtdcExchangeIDType	ExchangeID;
-	strcpy(qryInstrumentField.ExchangeID, "CFFEX");
+	strcpy(qryInstrumentField.ExchangeID, "");
 
   pTraderApi->ReqQryInstrument(&qryInstrumentField, pImp->nTraderRequestID++);
 
