@@ -193,7 +193,7 @@ int trader_trader_api_femas_order_insert(trader_trader_api* self, char* inst, ch
 	///经纪公司代码
 	strcpy(inputOrderField.BrokerID, self->pBrokerID);
 	///交易所代码
-	if('I' == inst[0]){
+	if(('I' == inst[0]) || ('T' == inst[0])){
   	strcpy(inputOrderField.ExchangeID, "CFFEX");
   }else{
   	strcpy(inputOrderField.ExchangeID, "SHFE");
