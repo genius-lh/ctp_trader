@@ -65,7 +65,7 @@ void test2()
 void test3(char* t1, char* t2, char* weight)
 {
   trader_mduser_shm_key_file(SHM_TEST_FILE);
-  trader_mduser_shm_header* hdr = trader_mduser_shm_header_at(SHM_TEST_FILE);
+  trader_mduser_shm_header* hdr = trader_mduser_shm_header_at();
   int i;
   trader_tick* t1Tick = NULL;
   trader_tick* t2Tick = NULL;

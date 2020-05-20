@@ -15,7 +15,8 @@ traderMduserCtp traderStrategyCtp traderStrategySopCtp\
 traderMduserFemas traderStrategyFemas \
 traderMduserFemasAF traderStrategyFemasAF \
 traderMduserXSpeedSOP traderStrategyXSpeedSOP \
-traderMduserXSpeedStock testMduserShm testMduserClient testStgMysql testMduserClient2
+traderMduserXSpeedStock testMduserShm testMduserClient testStgMysql testMduserClient2 \
+traderMduserShmHttp
 
 # static library
 libtradercmn_a_SOURCES=\
@@ -399,4 +400,16 @@ testMduserClient2_LDADD=\
 -L. -lstgmysql -ltradercmn \
 -L/usr/lib64/mysql -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto \
 -lc -lm -lpthread -lresolv -ldl
+
+traderMduserShmHttp_SOURCES=\
+src/svc/trader_mduser_shm_http.c \
+src/svc/trader_mduser_shm.c
+
+traderMduserShmHttp_CFLAGS=-Isrc/api -Isrc/svc \
+-Isrc/util -Isrc/log \
+-Ilibevent -Ilibevent/compat/sys
+
+traderMduserShmHttp_LDADD=\
+-L. -ltradercmn -Llibevent -levent \
+-lc -lstdc++ -lm -lpthread -lresolv -ldl
 
