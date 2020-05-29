@@ -146,8 +146,6 @@ struct CThostFtdcAuthenticationInfoField
 	TThostFtdcBoolType	IsResult;
 	// App代码
 	TThostFtdcClientAppIDType AppID;
-	// 版本信息
-    UtpCipherVersionType    VerInfo;
 };
 
 ///银期转帐报文头
@@ -666,6 +664,8 @@ struct CThostFtdcTradingAccountField
 	TThostFtdcMoneyType	SpecProductPositionProfitByAlg;
 	///特殊产品交易所保证金
 	TThostFtdcMoneyType	SpecProductExchangeMargin;
+	///分仓冻结资金
+	TThostFtdcMoneyType	FrozenPartition;
 };
 
 ///投资者持仓
@@ -4704,7 +4704,7 @@ struct CThostFtdcInstrumentOrderCommRateField
 	TThostFtdcRatioType	OrderActionCommByVolume;
 };
 
-///报单手续费率查询
+///申报费率查询
 struct CThostFtdcQryInstrumentOrderCommRateField
 {
 	///经纪公司代码
@@ -4713,6 +4713,8 @@ struct CThostFtdcQryInstrumentOrderCommRateField
 	TThostFtdcInvestorIDType	InvestorID;
 	///合约代码
 	TThostFtdcInstrumentIDType	InstrumentID;
+	///投机套保标志
+	TThostFtdcHedgeFlagType	HedgeFlag;
 };
 
 ///市场行情
