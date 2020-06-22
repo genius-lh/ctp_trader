@@ -111,6 +111,7 @@ struct trader_strategy_def{
 
   double T1Weight;
   double T2Weight;
+  int T1Ratio;
   int T2Ratio;
   // “π≈Ã ’≈Ã ±º‰
   int NightClosingTime;

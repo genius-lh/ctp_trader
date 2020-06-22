@@ -5,6 +5,8 @@
 #include <stddef.h>
 
 #include <signal.h>
+#include <limits.h>
+#include <float.h>
 
 #include <event2/event.h>
 #include <event2/http.h>
@@ -146,15 +148,20 @@ void trader_mduser_shm_http_calc(trader_mduser_shm_http* self, void* response, c
     }
 
     if(t1Tick && t2Tick){
-      d1 = t1Weight * t1Tick->AskPrice1 - t2Weight * t2Tick->AskPrice1;
-      d2 = t1Weight * t1Tick->BidPrice1 - t2Weight * t2Tick->BidPrice1;
-      asix = time(NULL) * 1000;
+      if((DBL_MAX != t1Tick->BidPrice1)
+      &&(DBL_MAX != t1Tick->AskPrice1)
+      &&(DBL_MAX != t2Tick->BidPrice1)
+      &&(DBL_MAX != t2Tick->AskPrice1)){
+        d1 = t1Weight * t1Tick->AskPrice1 - t2Weight * t2Tick->AskPrice1;
+        d2 = t1Weight * t1Tick->BidPrice1 - t2Weight * t2Tick->BidPrice1;
+        asix = time(NULL) * 1000;
 
-      evbuffer_add_printf(evb, SUCCESS_RESPONSE, asix, d1, d2);
-    }else{
-      evbuffer_add_printf(evb, FAILED_RESPONSE);
+        evbuffer_add_printf(evb, SUCCESS_RESPONSE, asix, d1, d2);
+        break;
+      }
     }
 
+    evbuffer_add_printf(evb, FAILED_RESPONSE);
   }while(0);
 
   return ;

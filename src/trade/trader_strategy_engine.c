@@ -124,6 +124,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
   	CMN_INFO("AutoDTClose[%lf]\n", pUpdate->stage[i].AutoDTClose);
   	CMN_INFO("T1Weight[%lf]\n", pUpdate->stage[i].T1Weight);
   	CMN_INFO("T2Weight[%lf]\n", pUpdate->stage[i].T2Weight);
+  	CMN_INFO("T1Ratio[%d]\n", pUpdate->stage[i].T1Ratio);
   	CMN_INFO("T2Ratio[%d]\n", pUpdate->stage[i].T2Ratio);
   	CMN_INFO("NightClosingTime[%d]\n", pUpdate->stage[i].NightClosingTime);
   	CMN_INFO("TriggerType[%d]\n", pUpdate->stage[i].TriggerType);
@@ -158,6 +159,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->AutoDTClose = pUpdate->stage[i].AutoDTClose; 
     pStrategy->T1Weight = pUpdate->stage[i].T1Weight; 
     pStrategy->T2Weight = pUpdate->stage[i].T2Weight; 
+    pStrategy->T1Ratio = pUpdate->stage[i].T1Ratio; 
     pStrategy->T2Ratio = pUpdate->stage[i].T2Ratio; 
     pStrategy->NightClosingTime = pUpdate->stage[i].NightClosingTime; 
     pStrategy->TriggerType = pUpdate->stage[i].TriggerType; 

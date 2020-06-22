@@ -420,6 +420,7 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
   update->stage[num].AutoDTClose = 0;
   update->stage[num].T1Weight = 1;
   update->stage[num].T2Weight = 1;
+  update->stage[num].T1Ratio = 1;
   update->stage[num].T2Ratio = 1;
   update->stage[num].NightClosingTime = 0;
 #ifdef FEMAS
@@ -486,6 +487,8 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
       update->stage[num].T1Weight = atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t2Weight")){
       update->stage[num].T2Weight = atof(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "t1Ratio")){
+      update->stage[num].T1Ratio = atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t2Ratio")){
       update->stage[num].T2Ratio = atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "nightClosingTime")){

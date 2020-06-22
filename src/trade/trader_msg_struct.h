@@ -77,6 +77,7 @@ struct trader_cmd_update_req_def {
     
     double T1Weight;
     double T2Weight;
+    int T1Ratio;
     int T2Ratio;
     int NightClosingTime;
     int TriggerType;
