@@ -2,14 +2,14 @@ AUTOMAKE_OPTIONS=foreign
 
 noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 
-noinst_PROGRAMS=libctpmduser.so libctptrader.so \
+noinst_PROGRAMS=libctpmduser.so libctptrader.so libxeletrader.so \
 				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so\
 				libfemasmduserAF.so libfemastraderAF.so \
 				libctpminimduser.so libctpminitrader.so \
 				libxspeedmduser.so libxspeedtrader.so
 
 bin_PROGRAMS=\
-			traderMduserCtp traderStrategyCtp \
+			traderMduserCtp traderStrategyCtp traderStrategyXele \
 			traderMduserCtpMini traderStrategyCtpMini \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
@@ -95,6 +95,11 @@ libxspeedtrader_so_SOURCES=src/api/trader_trader_api_xspeed.cpp\
 	src/api/XSpeedTraderHandler.cpp
 libxspeedtrader_so_CPPFLAGS=-fPIC -Ixspeed -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libxspeedtrader_so_LDFLAGS=-shared -fPIC
+
+libxeletrader_so_SOURCES=src/api/trader_trader_api_xele.cpp\
+	src/api/XeleTraderHandler.cpp
+libxeletrader_so_CPPFLAGS=-fPIC -Ixele -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
+libxeletrader_so_LDFLAGS=-shared -fPIC
 
 # exec
 # traderMduserCtp traderStrategyCtp
@@ -304,6 +309,32 @@ traderStrategyXSpeedSOP_LDADD=\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
         -Lxspeed -lxspeedtrader -lDFITCSECTraderApi
+
+traderStrategyXele_SOURCES=\
+        src/log/cmn_log_catalog.c\
+        src/log/cmn_log_appender.c\
+        src/log/cmn_log_svr.c\
+        src/daemon/trader_daemon.c \
+        src/trade/trader_db.c \
+        src/trade/trader_mduser_client.c \
+        src/trade/trader_strategy_engine.c \
+        src/trade/trader_strategy_imp.c \
+        src/trade/trader_strategy_limit.c \
+        src/trade/trader_strategy.c \
+        src/trade/trader_svr.c \
+        src/client/client_aud_cnn.c \
+        src/client/client_aud_svr.c \
+        src/client/client_aud_pool.c
+
+traderStrategyXele_CFLAGS=-DXELE -Isrc/api \
+        -Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
+        -Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
+
+traderStrategyXele_LDADD=\
+        -lc -lstdc++ -lm -lpthread -lresolv -ldl\
+        -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
+        -L. -ltradercmn -ltraderapi\
+        -Lxele -lxeletrader -lXeleTdAPI64
 
 testMduserClient_SOURCES=\
         src/test/trader_mduser_client_test.c\

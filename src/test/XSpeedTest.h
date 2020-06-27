@@ -12,7 +12,7 @@ class CXSpeedTraderHandler : public DFITCSECTraderSpi
 {
 public:
   CXSpeedTraderHandler();
-  ~CXSpeedTraderHandler();
+  virtual ~CXSpeedTraderHandler();
   
   /**
    * SEC-网络连接正常响应
@@ -226,7 +226,7 @@ public:
   * @param pData:指针若非空,返回用户报单响应信息结构地址,表明报单请求成功
   * @param pRspInfo:指针若非空，返回错误信息地址，表明报单请求失败
   */
-  virtual void OnRspSOPEntrustOrder(DFITCSOPRspEntrustOrderField *pData, DFITCSECRspInfoField *pRspInfo) {};
+  void OnRspSOPEntrustOrder(DFITCSOPRspEntrustOrderField *pData, DFITCSECRspInfoField *pRspInfo);
   /**
   * SOP-做市商报单响应
   * @param pData:指针若非空,返回用户报价委托响应信息结构地址,表明做市商报单请求成功
@@ -258,14 +258,14 @@ public:
   * @param pData:指针若非空,返回用户撤单响应信息结构地址,表明撤单请求成功
   * @param pRspInfo:指针若非空，返回错误信息地址，表明撤单请求失败
   */
-  virtual void OnRspSOPWithdrawOrder(DFITCSECRspWithdrawOrderField *pData, DFITCSECRspInfoField *pRspInfo) {};
+  void OnRspSOPWithdrawOrder(DFITCSECRspWithdrawOrderField *pData, DFITCSECRspInfoField *pRspInfo);
   /**
   * SOP-委托查询响应
   * @param pData:指针若非空,返回用户委托查询响应信息结构地址,表明委托查询请求成功
   * @param pRspInfo:指针若非空，返回错误信息地址，表明委托查询请求失败
   * @param bIsLast:返回值表明是否是最后一笔响应信息(0-否,1-是)
   */
-  virtual void OnRspSOPQryEntrustOrder(DFITCSOPRspQryEntrustOrderField *pData, DFITCSECRspInfoField *pRspInfo, bool bIsLast) {};
+  void OnRspSOPQryEntrustOrder(DFITCSOPRspQryEntrustOrderField *pData, DFITCSECRspInfoField *pRspInfo, bool bIsLast);
   /**
   * SOP-分笔成交查询响应
   * @param pData:指针若非空,返回用户分笔成交查询响应信息结构地址,表明分笔成交查询请求成功
@@ -279,7 +279,7 @@ public:
   * @param pRspInfo:指针若非空，返回错误信息地址，表明持仓查询请求失败
   * @param bIsLast:返回值表明是否是最后一笔响应信息(0-否,1-是)
   */
-  virtual void OnRspSOPQryPosition(DFITCSOPRspQryPositionField *pData, DFITCSECRspInfoField *pRspInfo, bool bIsLast) {};
+  void OnRspSOPQryPosition(DFITCSOPRspQryPositionField *pData, DFITCSECRspInfoField *pRspInfo, bool bIsLast);
   /**
   * SOP-客户担保持仓查询响应
   * @param pData:指针若非空,返回用户客户担保持仓查询响应信息结构地址,表明客户担保持仓查询请求成功
@@ -330,7 +330,7 @@ public:
   * @param pData:指针若非空,返回用户执行委托响应信息结构地址,表明客户执行委托请求成功
   * @param pRspInfo:指针若非空，返回错误信息地址，表明客户执行委托请求失败
   */
-  virtual void OnRspSOPExectueOrder(DFITCSOPRspExectueOrderField *pData, DFITCSECRspInfoField *pRspInfo) {};
+  void OnRspSOPExectueOrder(DFITCSOPRspExectueOrderField *pData, DFITCSECRspInfoField *pRspInfo);
   /**
   * SOP-客户行权指派信息查询响应
   * @param pData:指针若非空,返回用户客户行权指派信息查询响应信息结构地址,表明客户客户行权指派信息查询请求成功
@@ -377,17 +377,17 @@ public:
   * SOP-委托回报响应
   * @param pData:返回委托回报结构体的地址
   */
-  virtual void OnSOPEntrustOrderRtn(DFITCSOPEntrustOrderRtnField * pData){};
+  void OnSOPEntrustOrderRtn(DFITCSOPEntrustOrderRtnField * pData);
   /**
   * SOP-成交回报响应
   * @param pData:返回成交回报结构体的地址
   */
-  virtual void OnSOPTradeRtn(DFITCSOPTradeRtnField * pData){};
+  void OnSOPTradeRtn(DFITCSOPTradeRtnField * pData);
   /**
   * SOP-撤单回报响应
   * @param pData:返回撤单回报结构体的地址
   */
-  virtual void OnSOPWithdrawOrderRtn(DFITCSOPWithdrawOrderRtnField * pData){};
+  void OnSOPWithdrawOrderRtn(DFITCSOPWithdrawOrderRtnField * pData);
 
   /**
   * FASL-登录响应
@@ -600,9 +600,6 @@ public:
   virtual void OnFASLWithdrawOrderRtn(DFITCStockWithdrawOrderRtnField *pData){};
 
 public:
-  char* m_AppID;
-  char* m_AuthCode;
-  char* m_BrokerID;
   char* m_UserId;
   char* m_OldPasswd;
   char* m_NewPasswd;
@@ -611,6 +608,32 @@ public:
   void* m_Arg;
   int m_RequestId;
 
+
+public:
+  void Loop();
+  int ShowMenu();
+  void QueryContract();
+  void InsertOrder(char* inst, int buy_sell, int open_close, double price, int vol, int covered);
+  void ExecuteOrder(char* inst, int direction, int open_close, int vol);
+  void WithdrawOrder(int sys_order_id);
+  void QueryOrder(int sys_order_id);
+  
+  void CoveredOpen();
+  void CoveredClose();
+  void CallBuyOpen();
+  void CallSellClose();
+  void CallSellOpen();
+  void CallBuyClose();
+  void PutBuyOpen();
+  void PutSellClose();
+  void PutSellOpen();
+  void PutBuyClose();
+  void CallExecuteOrder();
+  void PutExecuteOrder();
+  void LogOut();
+  void Query();
+  void Withdraw();
+  void QueryPosition();
 
 };
 

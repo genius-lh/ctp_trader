@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
 
   FEMAS_LOG("%s %s %s\n", sUserId, sOldPassword, sNewPassword);
   
-  CUstpFtdcTraderApi* pTraderApi = CUstpFtdcTraderApi::CreateFtdcTraderApi();
+  CUstpFtdcTraderApi* pTraderApi = CUstpFtdcTraderApi::CreateFtdcTraderApi(".");
   CFemasTraderChangePassword* pTraderHandler = new CFemasTraderChangePassword();
   // 初始化变量
   pTraderHandler->m_AppID = sAppId;
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
   
   pTraderApi->RegisterSpi(NULL);
   pTraderApi->Release();
-  delete pTraderHandler;
+  delete [] pTraderHandler;
   return 0;  
 }
 
