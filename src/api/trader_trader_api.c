@@ -239,7 +239,9 @@ void trader_trader_api_on_rsp_qry_user_investor(trader_trader_api* self, char* i
   if(err_msg){
     strcpy(oEvent.ErrorMsg, err_msg);
   }
-  strcpy(oEvent.Body.InvestorRsp, investor_id);
+  if(investor_id) {
+    strncpy(oEvent.Body.InvestorRsp, investor_id, sizeof(oEvent.Body.InvestorRsp));
+  }
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 
 }

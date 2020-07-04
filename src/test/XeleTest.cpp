@@ -16,13 +16,14 @@ int main(int argc, char* argv[])
   char sAppId[128];
   char sAuthCode[128];
   char sBrokerID[128];
+  char sLoginId[128];
   char sUserId[128];
   char sOldPassword[128];
   int i = 1;
 
   if(argc < 9){
-    printf("input username:\n");
-    scanf("%s", sUserId);
+    printf("input sLoginId:\n");
+    scanf("%s", sLoginId);
     printf("input password:\n");
     scanf("%s", sOldPassword);
     printf("input sAppId:\n");
@@ -31,16 +32,19 @@ int main(int argc, char* argv[])
     scanf("%s", sAuthCode);
     printf("input sBrokerID:\n");
     scanf("%s", sBrokerID);
+    printf("input sUserId:\n");
+    scanf("%s", sUserId);
     printf("input sAddress:\n");
     scanf("%s", sAddress);
     printf("input sAddress1:\n");
     scanf("%s", sAddress1);
   }else{
-    strncpy(sUserId, argv[i++], sizeof(sUserId));
+    strncpy(sLoginId, argv[i++], sizeof(sLoginId));
     strncpy(sOldPassword, argv[i++], sizeof(sOldPassword));
     strncpy(sAppId, argv[i++], sizeof(sAppId));
     strncpy(sAuthCode, argv[i++], sizeof(sAuthCode));
     strncpy(sBrokerID, argv[i++], sizeof(sBrokerID));
+    strncpy(sUserId, argv[i++], sizeof(sUserId));
     strncpy(sAddress, argv[i++], sizeof(sAddress));
     strncpy(sAddress1, argv[i++], sizeof(sAddress1));
   }
@@ -53,8 +57,9 @@ int main(int argc, char* argv[])
   pTraderHandler->m_AppID = sAppId;
   pTraderHandler->m_AuthCode = sAuthCode;
   pTraderHandler->m_BrokerID = sBrokerID;
-  pTraderHandler->m_UserId = sUserId;
+  pTraderHandler->m_LoginId = sLoginId;
   pTraderHandler->m_OldPasswd = sOldPassword;
+  pTraderHandler->m_UserId = sUserId;
   
   pTraderHandler->m_Arg = (void*)pTraderApi;
   pTraderHandler->m_RequestId = 1;
@@ -153,8 +158,9 @@ void CXeleTraderHandler::LogOut()
   CXeleTraderApi* pTraderApi = (CXeleTraderApi*)m_Arg;
   CXeleFtdcReqUserLogoutField req;
 	memset(&req, 0, sizeof(req));
-  strncpy(req.AccountID, m_UserId, sizeof(req.AccountID));
+  strncpy(req.AccountID, m_LoginId, sizeof(req.AccountID));
   pTraderApi->ReqUserLogout(&req, m_RequestId++);
+  m_Loop = 0;
 
 }
 
@@ -261,7 +267,7 @@ void CXeleTraderHandler::QryOrder()
   CXeleFtdcQryOrderField qryOrder;
   memset(&qryOrder, 0, sizeof(CXeleFtdcQryOrderField));
   /* 客户代码 */
-  snprintf(qryOrder.AccountID, sizeof(qryOrder.AccountID), "%s", m_UserId);
+  snprintf(qryOrder.AccountID, sizeof(qryOrder.AccountID), "%s", m_LoginId);
   pTraderApi->ReqQryOrder(&qryOrder, m_RequestId++);
 
 }
@@ -272,7 +278,7 @@ void CXeleTraderHandler::QryTrade()
   CXeleFtdcQryTradeField qryTrade;
   memset(&qryTrade, 0, sizeof(CXeleFtdcQryTradeField));
   /* 客户代码 */
-  snprintf(qryTrade.AccountID, sizeof(qryTrade.AccountID), "%s", m_UserId);
+  snprintf(qryTrade.AccountID, sizeof(qryTrade.AccountID), "%s", m_LoginId);
   /* 合约代码 */
   //strcpy(qryTrade.InstrumentID, "cu1705");
   /* 成交编号 */
@@ -287,7 +293,7 @@ void CXeleTraderHandler::QryInvestorPosition()
   CXeleFtdcQryClientPositionField qryPosition;
   memset(&qryPosition, 0, sizeof(CXeleFtdcQryClientPositionField));
   /* 客户代码 */
-  snprintf(qryPosition.AccountID, sizeof(qryPosition.AccountID), "%s", m_UserId);
+  snprintf(qryPosition.AccountID, sizeof(qryPosition.AccountID), "%s", m_LoginId);
   pTraderApi->ReqQryClientPosition(&qryPosition, m_RequestId++);
 
 }
@@ -298,7 +304,7 @@ void CXeleTraderHandler::QryTradingAccount()
   CXeleFtdcQryClientAccountField qryAccount;
   memset(&qryAccount, 0, sizeof(CXeleFtdcQryClientAccountField));
   /* 客户代码 */
-  snprintf(qryAccount.AccountID, sizeof(qryAccount.AccountID), "%s", m_UserId);
+  snprintf(qryAccount.AccountID, sizeof(qryAccount.AccountID), "%s", m_LoginId);
   pTraderApi->ReqQryClientAccount(&qryAccount, m_RequestId++);
 
 }
@@ -446,21 +452,24 @@ void CXeleTraderHandler::OnFrontConnected()
 
 	CXeleFtdcReqUserLoginField login_info;
   CXeleFtdcAuthenticationInfoField auth_info;
+  int nRet = 0;
 
 	memset(&login_info, 0, sizeof(login_info));
-  snprintf(login_info.AccountID, sizeof(login_info.AccountID), "%s", m_UserId);
+  snprintf(login_info.AccountID, sizeof(login_info.AccountID), "%s", m_LoginId);
   snprintf(login_info.Password, sizeof(login_info.Password), "%s", m_OldPasswd);
   memset(&auth_info, 0, sizeof(auth_info));
   snprintf(auth_info.AuthCode, sizeof(auth_info.AuthCode), "%s", m_AuthCode);
   snprintf(auth_info.AppID, sizeof(auth_info.AppID), "%s", m_AppID);
 	pTraderApi->RegisterAuthentication(&auth_info);
-  pTraderApi->ReqUserLogin(&login_info, m_RequestId++);
+  nRet = pTraderApi->ReqUserLogin(&login_info, m_RequestId++);
+  XELE_LOG("ReqUserLogin ret=[%d]\n", nRet);
+  
 
 }
 
 void CXeleTraderHandler::OnFrontDisconnected(int nReason)
 {
-  XELE_LOG("%s\n", __FUNCTION__);
+  XELE_LOG("%s[0x%x][0x%x]\n", __FUNCTION__, ((nReason >> 16) & 0xFFFF), (nReason & 0xFFFF));
 
 }
 
@@ -504,7 +513,6 @@ void CXeleTraderHandler::OnRspUserLogout(CXeleFtdcRspUserLogoutField *pRspUserLo
       pRspInfo->ErrorID,
       pRspInfo->ErrorMsg);
   }
-  m_Loop = 0;
 
 }
 

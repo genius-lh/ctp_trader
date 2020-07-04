@@ -32,6 +32,9 @@ static int trader_trader_api_xele_qry_user_investor(trader_trader_api* self);
 static int trader_trader_api_xele_qry_investor_position(trader_trader_api* self);
 static int trader_trader_api_xele_qry_trading_account(trader_trader_api* self);
 
+static void trader_trader_api_xele_set_param(trader_trader_api* self, char* key, char* val);
+
+
 #ifdef __cplusplus
 }
 #endif
@@ -44,7 +47,7 @@ trader_trader_api_method* trader_trader_api_xele_method_get()
     trader_trader_api_set_workspace,
     trader_trader_api_set_app_id,
     trader_trader_api_set_auth_code,
-    trader_trader_api_set_param,
+    trader_trader_api_xele_set_param,
     trader_trader_api_xele_get_trading_day,
     trader_trader_api_xele_get_max_order_local_id,
     trader_trader_api_xele_start,
@@ -169,7 +172,7 @@ int trader_trader_api_xele_order_insert(trader_trader_api* self, char* inst, cha
 		/* 会员代码 */
 	snprintf(inputOrderField.ParticipantID, sizeof(inputOrderField.ParticipantID), "%s", self->pBrokerID);
 	/* 客户代码 */
-	snprintf(inputOrderField.ClientID, sizeof(inputOrderField.ClientID), "%s", self->pUser);
+	snprintf(inputOrderField.ClientID, sizeof(inputOrderField.ClientID), "%s", pImp->sClientID);
 	/* 合约代码 */
 	strncpy(inputOrderField.InstrumentID, inst, sizeof(inputOrderField.InstrumentID));
 	/* 报单价格条件 */
@@ -222,7 +225,7 @@ int trader_trader_api_xele_order_action(trader_trader_api* self, char* inst, cha
   ///会员代码
 	snprintf(inputOrderActionField.ParticipantID, sizeof(inputOrderActionField.ParticipantID), "%s", self->pBrokerID);
   ///客户代码
-	snprintf(inputOrderActionField.ClientID, sizeof(inputOrderActionField.ClientID), "%s", self->pUser);
+	snprintf(inputOrderActionField.ClientID, sizeof(inputOrderActionField.ClientID), "%s", pImp->sClientID);
   ///操作本地编号
 	snprintf(inputOrderActionField.ActionLocalID, sizeof(inputOrderActionField.ActionLocalID), "%s", local_id);
 	
@@ -284,6 +287,17 @@ int trader_trader_api_xele_qry_trading_account(trader_trader_api* self)
 
   pTraderApi->ReqQryClientAccount(&qryTradingAccountField, pImp->nTraderRequestID++);
   return 0;
+}
+
+void trader_trader_api_xele_set_param(trader_trader_api* self, char* key, char* val)
+{
+  trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
+  if(!strcmp("XELE_CLIENTID", key)){
+    strncpy(pImp->sClientID, val, sizeof(pImp->sClientID));
+    return ;
+  }
+
+  trader_trader_api_set_param(self, key, val);
 }
 
 

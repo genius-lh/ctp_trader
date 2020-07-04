@@ -5,9 +5,9 @@ add_compile_options(-g -Wall)
 
 set(BASE_LIBRARY_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 
-include_directories(. ${BASE_LIBRARY_PATH}/ctpsop ${BASE_LIBRARY_PATH}/femas ${BASE_LIBRARY_PATH}/xspeed ${BASE_LIBRARY_PATH}/xele)
+include_directories(. ${BASE_LIBRARY_PATH}/ctpsop ${BASE_LIBRARY_PATH}/femas ${BASE_LIBRARY_PATH}/xspeed ${CMAKE_CURRENT_SOURCE_DIR}/xele)
 
-link_directories(${BASE_LIBRARY_PATH}/ctpsop ${BASE_LIBRARY_PATH}/femas ${BASE_LIBRARY_PATH}/xspeed ${BASE_LIBRARY_PATH}/xele)
+link_directories(${BASE_LIBRARY_PATH}/ctpsop ${BASE_LIBRARY_PATH}/femas ${BASE_LIBRARY_PATH}/xspeed ${CMAKE_CURRENT_SOURCE_DIR}/xele)
 
 add_executable(testCtpSop CtpSopTest.cpp)
 
@@ -27,5 +27,5 @@ target_link_libraries(femasPasswd USTPtraderapi)
 
 target_link_libraries(testXSpeed DFITCSECTraderApi)
 
-target_link_libraries(testXele XeleTdAPI64)
+target_link_libraries(testXele XeleTdAPI64-Test)
 

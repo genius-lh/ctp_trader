@@ -95,6 +95,7 @@ public:
   char* m_AuthCode;
   char* m_BrokerID;
   char* m_UserId;
+  char* m_LoginId;
   char* m_OldPasswd;
   int m_Loop;
 

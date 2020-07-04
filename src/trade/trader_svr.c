@@ -79,6 +79,8 @@ static int trader_svr_chdir(trader_svr* self, char* user_id);
 
 static int trader_svr_check_instrument(trader_svr* self, char* inst);
 
+static int trader_svr_redis_get_param(trader_svr* self, char* key, char* val, int size);
+
 static int trader_svr_redis_init(trader_svr* self);
 static int trader_svr_redis_fini(trader_svr* self);
 
@@ -740,8 +742,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     }
     break;
   case TRADERONFRONTDISCONNECTED:
-    CMN_DEBUG("trader disconnected!\n");
-    
+    CMN_ERROR("DISCONNECTED=[%d][%x]!\n", msg->ErrorCd, msg->ErrorCd);
     break;
   case TRADERONRSPUSERLOGOUT:    
     CMN_DEBUG("trader disconnected!\n");
@@ -773,6 +774,23 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
       strcpy(self->TradingDay, sTradingDay);
       self->bQueried = 0;
     }
+    
+    #ifdef XELE
+    // 根据AccountID查询ClientID
+    char sQueryCmd[64];
+    char sResult[64];
+    int nRet = 0;
+    snprintf(sQueryCmd, sizeof(sQueryCmd), "XELE_CLIENTID_%s", self->UserId);
+    nRet = trader_svr_redis_get_param(self, sQueryCmd, sResult, sizeof(sResult));
+    if(!nRet){
+      self->pCtpTraderApi->pMethod->xSetParam(self->pCtpTraderApi, "XELE_CLIENTID", sResult);
+    }else{
+      trader_svr_client_notify_login(self, 99, "Not set XELE_CLIENTID");
+      self->bProcessing = 0;
+      return -1;
+    }
+      
+    #endif
 
     // 查询合约
     self->pCtpTraderApi->pMethod->xQryInstrument(self->pCtpTraderApi);
@@ -1539,7 +1557,21 @@ trader_contract* trader_svr_get_contract(trader_svr* self, char* contract_id)
     return iter;
 }
 
+int trader_svr_redis_get_param(trader_svr* self, char* key, char* val, int size)
+{
+  CMN_DEBUG("GET %s\n", key);
+  redisReply *reply;
+  int nRet = -1;
+  reply = redisCommand(self->pRedis, "GET %s\n", key);
 
+  if(REDIS_REPLY_STRING == reply->type){
+    strncpy(val, reply->str, size);
+    nRet = 0;
+  }
+
+  freeReplyObject(reply);
+  return nRet;
+}
 
 int trade_main(char* cfg_file, evutil_socket_t sock)
 {
