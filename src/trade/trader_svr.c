@@ -783,8 +783,10 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     snprintf(sQueryCmd, sizeof(sQueryCmd), "XELE_CLIENTID_%s", self->UserId);
     nRet = trader_svr_redis_get_param(self, sQueryCmd, sResult, sizeof(sResult));
     if(!nRet){
+      CMN_DEBUG("%s[%s]\n", sQueryCmd, sResult);
       self->pCtpTraderApi->pMethod->xSetParam(self->pCtpTraderApi, "XELE_CLIENTID", sResult);
     }else{
+      CMN_INFO("redis failed![%s]\n", sQueryCmd);
       trader_svr_client_notify_login(self, 99, "Not set XELE_CLIENTID");
       self->bProcessing = 0;
       return -1;
@@ -793,6 +795,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     #endif
 
     // ²éÑ¯ºÏÔ¼
+    sleep(1);
     self->pCtpTraderApi->pMethod->xQryInstrument(self->pCtpTraderApi);
     break;
   case TRADERONRSPQRYINVESTOR:
@@ -1562,7 +1565,7 @@ int trader_svr_redis_get_param(trader_svr* self, char* key, char* val, int size)
   CMN_DEBUG("GET %s\n", key);
   redisReply *reply;
   int nRet = -1;
-  reply = redisCommand(self->pRedis, "GET %s\n", key);
+  reply = redisCommand(self->pRedis, "GET %s", key);
 
   if(REDIS_REPLY_STRING == reply->type){
     strncpy(val, reply->str, size);

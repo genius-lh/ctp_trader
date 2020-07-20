@@ -11,7 +11,7 @@
 #define _XELE_FTDCTRADERAPI_H
 #include <string>
 #include "CXeleFtdcUserApiStruct.h"
-#define API_VERSION "2.0.198-f89b79a"
+#define API_VERSION "3.0.19-11f2c04"
 class CXeleTraderSpi
 {
 public:
@@ -267,11 +267,11 @@ public:
                               int nRequestID) = 0;
 
     ///报单录入请求
-    virtual int ReqOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
+    virtual int ReqOrderInsert(CXeleFairInputOrderField *pInputOrder,
                                int nRequestID) = 0;
 
     ///报单操作请求
-    virtual int ReqOrderAction(CXeleFtdcOrderActionField *pOrderAction,
+    virtual int ReqOrderAction(CXeleFairOrderActionField *pOrderAction,
                                int nRequestID) = 0;
 
     ///客户资金查询

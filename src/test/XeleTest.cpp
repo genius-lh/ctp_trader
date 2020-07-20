@@ -119,6 +119,9 @@ void CXeleTraderHandler::Loop()
     case 7:
       QryTradingAccount();
       break;
+    case 8:
+      ChangePassword();
+      break;
     case 0:
       LogOut();
       sleep(1);
@@ -143,6 +146,7 @@ int CXeleTraderHandler::ShowMenu()
         "5-成交查询\n"
         "6-持仓查询\n"
         "7-资金查询\n"
+        "8-修改密码\n"
         "0-退出\n"
         "**********************\n"
         "请选择："
@@ -166,9 +170,9 @@ void CXeleTraderHandler::LogOut()
 
 void CXeleTraderHandler::OpenOrder()
 {
+#if 0
   CXeleTraderApi* pTraderApi = (CXeleTraderApi*)m_Arg;
-
-  CXeleFtdcInputOrderField req;
+  CXeleFairInputOrderField req;
   memset(&req, 0, sizeof(req));
   char InstrumentID[32];
   char Direction[32];
@@ -220,14 +224,15 @@ void CXeleTraderHandler::OpenOrder()
 	req.IsAutoSuspend = 0;
 
   pTraderApi->ReqOrderInsert(&req, m_RequestId++);
-
+#endif
   return ;
 }
 
 void CXeleTraderHandler::Withdraw()
 {
+#if 0
   CXeleTraderApi* pTraderApi = (CXeleTraderApi*)m_Arg;
-  CXeleFtdcOrderActionField req;
+  CXeleFairOrderActionField req;
   memset(&req, 0, sizeof(req));
   
   char OrderSysID[32];
@@ -235,18 +240,21 @@ void CXeleTraderHandler::Withdraw()
   scanf("%s", OrderSysID);
 
   ///报单编号
-	snprintf(req.OrderSysID, sizeof(req.OrderSysID), "%s", OrderSysID);
+	//snprintf(req.OrderSysID, sizeof(req.OrderSysID), "%s", OrderSysID);
+	req.OrderSysNo = atoi(OrderSysID);
   ///报单操作标志
   req.ActionFlag = XELE_FTDC_AF_Delete;
   ///会员代码
-	snprintf(req.ParticipantID, sizeof(req.ParticipantID), "%s", m_BrokerID);
+	//snprintf(req.ParticipantID, sizeof(req.ParticipantID), "%s", m_BrokerID);
   ///客户代码
-	snprintf(req.ClientID, sizeof(req.ClientID), "%s", m_UserId);
+	//snprintf(req.ClientID, sizeof(req.ClientID), "%s", m_UserId);
   ///操作本地编号
-	snprintf(req.ActionLocalID, sizeof(req.ActionLocalID), "%ld", m_RequestId);
+	//snprintf(req.ActionLocalID, sizeof(req.ActionLocalID), "%ld", m_RequestId);
+	req.ActionLocalNo = atoi(m_RequestId);
 
   pTraderApi->ReqOrderAction(&req, m_RequestId++);
 
+#endif
   return ;
 }
 
@@ -309,15 +317,38 @@ void CXeleTraderHandler::QryTradingAccount()
 
 }
 
+void CXeleTraderHandler::ChangePassword()
+{
+  char NewPassword[41];
+  printf("请输入新密码:");
+  scanf("%s", NewPassword);
+
+  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)m_Arg;
+  CXeleFtdcUserPasswordUpdateField req;
+  memset(&req, 0, sizeof(req));
+  
+  snprintf(req.AccountID, sizeof(req.AccountID), "%s", m_LoginId);
+  snprintf(req.ParticipantID, sizeof(req.ParticipantID), "%s", m_BrokerID);
+  snprintf(req.OldPassword, sizeof(req.OldPassword), "%s", m_OldPasswd);
+  snprintf(req.NewPassword, sizeof(req.NewPassword), "%s", NewPassword);
+  
+  pTraderApi->ReqUserPasswordUpdate(&req, m_RequestId++);
+}
+
+
 void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
 {
+  if(!pTrade){
+    return ;
+  }
+  
   XELE_LOG(
     "pTrade->TradingDay=[%s]"
     "pTrade->SettlementGroupID=[%s]"
     "pTrade->SettlementID=[%d]"
     "pTrade->TradeID=[%s]"
     "pTrade->Direction=[%c]"
-    "pTrade->OrderSysID=[%s]"
+    "pTrade->OrderSystemNo=[%d]"
     "pTrade->ParticipantID=[%s]"
     "pTrade->ClientID=[%s]"
     "pTrade->TradingRole=[%c]"
@@ -331,7 +362,7 @@ void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
     "pTrade->TradeType=[%c]"
     "pTrade->PriceSource=[%c]"
     "pTrade->UserID=[%s]"
-    "pTrade->OrderLocalID=[%s]"
+    "pTrade->OrderLocalNo=[%d]"
     "pTrade->ExchangeOrderSysID=[%s]"
     "\n"
     ,pTrade->TradingDay
@@ -339,7 +370,7 @@ void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
     ,pTrade->SettlementID
     ,pTrade->TradeID
     ,pTrade->Direction
-    ,pTrade->OrderSysID
+    ,pTrade->OrderSystemNo
     ,pTrade->ParticipantID
     ,pTrade->ClientID
     ,pTrade->TradingRole
@@ -353,7 +384,7 @@ void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
     ,pTrade->TradeType
     ,pTrade->PriceSource
     ,pTrade->UserID
-    ,pTrade->OrderLocalID
+    ,pTrade->OrderLocalNo
     ,pTrade->ExchangeOrderSysID
   );
 
@@ -362,11 +393,15 @@ void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
 
 void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
 {
+  if(!pOrder){
+    return ;
+  }
+  
   XELE_LOG(
     "pOrder->TradingDay=[%s]"
     "pOrder->SettlementGroupID=[%s]"
     "pOrder->SettlementID=[%d]"
-    "pOrder->OrderSysID=[%s]"
+    "pOrder->OrderSystemNo=[%d]"
     "pOrder->ParticipantID=[%s]"
     "pOrder->ClientID=[%s]"
     "pOrder->UserID=[%s]"
@@ -384,7 +419,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     "pOrder->ContingentCondition=[%c]"
     "pOrder->StopPrice=[%lf]"
     "pOrder->ForceCloseReason=[%c]"
-    "pOrder->OrderLocalID=[%s]"
+    "pOrder->OrderLocalNo=[%d]"
     "pOrder->IsAutoSuspend=[%d]"
     "pOrder->OrderSource=[%c]"
     "pOrder->OrderStatus=[%c]"
@@ -405,7 +440,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     ,pOrder->TradingDay
     ,pOrder->SettlementGroupID
     ,pOrder->SettlementID
-    ,pOrder->OrderSysID
+    ,pOrder->OrderSystemNo
     ,pOrder->ParticipantID
     ,pOrder->ClientID
     ,pOrder->UserID
@@ -423,7 +458,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     ,pOrder->ContingentCondition
     ,pOrder->StopPrice
     ,pOrder->ForceCloseReason
-    ,pOrder->OrderLocalID
+    ,pOrder->OrderLocalNo
     ,pOrder->IsAutoSuspend
     ,pOrder->OrderSource
     ,pOrder->OrderStatus
@@ -498,6 +533,10 @@ void CXeleTraderHandler::OnRspUserLogin(CXeleFtdcRspUserLoginField *pRspUserLogi
       "pRspInfo->ErrorMsg=[%s]\n",
       pRspInfo->ErrorID,
       pRspInfo->ErrorMsg);
+    if(!pRspInfo->ErrorID){
+      m_ClientIndex = pRspUserLogin->ClientIndex[0];
+      m_Token = pRspUserLogin->Token[0];
+    }
   }
 }
 
@@ -823,5 +862,20 @@ void CXeleTraderHandler::OnRspQryTrade(CXeleFtdcTradeField* pTradeField, CXeleFt
   PrintTrade(pTradeField);
 }
 
+
+void CXeleTraderHandler::OnRspUserPasswordUpdate(CXeleFtdcUserPasswordUpdateField *pUserPasswordUpdate,
+                                       CXeleFtdcRspInfoField *pRspInfo,
+                                       int nRequestID,
+                                       bool bIsLast)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+
+}
 
 

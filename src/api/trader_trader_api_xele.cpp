@@ -85,6 +85,10 @@ void trader_trader_api_xele_start(trader_trader_api* self)
 {
   CXeleTraderApi* pTraderApi = CXeleTraderApi::CreateTraderApi();
   CXeleTraderHandler* pTraderHandler = new CXeleTraderHandler((void*)self);
+  char sAddress[256];
+  char* pSavePtr;
+  char* pFrontAddress;
+  char* pQueryFrontAddress;
   
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)malloc(sizeof(trader_trader_api_xele));
   pImp->pTraderApi = (void*)pTraderApi;
@@ -98,14 +102,24 @@ void trader_trader_api_xele_start(trader_trader_api* self)
   self->hedgeFlag = XELE_FTDC_HF_Speculation;
   
 	pTraderApi->RegisterSpi(pTraderHandler);
-  //TODO
-  pTraderApi->RegisterFront(self->pAddress, self->pAddress);
+
+  strncpy(sAddress, self->pAddress, sizeof(sAddress));
+  
+  pFrontAddress = strtok_r(sAddress, "|", &pSavePtr);
+  CMN_ASSERT (pFrontAddress);
+  
+  pQueryFrontAddress = strtok_r(NULL, "|", &pSavePtr);
+  CMN_ASSERT (pQueryFrontAddress);
+  
+  pTraderApi->RegisterFront(pFrontAddress, pQueryFrontAddress);
+  
   /*	 * 准备login的结构体	 */
   /*	 * 订阅相应的流	 */
   pTraderApi->SubscribePrivateTopic(XELE_TERT_RESUME);
   pTraderApi->SubscribePublicTopic(XELE_TERT_RESUME);
+  pTraderApi->SubscribeUserTopic(XELE_TERT_RESUME);
   /*	 * 开始登录, 使客户端程序开始与交易柜台建立连接	 */
-  pTraderApi->Init();
+  pTraderApi->Init(false);
   
   return;
 
@@ -166,10 +180,12 @@ int trader_trader_api_xele_order_insert(trader_trader_api* self, char* inst, cha
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
   CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
 
-  CXeleFtdcInputOrderField inputOrderField;
+  CXeleFairInputOrderField inputOrderField;
 
   memset(&inputOrderField, 0, sizeof(inputOrderField));
-		/* 会员代码 */
+
+#if 0
+	/* 会员代码 */
 	snprintf(inputOrderField.ParticipantID, sizeof(inputOrderField.ParticipantID), "%s", self->pBrokerID);
 	/* 客户代码 */
 	snprintf(inputOrderField.ClientID, sizeof(inputOrderField.ClientID), "%s", pImp->sClientID);
@@ -203,8 +219,8 @@ int trader_trader_api_xele_order_insert(trader_trader_api* self, char* inst, cha
 	snprintf(inputOrderField.OrderLocalID, sizeof(inputOrderField.OrderLocalID), "%s", local_id);
   /* 自动挂起标志 */
 	inputOrderField.IsAutoSuspend = 0;
-
   pTraderApi->ReqOrderInsert(&inputOrderField, pImp->nTraderRequestID++);
+#endif
 
   return 0;
 }
@@ -214,10 +230,11 @@ int trader_trader_api_xele_order_action(trader_trader_api* self, char* inst, cha
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
   CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
 
-  CXeleFtdcOrderActionField inputOrderActionField;
+  CXeleFairOrderActionField inputOrderActionField;
   
   memset(&inputOrderActionField, 0, sizeof(inputOrderActionField));
 
+#if 0
   ///报单编号
 	snprintf(inputOrderActionField.OrderSysID, sizeof(inputOrderActionField.OrderSysID), "%s", order_sys_id);
   ///报单操作标志
@@ -231,6 +248,7 @@ int trader_trader_api_xele_order_action(trader_trader_api* self, char* inst, cha
 	
   
   pTraderApi->ReqOrderAction(&inputOrderActionField, pImp->nTraderRequestID++);
+#endif
   return 0;
 }
 
@@ -256,7 +274,11 @@ int trader_trader_api_xele_qry_instrument(trader_trader_api* self)
 
 int trader_trader_api_xele_qry_user_investor(trader_trader_api* self)
 {
-  // empty
+  
+  trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
+  
+  trader_trader_api_on_rsp_qry_user_investor(self, pImp->sClientID, 0, "");
+  
   return 0;
 }
 

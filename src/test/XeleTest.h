@@ -74,6 +74,11 @@ public:
 
   void OnRspQryTrade(CXeleFtdcTradeField* pTradeField, CXeleFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
 
+  void OnRspUserPasswordUpdate(CXeleFtdcUserPasswordUpdateField *pUserPasswordUpdate,
+                                         CXeleFtdcRspInfoField *pRspInfo,
+                                         int nRequestID,
+                                         bool bIsLast);
+
 public:
   void Loop();
   int ShowMenu();
@@ -90,6 +95,8 @@ public:
   void PrintTrade(CXeleFtdcTradeField *pTrade);
   void PrintOrder(CXeleFtdcOrderField *pOrder);
 
+  void ChangePassword();
+
 public:
   char* m_AppID;
   char* m_AuthCode;
@@ -101,6 +108,8 @@ public:
 
   void* m_Arg;
   long m_RequestId;
+  uint8_t m_ClientIndex;
+  uint16_t m_Token;
 };
 
 #endif //_XELE_TEST_H_

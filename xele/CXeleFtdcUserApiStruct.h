@@ -72,12 +72,17 @@ struct CXeleFtdcRspUserLoginField {
   TXeleFtdcOrderLocalIDType MaxOrderLocalID;
   ///交易用户代码
   TXeleFtdcAccountIDType AccountID;
-  char Padding_Three[3];
+  ///当前登录的交易所数目;最大支持同时登录XELE_EXCHANGE_LOGIN_NUM个
+  TXeleFtdcExchangeNumType ExchangeNum;  
+  ///当前登录交易所的交易用户index
+  TXeleFtdcClientIndexType ClientIndex[XELE_EXCHANGE_LOGIN_NUM];
+  ///当前登录交易所的交易用户的token
+  TXeleFtdcClientTokenType Token[XELE_EXCHANGE_LOGIN_NUM]; 
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
   ///交易系统名称
   TXeleFtdcTradingSystemNameType TradingSystemName;
-  ///数据中心代码
+  ///数据中心代码:0表示系统的查询中心，1 表示交易中心
   TXeleFtdcDataCenterIDType DataCenterID;
   ///会员私有流当前长度
   TXeleFtdcSequenceNoType PrivateFlowSize;
@@ -112,13 +117,69 @@ struct CXeleFtdcRspUserLogoutField {
 };
 
 ///输入报单
+struct CXeleFairInputOrderField {
+#ifdef __cplusplus
+  CXeleFairInputOrderField();
+#endif
+  ///产品保留字段1，由程序自动填写
+  TXeleFtdcProductReserve1Type  ProductReserve1;
+  ///客户编号
+  TXeleFtdcClientIndexType      ClientIndex;
+  ///客户令牌
+  TXeleFtdcClientTokenType      ClientToken;
+  ///产品保留字段2，由程序自动填写
+  TXeleFtdcProductReserve2Type  ProductReserve2;
+  ///产品保留字段3，由程序自动填写
+  TXeleFtdcProductReserve3Type  ProductReserve3;  
+  ///本地报单编号
+  TXeleFtdcOrderLocalNoType OrderLocalNo;
+  ///报单价格
+  TXeleFtdcPriceType    LimitPrice;  
+  ///合约代码
+  TXeleFtdcInstruIDType InstrumentID;
+  ///数量
+  TXeleFtdcVolumeTotalOriginalType VolumeTotalOriginal;
+  ///输入报单类型
+  TXeleFtdcInsertType   InsertType;
+  ///最小成交数量
+  TXeleFtdcMinVolumeType MinVolume;
+  ///前置信息
+  TXeleFtdcExchangeFrontEnumType  ExchangeFront;
+  char                  _unused_1[2];
+};
+
+///报单操作
+struct CXeleFairOrderActionField {
+#ifdef __cplusplus
+  CXeleFairOrderActionField();
+#endif
+  ///产品保留字段1，由程序自动填写
+  TXeleFtdcProductReserve1Type  ProductReserve1;
+  ///客户编号
+  TXeleFtdcClientIndexType      ClientIndex;
+  ///客户令牌
+  TXeleFtdcClientTokenType      ClientToken;
+  ///产品保留字段2，由程序自动填写
+  TXeleFtdcProductReserve2Type  ProductReserve2;
+  ///产品保留字段3，由程序自动填写
+  TXeleFtdcProductReserve3Type  ProductReserve3; 
+  ///本地报单编号
+  TXeleFtdcActionLocalNoType ActionLocalNo;
+  ///被撤单柜台编码
+  TXeleFtdcOrderSysNoType    OrderSysNo; 
+  char _unused_1[28];
+};
+
+
+///输入报单
 struct CXeleFtdcInputOrderField {
 #ifdef __cplusplus
   CXeleFtdcInputOrderField();
 #endif
 
   ///报单编号
-  TXeleFtdcOrderSysIDType OrderSysID;
+  TXeleFtdcOrderSystemNoType OrderSystemNo;
+  char _unused_1[9];
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
   ///客户代码
@@ -154,14 +215,17 @@ struct CXeleFtdcInputOrderField {
   ///强平原因
   TXeleFtdcForceCloseReasonType ForceCloseReason;
   ///本地报单编号
-  TXeleFtdcOrderLocalIDType OrderLocalID;
+  TXeleFtdcOrderLocalNoType OrderLocalNo;
+  ///未用字段
+  char _unused_2[9];
   ///自动挂起标志
   TXeleFtdcBoolType IsAutoSuspend;
   ///交易所报单编号, RspOrderInsert时有意义
   TXeleFtdcExchangeOrderSysIDType ExchangeOrderSysID;
   ///用户定义交易所前置发单, 可选.
   TXeleFtdcExchangeFrontType ExchangeFront;
-  char _unused_1[5];
+  ///未用字段
+  char _unused_3[9];
 };
 
 ///报单操作
@@ -171,9 +235,13 @@ struct CXeleFtdcOrderActionField {
 #endif
 
   ///报单编号
-  TXeleFtdcOrderSysIDType OrderSysID;
+  TXeleFtdcOrderSystemNoType OrderSystemNo;
+  ///未用字段
+  char _unused_1[9];
   ///本地报单编号
-  TXeleFtdcOrderLocalIDType OrderLocalID;
+  TXeleFtdcOrderLocalNoType OrderLocalNo;
+  ///未用字段
+  char _unused_2[9];
   ///报单操作标志
   TXeleFtdcActionFlagType ActionFlag;
   ///会员代码
@@ -188,8 +256,12 @@ struct CXeleFtdcOrderActionField {
   TXeleFtdcVolumeType VolumeChange;
   ///操作本地编号
   TXeleFtdcOrderLocalIDType ActionLocalID;
-  ///业务单元
-  TXeleFtdcBusinessUnitType BusinessUnit;
+  ///未用字段
+  char _unused_3[9];
+  ///操作本地num
+  TXeleFtdcActionLocalNoType ActionLocalNo;
+  ///未用字段
+  char _unused_4[12];
 };
 
 ///用户口令修改
@@ -319,11 +391,11 @@ struct CXeleFtdcRspInstrumentField {
   CXeleFtdcRspInstrumentField();
 #endif
 
-  ///结算组代码
+  ///结算组代码(未使用)
   TXeleFtdcSettlementGroupIDType SettlementGroupID;
   ///产品代码
   TXeleFtdcProductIDType ProductID;
-  ///产品组代码
+  ///产品组代码(未使用)
   TXeleFtdcProductGroupIDType ProductGroupID;
   ///基础商品代码
   TXeleFtdcInstrumentIDType UnderlyingInstrID;
@@ -331,9 +403,9 @@ struct CXeleFtdcRspInstrumentField {
   TXeleFtdcProductClassType ProductClass;
   ///持仓类型
   TXeleFtdcPositionTypeType PositionType;
-  ///执行价
+  ///执行价(未使用)
   TXeleFtdcPriceType StrikePrice;
-  ///期权类型
+  ///期权类型(未使用)
   TXeleFtdcOptionsTypeType OptionsType;
   ///合约数量乘数
   TXeleFtdcVolumeMultipleType VolumeMultiple;
@@ -341,13 +413,13 @@ struct CXeleFtdcRspInstrumentField {
   TXeleFtdcUnderlyingMultipleType UnderlyingMultiple;
   ///合约代码
   TXeleFtdcInstrumentIDType InstrumentID;
-  ///合约名称
+  ///合约名称(未使用)
   TXeleFtdcInstrumentNameType InstrumentName;
   ///交割年份
   TXeleFtdcYearType DeliveryYear;
   ///交割月
   TXeleFtdcMonthType DeliveryMonth;
-  ///提前月份
+  ///提前月份(未使用)
   TXeleFtdcAdvanceMonthType AdvanceMonth;
   ///当前是否交易
   TXeleFtdcBoolType IsTrading;
@@ -361,7 +433,7 @@ struct CXeleFtdcRspInstrumentField {
   TXeleFtdcDateType StartDelivDate;
   ///最后交割日
   TXeleFtdcDateType EndDelivDate;
-  ///挂牌基准价
+  ///挂牌基准价(未使用)
   TXeleFtdcPriceType BasisPrice;
   ///市价单最大下单量
   TXeleFtdcVolumeType MaxMarketOrderVolume;
@@ -373,7 +445,7 @@ struct CXeleFtdcRspInstrumentField {
   TXeleFtdcVolumeType MinLimitOrderVolume;
   ///最小变动价位
   TXeleFtdcPriceType PriceTick;
-  ///交割月自然人开仓
+  ///交割月自然人开仓(未使用)
   TXeleFtdcMonthCountType AllowDelivPersonOpen;
 };
 
@@ -434,14 +506,16 @@ struct CXeleFtdcTradeField {
   ///买卖方向
   TXeleFtdcDirectionType Direction;
   ///报单编号
-  TXeleFtdcOrderSysIDType OrderSysID;
+  TXeleFtdcOrderSystemNoType OrderSystemNo;
+  ///未用字段
+  char _unused_1[9];
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
   ///客户代码
   TXeleFtdcClientIDType ClientID;
-  ///交易角色
+  ///交易角色(未使用)
   TXeleFtdcTradingRoleType TradingRole;
-  ///资金帐号
+  ///资金帐号(未使用)
   TXeleFtdcAccountIDType AccountID;
   ///合约代码
   TXeleFtdcInstrumentIDType InstrumentID;
@@ -455,17 +529,19 @@ struct CXeleFtdcTradeField {
   TXeleFtdcVolumeType Volume;
   ///成交时间
   TXeleFtdcTimeType TradeTime;
-  ///成交类型
+  ///成交类型(未使用)
   TXeleFtdcTradeTypeType TradeType;
-  ///成交价来源
+  ///成交价来源(未使用)
   TXeleFtdcPriceSourceType PriceSource;
   ///交易用户代码
   TXeleFtdcUserIDType UserID;
   ///本地报单编号
-  TXeleFtdcOrderLocalIDType OrderLocalID;
+  TXeleFtdcOrderLocalNoType OrderLocalNo;
+  ///未用字段
+  char _unused_2[9];
   ///交易所报单编号
   TXeleFtdcExchangeOrderSysIDType ExchangeOrderSysID;
-  char unused_[19];
+  char _unused_3[32];
 };
 
 ///报单
@@ -476,12 +552,14 @@ struct CXeleFtdcOrderField {
 
   ///交易日
   TXeleFtdcDateType TradingDay;
-  ///结算组代码
+  ///结算组代码(未使用)
   TXeleFtdcSettlementGroupIDType SettlementGroupID;
-  ///结算编号
+  ///结算编号(未使用)
   TXeleFtdcSettlementIDType SettlementID;
-  ///报单编号
-  TXeleFtdcOrderSysIDType OrderSysID;
+  ///本地报单编号
+  TXeleFtdcOrderSystemNoType OrderSystemNo;
+  ///未用字段
+  char _unused_1[9];
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
   ///客户代码
@@ -517,16 +595,18 @@ struct CXeleFtdcOrderField {
   ///强平原因
   TXeleFtdcForceCloseReasonType ForceCloseReason;
   ///本地报单编号
-  TXeleFtdcOrderLocalIDType OrderLocalID;
+  TXeleFtdcOrderLocalNoType OrderLocalNo;
+  ///未用字段
+  char _unused_2[9];
   ///自动挂起标志
   TXeleFtdcBoolType IsAutoSuspend;
-  ///报单来源
+  ///报单来源(未使用)
   TXeleFtdcOrderSourceType OrderSource;
   ///报单状态
   TXeleFtdcOrderStatusType OrderStatus;
-  ///报单类型
+  ///报单类型(未使用)
   TXeleFtdcOrderTypeType OrderType;
-  ///今成交数量
+  ///今成交数量(未使用)
   TXeleFtdcVolumeType VolumeTraded;
   ///剩余数量
   TXeleFtdcVolumeType VolumeTotal;
@@ -534,23 +614,24 @@ struct CXeleFtdcOrderField {
   TXeleFtdcDateType InsertDate;
   ///插入时间
   TXeleFtdcTimeType InsertTime;
-  ///激活时间
+  ///激活时间(未使用)
   TXeleFtdcTimeType ActiveTime;
-  ///挂起时间
+  ///挂起时间(未使用)
   TXeleFtdcTimeType SuspendTime;
-  ///最后修改时间
+  ///最后修改时间(未使用)
   TXeleFtdcTimeType UpdateTime;
-  ///撤销时间
+  ///撤销时间(未使用)
   TXeleFtdcTimeType CancelTime;
   ///最后修改交易用户代码
   TXeleFtdcUserIDType ActiveUserID;
-  ///优先权
+  ///优先权(未使用)
   TXeleFtdcPriorityType Priority;
-  ///按时间排队的序号
+  ///按时间排队的序号(未使用)
   TXeleFtdcTimeSortIDType TimeSortID;
   ///交易所报单编号
   TXeleFtdcExchangeOrderSysIDType ExchangeOrderSysID;
-  char unused_[19];
+  ///未用字段
+  char _unused_3[32];
 };
 
 ///合约状态
@@ -590,9 +671,9 @@ struct CXeleFtdcRspClientAccountField {
 
   ///交易日
   TXeleFtdcDateType TradingDay;
-  ///结算组代码
+  ///结算组代码(未使用)
   TXeleFtdcSettlementGroupIDType SettlementGroupID;
-  ///结算编号
+  ///结算编号(未使用)
   TXeleFtdcSettlementIDType SettlementID;
   ///上次结算准备金
   TXeleFtdcMoneyType PreBalance;
@@ -616,7 +697,7 @@ struct CXeleFtdcRspClientAccountField {
   TXeleFtdcMoneyType FrozenMargin;
   ///冻结的权利金
   TXeleFtdcMoneyType FrozenPremium;
-  ///基本准备金
+  ///基本准备金(未使用)
   TXeleFtdcMoneyType BaseReserve;
   ///浮动盈亏
   TXeleFtdcMoneyType floatProfitAndLoss;
