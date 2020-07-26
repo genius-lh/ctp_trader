@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "CXeleTraderApi.hpp"
+#include "XeleTraderOrderApi.h"
 
 class CXeleTraderHandler : public CXeleTraderSpi
 {
@@ -36,12 +37,12 @@ public:
     void OnRspOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
                                 CXeleFtdcRspInfoField *pRspInfo,
                                 int nRequestID,
-                                bool bIsLast);
+                                bool bIsLast) {};
     
     void OnRspOrderAction(CXeleFtdcOrderActionField *pOrderAction,
                                 CXeleFtdcRspInfoField *pRspInfo,
                                 int nRequestID,
-                                bool bIsLast);
+                                bool bIsLast) {};
     
     void OnRspQryClientPosition(CXeleFtdcRspClientPositionField *pRspClientPosition,
                                       CXeleFtdcRspInfoField *pRspInfo,
@@ -59,29 +60,102 @@ public:
                                      int nRequestID,
                                      bool bIsLast);
     
-    void OnRtnTrade(CXeleFtdcTradeField *pTrade);
+    void OnRtnTrade(CXeleFtdcTradeField *pTrade) {};
     
-    void OnRtnOrder(CXeleFtdcOrderField *pOrder);
+    void OnRtnOrder(CXeleFtdcOrderField *pOrder) {};
     
     void OnRtnInsInstrument(CXeleFtdcInstrumentField *pInstrument);
     
     void OnErrRtnOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
-                                   CXeleFtdcRspInfoField *pRspInfo);
+                                   CXeleFtdcRspInfoField *pRspInfo) {};
     
     void OnErrRtnOrderAction(CXeleFtdcOrderActionField *pOrderAction,
-                                   CXeleFtdcRspInfoField *pRspInfo);
+                                   CXeleFtdcRspInfoField *pRspInfo) {};
     
     void OnRspQryOrder(CXeleFtdcOrderField* pOrderField, CXeleFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
     
     void OnRspQryTrade(CXeleFtdcTradeField* pTradeField, CXeleFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
     
-    void PrintTrade(CXeleFtdcTradeField *pTrade);
-    void PrintOrder(CXeleFtdcOrderField *pOrder);
+    static void PrintTrade(CXeleFtdcTradeField *pTrade);
+    static void PrintOrder(CXeleFtdcOrderField *pOrder);
 
 private:
   void* m_Arg;
 
 };
+
+class CXeleTraderOrderHandler : public CXeleTraderSpi
+{
+public:
+  CXeleTraderOrderHandler(void* arg);
+  
+  virtual ~CXeleTraderOrderHandler();
+  
+  void OnFrontConnected();
+  
+  void OnFrontDisconnected(int nReason);
+  
+  void OnRspError(CXeleFtdcRspInfoField *pRspInfo,
+                        int nRequestID,
+                        bool bIsLast) {};
+  
+  void OnRspUserLogin(CXeleFtdcRspUserLoginField *pRspUserLogin,
+                            CXeleFtdcRspInfoField *pRspInfo,
+                            int nRequestID,
+                            bool bIsLast);
+  
+  void OnRspUserLogout(CXeleFtdcRspUserLogoutField *pRspUserLogout,
+                             CXeleFtdcRspInfoField *pRspInfo,
+                             int nRequestID,
+                             bool bIsLast);
+  
+  void OnRspOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
+                              CXeleFtdcRspInfoField *pRspInfo,
+                              int nRequestID,
+                              bool bIsLast);
+  
+  void OnRspOrderAction(CXeleFtdcOrderActionField *pOrderAction,
+                              CXeleFtdcRspInfoField *pRspInfo,
+                              int nRequestID,
+                              bool bIsLast);
+  
+  void OnRspQryClientPosition(CXeleFtdcRspClientPositionField *pRspClientPosition,
+                                    CXeleFtdcRspInfoField *pRspInfo,
+                                    int nRequestID,
+                                    bool bIsLast) {};
+  
+  
+  void OnRspQryInstrument(CXeleFtdcRspInstrumentField *pRspInstrument,
+                                CXeleFtdcRspInfoField *pRspInfo,
+                                int nRequestID,
+                                bool bIsLast) {};
+  
+  void OnRspQryClientAccount(CXeleFtdcRspClientAccountField *pClientAccount,
+                                   CXeleFtdcRspInfoField *pRspInfo,
+                                   int nRequestID,
+                                   bool bIsLast) {};
+  
+  void OnRtnTrade(CXeleFtdcTradeField *pTrade);
+  
+  void OnRtnOrder(CXeleFtdcOrderField *pOrder);
+  
+  void OnRtnInsInstrument(CXeleFtdcInstrumentField *pInstrument) {};
+  
+  void OnErrRtnOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
+                                 CXeleFtdcRspInfoField *pRspInfo);
+  
+  void OnErrRtnOrderAction(CXeleFtdcOrderActionField *pOrderAction,
+                                 CXeleFtdcRspInfoField *pRspInfo);
+  
+  void OnRspQryOrder(CXeleFtdcOrderField* pOrderField, CXeleFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast) {};
+  
+  void OnRspQryTrade(CXeleFtdcTradeField* pTradeField, CXeleFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast) {};
+ 
+private:
+  void* m_Arg;
+
+};
+
 
 #endif
 

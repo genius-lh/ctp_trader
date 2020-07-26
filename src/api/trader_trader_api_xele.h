@@ -11,6 +11,8 @@ extern "C" {
 typedef struct trader_trader_api_xele_def trader_trader_api_xele;
 
 struct trader_trader_api_xele_def {
+  void* pQueryApi;
+  void* pQueryHandler;
   void* pTraderApi;
   void* pTraderHandler;
   char sTradingDay[9];

@@ -27,5 +27,5 @@ target_link_libraries(femasPasswd USTPtraderapi)
 
 target_link_libraries(testXSpeed DFITCSECTraderApi)
 
-target_link_libraries(testXele XeleTdAPI64-Test)
+target_link_libraries(testXele XeleTdAPI64-Test XeleTraderOrderApi)
 

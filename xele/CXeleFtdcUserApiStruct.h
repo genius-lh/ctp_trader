@@ -43,11 +43,13 @@ struct CXeleFtdcReqUserLoginField {
 #ifdef __cplusplus
   CXeleFtdcReqUserLoginField();
 #endif
+  ///未用字段
   char unused1_[7];
   ///Session Number
   short Session;
   ///交易用户代码
   TXeleFtdcAccountIDType AccountID;
+  ///未用字段
   char unused2_[14];
   ///密码
   TXeleFtdcPasswordType Password;
@@ -55,6 +57,7 @@ struct CXeleFtdcReqUserLoginField {
   TXeleFtdcProductInfoType UserProductInfo;
   ///接口端产品信息 (程序自动填写)
   TXeleFtdcProductInfoType InterfaceProductInfo;
+  ///未用字段
   char unused3_[45];
 };
 
@@ -72,17 +75,17 @@ struct CXeleFtdcRspUserLoginField {
   TXeleFtdcOrderLocalIDType MaxOrderLocalID;
   ///交易用户代码
   TXeleFtdcAccountIDType AccountID;
-  ///当前登录的交易所数目;最大支持同时登录XELE_EXCHANGE_LOGIN_NUM个
+  ///当前登录的交易所数目;
   TXeleFtdcExchangeNumType ExchangeNum;  
-  ///当前登录交易所的交易用户index
+  ///当前登录交易所的交易用户编号;
   TXeleFtdcClientIndexType ClientIndex[XELE_EXCHANGE_LOGIN_NUM];
-  ///当前登录交易所的交易用户的token
+  ///当前登录交易所的交易用户令牌;
   TXeleFtdcClientTokenType Token[XELE_EXCHANGE_LOGIN_NUM]; 
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
   ///交易系统名称
   TXeleFtdcTradingSystemNameType TradingSystemName;
-  ///数据中心代码:0表示系统的查询中心，1 表示交易中心
+  ///数据中心代码
   TXeleFtdcDataCenterIDType DataCenterID;
   ///会员私有流当前长度
   TXeleFtdcSequenceNoType PrivateFlowSize;
@@ -98,6 +101,7 @@ struct CXeleFtdcReqUserLogoutField {
 
   ///交易用户代码
   TXeleFtdcAccountIDType AccountID;
+  ///未用字段
   char Padding_Three[3];
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
@@ -111,6 +115,7 @@ struct CXeleFtdcRspUserLogoutField {
 
   ///交易用户代码
   TXeleFtdcAccountIDType AccountID;
+  ///未用字段
   char Padding_Three[3];
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
@@ -143,8 +148,9 @@ struct CXeleFairInputOrderField {
   TXeleFtdcInsertType   InsertType;
   ///最小成交数量
   TXeleFtdcMinVolumeType MinVolume;
-  ///前置信息
+  ///前置信息;
   TXeleFtdcExchangeFrontEnumType  ExchangeFront;
+  ///未用字段
   char                  _unused_1[2];
 };
 
@@ -163,10 +169,11 @@ struct CXeleFairOrderActionField {
   TXeleFtdcProductReserve2Type  ProductReserve2;
   ///产品保留字段3，由程序自动填写
   TXeleFtdcProductReserve3Type  ProductReserve3; 
-  ///本地报单编号
+  ///本地报单操作编号
   TXeleFtdcActionLocalNoType ActionLocalNo;
   ///被撤单柜台编码
   TXeleFtdcOrderSysNoType    OrderSysNo; 
+  ///未用字段
   char _unused_1[28];
 };
 
@@ -179,6 +186,7 @@ struct CXeleFtdcInputOrderField {
 
   ///报单编号
   TXeleFtdcOrderSystemNoType OrderSystemNo;
+  ///未用字段
   char _unused_1[9];
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
@@ -255,11 +263,11 @@ struct CXeleFtdcOrderActionField {
   ///数量变化
   TXeleFtdcVolumeType VolumeChange;
   ///操作本地编号
-  TXeleFtdcOrderLocalIDType ActionLocalID;
+  TXeleFtdcActionLocalNoType ActionLocalNo;   
   ///未用字段
   char _unused_3[9];
-  ///操作本地num
-  TXeleFtdcActionLocalNoType ActionLocalNo;
+  ///操作本地代码
+  TXeleFtdcOrderLocalIDType ActionLocalID;
   ///未用字段
   char _unused_4[12];
 };
@@ -272,6 +280,7 @@ struct CXeleFtdcUserPasswordUpdateField {
 
   ///交易用户代码
   TXeleFtdcAccountIDType AccountID;
+  ///未用字段
   char Padding_Three[3];
   ///会员代码
   TXeleFtdcParticipantIDType ParticipantID;
@@ -541,6 +550,7 @@ struct CXeleFtdcTradeField {
   char _unused_2[9];
   ///交易所报单编号
   TXeleFtdcExchangeOrderSysIDType ExchangeOrderSysID;
+  ///未用字段
   char _unused_3[32];
 };
 
@@ -836,10 +846,10 @@ struct CXeleFtdcRspExchangeFrontField {
 #ifdef __cplusplus
   CXeleFtdcRspExchangeFrontField();
 #endif
-  ///交易所标志 0:NULL, 1:SHFE, 2:INE, 3:DCE, 4:CZCE, 5:CFFEX
-  int ExchangeID;
+  ///交易所标志
+  TXeleFtdcExchangNoType ExchangeID;
   ///交易前置数量
-  short FrontCount;
+  TXeleFtdcFrontCountType FrontCount;
   ///交易前置代码列表
   TXeleFtdcFrontListType FrontList;
 };

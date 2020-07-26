@@ -3,9 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "CXeleTraderApi.hpp"
+#include "XeleTraderOrderApi.h"
 #include "XeleTraderHandler.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,14 +86,36 @@ int trader_trader_api_xele_get_max_order_local_id(trader_trader_api* self, long*
 
 void trader_trader_api_xele_start(trader_trader_api* self)
 {
-  CXeleTraderApi* pTraderApi = CXeleTraderApi::CreateTraderApi();
-  CXeleTraderHandler* pTraderHandler = new CXeleTraderHandler((void*)self);
+  CXeleTraderApi* pQueryApi = CXeleTraderApi::CreateTraderApi();
+  CXeleTraderHandler* pQueryHandler = new CXeleTraderHandler((void*)self);
+
+  CXeleTraderOrderApi* pTraderApi = CXeleTraderOrderApi::CreateTraderApi();
+  CXeleTraderOrderHandler* pTraderHandler = new CXeleTraderOrderHandler((void*)self);
+  
   char sAddress[256];
   char* pSavePtr;
   char* pFrontAddress;
   char* pQueryFrontAddress;
+  char* pUdpFrontAddress;
+  char* pTcpFrontAddress;
+
+  strncpy(sAddress, self->pAddress, sizeof(sAddress));
   
+  pFrontAddress = strtok_r(sAddress, "|", &pSavePtr);
+  CMN_ASSERT (pFrontAddress);
+  
+  pQueryFrontAddress = strtok_r(NULL, "|", &pSavePtr);
+  CMN_ASSERT (pQueryFrontAddress);
+  
+  pUdpFrontAddress = strtok_r(NULL, "|", &pSavePtr);
+  CMN_ASSERT (pUdpFrontAddress);
+  
+  pTcpFrontAddress = strtok_r(NULL, "|", &pSavePtr);
+  CMN_ASSERT (pTcpFrontAddress);
+
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)malloc(sizeof(trader_trader_api_xele));
+  pImp->pQueryApi = (void*)pQueryApi;
+  pImp->pQueryHandler = (void*)pQueryHandler;
   pImp->pTraderApi = (void*)pTraderApi;
   pImp->pTraderHandler = (void*)pTraderHandler;
 
@@ -101,25 +126,24 @@ void trader_trader_api_xele_start(trader_trader_api* self)
   self->timeCondition = XELE_FTDC_TC_GFD;
   self->hedgeFlag = XELE_FTDC_HF_Speculation;
   
-	pTraderApi->RegisterSpi(pTraderHandler);
-
-  strncpy(sAddress, self->pAddress, sizeof(sAddress));
-  
-  pFrontAddress = strtok_r(sAddress, "|", &pSavePtr);
-  CMN_ASSERT (pFrontAddress);
-  
-  pQueryFrontAddress = strtok_r(NULL, "|", &pSavePtr);
-  CMN_ASSERT (pQueryFrontAddress);
-  
-  pTraderApi->RegisterFront(pFrontAddress, pQueryFrontAddress);
+	pQueryApi->RegisterSpi(pQueryHandler);
+  pQueryApi->RegisterFront(pFrontAddress, pQueryFrontAddress);
   
   /*	 * 准备login的结构体	 */
   /*	 * 订阅相应的流	 */
-  pTraderApi->SubscribePrivateTopic(XELE_TERT_RESUME);
-  pTraderApi->SubscribePublicTopic(XELE_TERT_RESUME);
-  pTraderApi->SubscribeUserTopic(XELE_TERT_RESUME);
+  pQueryApi->SubscribePrivateTopic(XELE_TERT_RESUME);
+  pQueryApi->SubscribePublicTopic(XELE_TERT_RESUME);
+  pQueryApi->SubscribeUserTopic(XELE_TERT_RESUME);
+
+  pQueryApi->SetCustomClientSide();
+
+  pTraderApi->RegisterFront(pUdpFrontAddress, pTcpFrontAddress);
+  pTraderApi->RegisterSpi(pTraderHandler);
+
   /*	 * 开始登录, 使客户端程序开始与交易柜台建立连接	 */
-  pTraderApi->Init(false);
+  pQueryApi->Init(false);
+  
+  signal(SIGSEGV, SIG_DFL);
   
   return;
 
@@ -128,11 +152,19 @@ void trader_trader_api_xele_start(trader_trader_api* self)
 void trader_trader_api_xele_stop(trader_trader_api* self)
 {
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
-  CXeleTraderHandler* pTraderHandler = (CXeleTraderHandler*)pImp->pTraderHandler;
+  CXeleTraderApi* pQueryApi = (CXeleTraderApi*)pImp->pQueryApi;
+  CXeleTraderHandler* pQueryHandler = (CXeleTraderHandler*)pImp->pQueryHandler;
   
-  pTraderApi->RegisterSpi(NULL);
-  pTraderApi->Release();
+  CXeleTraderOrderApi* pTraderApi = (CXeleTraderOrderApi*)pImp->pTraderApi;
+  CXeleTraderOrderHandler* pTraderHandler = (CXeleTraderOrderHandler*)pImp->pTraderHandler;
+  
+  pQueryApi->RegisterSpi(NULL);
+  pQueryApi->Release();
+  delete pQueryHandler;
+
+  
+  pQueryApi->Release();
+  delete pTraderApi;
   delete pTraderHandler;
   
   free(pImp);
@@ -144,7 +176,7 @@ void trader_trader_api_xele_stop(trader_trader_api* self)
 void trader_trader_api_xele_login(trader_trader_api* self)
 {
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
+  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pQueryApi;
   
 	CXeleFtdcReqUserLoginField loginInfo;
   CXeleFtdcAuthenticationInfoField authInfo;
@@ -163,7 +195,7 @@ void trader_trader_api_xele_login(trader_trader_api* self)
 void trader_trader_api_xele_logout(trader_trader_api* self)
 {
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
+  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pQueryApi;
 
   CXeleFtdcReqUserLogoutField userLogoutField;
   
@@ -178,49 +210,32 @@ void trader_trader_api_xele_logout(trader_trader_api* self)
 int trader_trader_api_xele_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
 {
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
+  CXeleTraderOrderApi* pTraderApi = (CXeleTraderOrderApi*)pImp->pTraderApi;
 
   CXeleFairInputOrderField inputOrderField;
 
   memset(&inputOrderField, 0, sizeof(inputOrderField));
 
-#if 0
-	/* 会员代码 */
-	snprintf(inputOrderField.ParticipantID, sizeof(inputOrderField.ParticipantID), "%s", self->pBrokerID);
-	/* 客户代码 */
-	snprintf(inputOrderField.ClientID, sizeof(inputOrderField.ClientID), "%s", pImp->sClientID);
-	/* 合约代码 */
-	strncpy(inputOrderField.InstrumentID, inst, sizeof(inputOrderField.InstrumentID));
-	/* 报单价格条件 */
-	inputOrderField.OrderPriceType = XELE_FTDC_OPT_LimitPrice;
-	/* 买卖方向 */
-	inputOrderField.Direction = buy_sell;
-	/* 组合开平标志 */
-	inputOrderField.CombOffsetFlag[0] = open_close;
-	/* 组合投机套保标志 */
-	inputOrderField.CombHedgeFlag[0] = self->hedgeFlag;
-	/* 价格 */
-	inputOrderField.LimitPrice = price;
-	/* 数量 */
-	inputOrderField.VolumeTotalOriginal = vol;
-	/* 有效期类型 */
-	inputOrderField.TimeCondition = self->timeCondition;
-	/* 成交量类型 */
-	inputOrderField.VolumeCondition = XELE_FTDC_VC_AV;
-	/* 最小成交量 */
-	inputOrderField.MinVolume = 0;
-	/* 触发条件 */
-	inputOrderField.ContingentCondition = XELE_FTDC_CC_Immediately;
-	/* 止损价 */
-	inputOrderField.StopPrice = 0;
-	/* 强平原因 */
-	inputOrderField.ForceCloseReason = XELE_FTDC_FCC_NotForceClose;
-  /* 本地报单编号 */
-	snprintf(inputOrderField.OrderLocalID, sizeof(inputOrderField.OrderLocalID), "%s", local_id);
-  /* 自动挂起标志 */
-	inputOrderField.IsAutoSuspend = 0;
+  char insertType = CXeleTraderOrderApi::ConvertInsertType(XELE_FTDC_TC_GFD, open_close, buy_sell, XELE_FTDC_VC_AV);
+  if(insertType < 1){
+    return -1;
+  }
+  ///客户编号
+  ///客户令牌
+  ///本地报单编号
+  inputOrderField.OrderLocalNo = atoi(local_id);
+  ///报单价格
+  inputOrderField.LimitPrice = price;
+  ///合约代码
+  strncpy(inputOrderField.InstrumentID, inst, sizeof(inputOrderField.InstrumentID));
+  ///数量
+  inputOrderField.VolumeTotalOriginal = vol;
+  ///输入报单类型
+  inputOrderField.InsertType = insertType;
+  ///最小成交数量
+  inputOrderField.MinVolume = 0;
+
   pTraderApi->ReqOrderInsert(&inputOrderField, pImp->nTraderRequestID++);
-#endif
 
   return 0;
 }
@@ -228,27 +243,19 @@ int trader_trader_api_xele_order_insert(trader_trader_api* self, char* inst, cha
 int trader_trader_api_xele_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
 {
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
+  CXeleTraderOrderApi* pTraderApi = (CXeleTraderOrderApi*)pImp->pTraderApi;
 
   CXeleFairOrderActionField inputOrderActionField;
   
   memset(&inputOrderActionField, 0, sizeof(inputOrderActionField));
 
-#if 0
-  ///报单编号
-	snprintf(inputOrderActionField.OrderSysID, sizeof(inputOrderActionField.OrderSysID), "%s", order_sys_id);
-  ///报单操作标志
-  inputOrderActionField.ActionFlag = XELE_FTDC_AF_Delete;
-  ///会员代码
-	snprintf(inputOrderActionField.ParticipantID, sizeof(inputOrderActionField.ParticipantID), "%s", self->pBrokerID);
-  ///客户代码
-	snprintf(inputOrderActionField.ClientID, sizeof(inputOrderActionField.ClientID), "%s", pImp->sClientID);
-  ///操作本地编号
-	snprintf(inputOrderActionField.ActionLocalID, sizeof(inputOrderActionField.ActionLocalID), "%s", local_id);
-	
-  
+  ///本地报单操作编号
+	inputOrderActionField.ActionLocalNo = atoi(local_id);
+  ///被撤单柜台编码
+	inputOrderActionField.OrderSysNo = atol(order_sys_id);
+
   pTraderApi->ReqOrderAction(&inputOrderActionField, pImp->nTraderRequestID++);
-#endif
+  
   return 0;
 }
 
@@ -256,7 +263,7 @@ int trader_trader_api_xele_order_action(trader_trader_api* self, char* inst, cha
 int trader_trader_api_xele_qry_instrument(trader_trader_api* self)
 {
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
+  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pQueryApi;
 
   CXeleFtdcQryInstrumentField qryInstrumentField;
   
@@ -277,15 +284,13 @@ int trader_trader_api_xele_qry_user_investor(trader_trader_api* self)
   
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
   
-  trader_trader_api_on_rsp_qry_user_investor(self, pImp->sClientID, 0, "");
-  
   return 0;
 }
 
 int trader_trader_api_xele_qry_investor_position(trader_trader_api* self)
 {
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
+  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pQueryApi;
 
   CXeleFtdcQryClientPositionField qryInvestorPositionField;
   memset(&qryInvestorPositionField, 0, sizeof(qryInvestorPositionField));
@@ -299,7 +304,7 @@ int trader_trader_api_xele_qry_investor_position(trader_trader_api* self)
 int trader_trader_api_xele_qry_trading_account(trader_trader_api* self)
 {
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pTraderApi;
+  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)pImp->pQueryApi;
   
   CXeleFtdcQryClientAccountField qryTradingAccountField;
   memset(&qryTradingAccountField, 0, sizeof(qryTradingAccountField));

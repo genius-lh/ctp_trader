@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+
 
 #include "CXeleTraderApi.hpp"
+
+#include "XeleTraderOrderApi.h"
 
 #include "XeleTest.h"
 
@@ -20,8 +24,10 @@ int main(int argc, char* argv[])
   char sUserId[128];
   char sOldPassword[128];
   int i = 1;
+  char sAddress2[128];
+  char sAddress3[128];
 
-  if(argc < 9){
+  if(argc < 11){
     printf("input sLoginId:\n");
     scanf("%s", sLoginId);
     printf("input password:\n");
@@ -38,6 +44,10 @@ int main(int argc, char* argv[])
     scanf("%s", sAddress);
     printf("input sAddress1:\n");
     scanf("%s", sAddress1);
+    printf("input sAddress2:\n");
+    scanf("%s", sAddress2);
+    printf("input sAddress3:\n");
+    scanf("%s", sAddress3);
   }else{
     strncpy(sLoginId, argv[i++], sizeof(sLoginId));
     strncpy(sOldPassword, argv[i++], sizeof(sOldPassword));
@@ -47,11 +57,17 @@ int main(int argc, char* argv[])
     strncpy(sUserId, argv[i++], sizeof(sUserId));
     strncpy(sAddress, argv[i++], sizeof(sAddress));
     strncpy(sAddress1, argv[i++], sizeof(sAddress1));
+    strncpy(sAddress2, argv[i++], sizeof(sAddress2));
+    strncpy(sAddress3, argv[i++], sizeof(sAddress3));
   }
 
 
-  CXeleTraderApi* pTraderApi = CXeleTraderApi::CreateTraderApi();
+  CXeleTraderApi* pTraderApi = CXeleTraderApi::CreateTraderApi(1);
   CXeleTraderHandler* pTraderHandler = new CXeleTraderHandler();
+
+  
+  CXeleTraderOrderApi* pOrderApi = CXeleTraderOrderApi::CreateTraderApi();
+  CXeleTraderOrderHandler* pOrderHander = new CXeleTraderOrderHandler((void*)pOrderApi);
   
   // 初始化变量
   pTraderHandler->m_AppID = sAppId;
@@ -63,6 +79,12 @@ int main(int argc, char* argv[])
   
   pTraderHandler->m_Arg = (void*)pTraderApi;
   pTraderHandler->m_RequestId = 1;
+
+  pTraderHandler->m_OrderApi = pOrderApi;
+  pTraderHandler->m_OrderHander = pOrderHander;
+
+  pOrderApi->RegisterFront(sAddress2, sAddress3);
+  pOrderApi->RegisterSpi(pOrderHander);
   
 	pTraderApi->RegisterSpi(pTraderHandler);
   pTraderApi->RegisterFront(sAddress, sAddress1);
@@ -70,13 +92,22 @@ int main(int argc, char* argv[])
   /*	 * 订阅相应的流	 */
   pTraderApi->SubscribePrivateTopic(XELE_TERT_RESUME);
   pTraderApi->SubscribePublicTopic(XELE_TERT_RESUME);
+  
+  pTraderApi->SetCustomClientSide();
+
   /*	 * 开始登录, 使客户端程序开始与交易柜台建立连接	 */
   pTraderApi->Init();
+  
+  signal(SIGSEGV, SIG_DFL);
 
   pTraderHandler->Loop();
 
   pTraderApi->Release();
   delete pTraderHandler;
+
+  pOrderApi->Release();
+  delete pOrderHander;
+  
   return 0;  
 }
 
@@ -122,6 +153,12 @@ void CXeleTraderHandler::Loop()
     case 8:
       ChangePassword();
       break;
+    case 9:
+      ReqQryLogin();
+      break;
+    case 10:
+      ReqQryLogout();
+      break;
     case 0:
       LogOut();
       sleep(1);
@@ -147,6 +184,8 @@ int CXeleTraderHandler::ShowMenu()
         "6-持仓查询\n"
         "7-资金查询\n"
         "8-修改密码\n"
+        "9-协议登录\n"
+        "10-协议登出\n"
         "0-退出\n"
         "**********************\n"
         "请选择："
@@ -162,6 +201,9 @@ void CXeleTraderHandler::LogOut()
   CXeleTraderApi* pTraderApi = (CXeleTraderApi*)m_Arg;
   CXeleFtdcReqUserLogoutField req;
 	memset(&req, 0, sizeof(req));
+  //this->m_OrderApi->ReqUserLogout(&req, m_RequestId++);
+  //sleep(1);
+  
   strncpy(req.AccountID, m_LoginId, sizeof(req.AccountID));
   pTraderApi->ReqUserLogout(&req, m_RequestId++);
   m_Loop = 0;
@@ -170,8 +212,6 @@ void CXeleTraderHandler::LogOut()
 
 void CXeleTraderHandler::OpenOrder()
 {
-#if 0
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)m_Arg;
   CXeleFairInputOrderField req;
   memset(&req, 0, sizeof(req));
   char InstrumentID[32];
@@ -188,73 +228,51 @@ void CXeleTraderHandler::OpenOrder()
   printf("请输入价格:");
   scanf("%lf", &LimitPrice);
 
-	/* 会员代码 */
-	snprintf(req.ParticipantID, sizeof(req.ParticipantID), "%s", m_BrokerID);
-	/* 客户代码 */
-	snprintf(req.ClientID, sizeof(req.ClientID), "%s", m_UserId);
-	/* 合约代码 */
-	strncpy(req.InstrumentID, InstrumentID, sizeof(req.InstrumentID));
-	/* 报单价格条件 */
-	req.OrderPriceType = XELE_FTDC_OPT_LimitPrice;
-	/* 买卖方向 */
-	req.Direction = Direction[0];
-	/* 组合开平标志 */
-	req.CombOffsetFlag[0] = OffsetFlag[0];
-	/* 组合投机套保标志 */
-	req.CombHedgeFlag[0] = XELE_FTDC_HF_Speculation;
-	/* 价格 */
+  char insertType = CXeleTraderOrderApi::ConvertInsertType(XELE_FTDC_TC_GFD, OffsetFlag[0], Direction[0], XELE_FTDC_VC_AV);
+  if(insertType < 1){
+    return ;
+  }
+  ///客户编号
+  req.ClientIndex = this->m_ClientIndex;
+  ///客户令牌
+  req.ClientToken = this->m_Token;
+  ///本地报单编号
+  req.OrderLocalNo = m_RequestId;
+  ///报单价格
 	req.LimitPrice = LimitPrice;
-	/* 数量 */
+  ///合约代码
+	strncpy(req.InstrumentID, InstrumentID, sizeof(req.InstrumentID));
+  ///数量
 	req.VolumeTotalOriginal = 1;
-	/* 有效期类型 */
-	req.TimeCondition = XELE_FTDC_TC_GFD;
-	/* 成交量类型 */
-	req.VolumeCondition = XELE_FTDC_VC_AV;
-	/* 最小成交量 */
-	req.MinVolume = 0;
-	/* 触发条件 */
-	req.ContingentCondition = XELE_FTDC_CC_Immediately;
-	/* 止损价 */
-	req.StopPrice = 0;
-	/* 强平原因 */
-	req.ForceCloseReason = XELE_FTDC_FCC_NotForceClose;
-  /* 本地报单编号 */
-	snprintf(req.OrderLocalID, sizeof(req.OrderLocalID), "%ld", m_RequestId);
-  /* 自动挂起标志 */
-	req.IsAutoSuspend = 0;
+  ///输入报单类型
+	req.InsertType = insertType;
+  ///最小成交数量
+	req.MinVolume = 1;
 
-  pTraderApi->ReqOrderInsert(&req, m_RequestId++);
-#endif
+  this->m_OrderApi->ReqOrderInsert(&req, m_RequestId++);
   return ;
 }
 
 void CXeleTraderHandler::Withdraw()
 {
-#if 0
-  CXeleTraderApi* pTraderApi = (CXeleTraderApi*)m_Arg;
   CXeleFairOrderActionField req;
   memset(&req, 0, sizeof(req));
-  
+
   char OrderSysID[32];
   printf("请输入报单编号:");
   scanf("%s", OrderSysID);
 
-  ///报单编号
-	//snprintf(req.OrderSysID, sizeof(req.OrderSysID), "%s", OrderSysID);
+  ///客户编号
+  req.ClientIndex = this->m_ClientIndex;
+  ///客户令牌
+  req.ClientToken = this->m_Token;
+  ///本地报单操作编号
+	req.ActionLocalNo = m_RequestId;
+  ///被撤单柜台编码
 	req.OrderSysNo = atoi(OrderSysID);
-  ///报单操作标志
-  req.ActionFlag = XELE_FTDC_AF_Delete;
-  ///会员代码
-	//snprintf(req.ParticipantID, sizeof(req.ParticipantID), "%s", m_BrokerID);
-  ///客户代码
-	//snprintf(req.ClientID, sizeof(req.ClientID), "%s", m_UserId);
-  ///操作本地编号
-	//snprintf(req.ActionLocalID, sizeof(req.ActionLocalID), "%ld", m_RequestId);
-	req.ActionLocalNo = atoi(m_RequestId);
 
-  pTraderApi->ReqOrderAction(&req, m_RequestId++);
+  this->m_OrderApi->ReqOrderAction(&req, m_RequestId++);
 
-#endif
   return ;
 }
 
@@ -335,6 +353,18 @@ void CXeleTraderHandler::ChangePassword()
   pTraderApi->ReqUserPasswordUpdate(&req, m_RequestId++);
 }
 
+void CXeleTraderHandler::ReqQryLogin()
+{
+  this->m_OrderApi->ReqUserLogin(m_RequestId++);
+}
+
+void CXeleTraderHandler::ReqQryLogout()
+{
+  CXeleFtdcReqUserLogoutField req;
+  memset(&req, 0, sizeof(req));
+
+  this->m_OrderApi->ReqUserLogout(&req, m_RequestId++);
+}
 
 void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
 {
@@ -482,7 +512,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
 
 void CXeleTraderHandler::OnFrontConnected()
 {
-  XELE_LOG("%s\n", __FUNCTION__);
+  XELE_LOG("CXeleTraderHandler::%s\n", __FUNCTION__);
   CXeleTraderApi* pTraderApi = (CXeleTraderApi*)m_Arg;
 
 	CXeleFtdcReqUserLoginField login_info;
@@ -536,6 +566,12 @@ void CXeleTraderHandler::OnRspUserLogin(CXeleFtdcRspUserLoginField *pRspUserLogi
     if(!pRspInfo->ErrorID){
       m_ClientIndex = pRspUserLogin->ClientIndex[0];
       m_Token = pRspUserLogin->Token[0];
+
+      this->m_OrderApi->Init(pRspUserLogin->ClientIndex, pRspUserLogin->Token);
+
+      sleep(2);
+
+      //this->m_OrderApi->ReqUserLogin(m_RequestId++);
     }
   }
 }
@@ -544,36 +580,6 @@ void CXeleTraderHandler::OnRspUserLogout(CXeleFtdcRspUserLogoutField *pRspUserLo
                            CXeleFtdcRspInfoField *pRspInfo,
                            int nRequestID,
                            bool bIsLast)
-{
-  XELE_LOG("%s\n", __FUNCTION__);
-  if(pRspInfo){
-    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
-      "pRspInfo->ErrorMsg=[%s]\n",
-      pRspInfo->ErrorID,
-      pRspInfo->ErrorMsg);
-  }
-
-}
-
-void CXeleTraderHandler::OnRspOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
-                            CXeleFtdcRspInfoField *pRspInfo,
-                            int nRequestID,
-                            bool bIsLast)
-{
-  XELE_LOG("%s\n", __FUNCTION__);
-  if(pRspInfo){
-    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
-      "pRspInfo->ErrorMsg=[%s]\n",
-      pRspInfo->ErrorID,
-      pRspInfo->ErrorMsg);
-  }
-
-}
-
-void CXeleTraderHandler::OnRspOrderAction(CXeleFtdcOrderActionField *pOrderAction,
-                            CXeleFtdcRspInfoField *pRspInfo,
-                            int nRequestID,
-                            bool bIsLast)
 {
   XELE_LOG("%s\n", __FUNCTION__);
   if(pRspInfo){
@@ -638,7 +644,17 @@ void CXeleTraderHandler::OnRspQryInstrument(CXeleFtdcRspInstrumentField *pRspIns
       pRspInfo->ErrorMsg);
   }
   if(pRspInstrument){
+    
     XELE_LOG(
+      "pRspInstrument->InstrumentID=[%s]"
+      "\n"
+      ,pRspInstrument->InstrumentID
+    );
+    FILE* fp = fopen("RspInstrument.txt", "a+");
+    if(!fp){
+      return ;
+    }
+    fprintf(fp,
       "pRspInstrument->SettlementGroupID=[%s]"
       "pRspInstrument->ProductID=[%s]"
       "pRspInstrument->ProductGroupID=[%s]"
@@ -697,7 +713,7 @@ void CXeleTraderHandler::OnRspQryInstrument(CXeleFtdcRspInstrumentField *pRspIns
       ,pRspInstrument->PriceTick
       ,pRspInstrument->AllowDelivPersonOpen
     );
-
+    fclose(fp);
   }
 
 }
@@ -755,18 +771,6 @@ void CXeleTraderHandler::OnRspQryClientAccount(CXeleFtdcRspClientAccountField *p
 
 }
 
-void CXeleTraderHandler::OnRtnTrade(CXeleFtdcTradeField *pTrade)
-{
-  XELE_LOG("%s\n", __FUNCTION__);
-  PrintTrade(pTrade);
-}
-
-void CXeleTraderHandler::OnRtnOrder(CXeleFtdcOrderField *pOrder)
-{
-  XELE_LOG("%s\n", __FUNCTION__);
-  PrintOrder(pOrder);
-}
-
 void CXeleTraderHandler::OnRtnInsInstrument(CXeleFtdcInstrumentField *pInstrument)
 {
   XELE_LOG("%s\n", __FUNCTION__);
@@ -806,32 +810,6 @@ void CXeleTraderHandler::OnRtnInsInstrument(CXeleFtdcInstrumentField *pInstrumen
       ,pInstrument->AdvanceMonth
       ,pInstrument->IsTrading
     );
-  }
-
-}
-
-void CXeleTraderHandler::OnErrRtnOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
-                               CXeleFtdcRspInfoField *pRspInfo)
-{
-  XELE_LOG("%s\n", __FUNCTION__);
-  if(pRspInfo){
-    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
-      "pRspInfo->ErrorMsg=[%s]\n",
-      pRspInfo->ErrorID,
-      pRspInfo->ErrorMsg);
-  }
-
-}
-
-void CXeleTraderHandler::OnErrRtnOrderAction(CXeleFtdcOrderActionField *pOrderAction,
-                               CXeleFtdcRspInfoField *pRspInfo)
-{
-  XELE_LOG("%s\n", __FUNCTION__);
-  if(pRspInfo){
-    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
-      "pRspInfo->ErrorMsg=[%s]\n",
-      pRspInfo->ErrorID,
-      pRspInfo->ErrorMsg);
   }
 
 }
@@ -877,5 +855,127 @@ void CXeleTraderHandler::OnRspUserPasswordUpdate(CXeleFtdcUserPasswordUpdateFiel
   }
 
 }
+
+
+CXeleTraderOrderHandler::CXeleTraderOrderHandler(void* arg)
+:m_Arg(arg)
+{
+
+}
+
+CXeleTraderOrderHandler::~CXeleTraderOrderHandler()
+{
+  XELE_LOG("CXeleTraderHandler::%s\n", __FUNCTION__);
+}
+
+void CXeleTraderOrderHandler::OnFrontConnected()
+{
+  XELE_LOG("CXeleTraderOrderHandler::%s\n", __FUNCTION__);
+
+  
+  
+}
+
+void CXeleTraderOrderHandler::OnFrontDisconnected(int nReason)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+}
+
+void CXeleTraderOrderHandler::OnRspUserLogin(CXeleFtdcRspUserLoginField *pRspUserLogin,
+                          CXeleFtdcRspInfoField *pRspInfo,
+                          int nRequestID,
+                          bool bIsLast)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+}
+
+void CXeleTraderOrderHandler::OnRspUserLogout(CXeleFtdcRspUserLogoutField *pRspUserLogout,
+                           CXeleFtdcRspInfoField *pRspInfo,
+                           int nRequestID,
+                           bool bIsLast)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+}
+
+void CXeleTraderOrderHandler::OnRspOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
+                            CXeleFtdcRspInfoField *pRspInfo,
+                            int nRequestID,
+                            bool bIsLast)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+
+}
+
+void CXeleTraderOrderHandler::OnRspOrderAction(CXeleFtdcOrderActionField *pOrderAction,
+                            CXeleFtdcRspInfoField *pRspInfo,
+                            int nRequestID,
+                            bool bIsLast)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+
+}
+
+
+void CXeleTraderOrderHandler::OnRtnTrade(CXeleFtdcTradeField *pTrade)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  CXeleTraderHandler::PrintTrade(pTrade);
+}
+
+void CXeleTraderOrderHandler::OnRtnOrder(CXeleFtdcOrderField *pOrder)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  CXeleTraderHandler::PrintOrder(pOrder);
+}
+
+void CXeleTraderOrderHandler::OnErrRtnOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
+                               CXeleFtdcRspInfoField *pRspInfo)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+}
+
+void CXeleTraderOrderHandler::OnErrRtnOrderAction(CXeleFtdcOrderActionField *pOrderAction,
+                               CXeleFtdcRspInfoField *pRspInfo)
+{
+  XELE_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    XELE_LOG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+
+}
+
 
 

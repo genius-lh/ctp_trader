@@ -12,7 +12,7 @@ bin_PROGRAMS=\
 			traderMduserCtp traderStrategyCtp traderStrategyXele \
 			traderMduserCtpMini traderStrategyCtpMini \
 			traderMduserFemas traderStrategyFemas \
-			traderMduserFemasAF traderStrategyFemasAF \
+			traderMduserFemasAF traderStrategyFemasAF traderMduserFemasUDP\
 			traderMduserXSpeedSOP traderStrategyXSpeedSOP \
 			traderMduserXSpeedStock \
 			testMduserShm testMduserClient \
@@ -231,6 +231,19 @@ traderMduserFemasAF_CFLAGS=-DFEMAS\
 traderMduserFemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
 	-L. -ltradercmn -lmduserapi\
 	-Lfemas20 -lfemasmduserAF -lUSTPmduserapiAF
+
+traderMduserFemasUDP_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserFemasUDP_CFLAGS=-DFEMAS\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserFemasUDP_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
+	-L. -ltradercmn -lmduserapi\
+	-Lfemas20 -lfemasmduser_udp -lUSTPmduserapiAF
+
 
 traderStrategyFemasAF_SOURCES=\
 	src/log/cmn_log_catalog.c\

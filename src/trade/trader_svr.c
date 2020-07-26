@@ -798,15 +798,6 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     sleep(1);
     self->pCtpTraderApi->pMethod->xQryInstrument(self->pCtpTraderApi);
     break;
-  case TRADERONRSPQRYINVESTOR:
-    self->bQueried = 1;
-    // 通知登陆成功
-    trader_svr_client_notify_login(self, 0, "SUCCESS");
-    
-    // 查询持仓
-    sleep(1);
-    self->pCtpTraderApi->pMethod->xQryInvestorPosition(self->pCtpTraderApi);
-    break;
   case TRADERONRSPQRYINSTRUMENT:
     if(!pMsg->ErrorCd){
       bFound = trader_svr_check_instrument(self, pInstrument->InstrumentID);
@@ -831,10 +822,23 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     }
 
     if(pMsg->IsLast){
+      // 查询持仓
+      sleep(1);
+      CMN_DEBUG("xQryInvestorPosition!\n");
+      self->pCtpTraderApi->pMethod->xQryInvestorPosition(self->pCtpTraderApi);
+
+    }
+    break;
+  case TRADERONRSPQRYINVESTOR:    
+    CMN_DEBUG("OnRspQryUserInvestor!\n");
+    break;
+  case TRADERONRSPQRYTRADINGACCOUNT:
+    if(pMsg->IsLast){
       // 查询投资者编号
       sleep(1);
-      self->pCtpTraderApi->pMethod->xQryUserInvestor(self->pCtpTraderApi);
-    }
+      CMN_DEBUG("xQryUserInvestor!\n");
+      self->pCtpTraderApi->pMethod->xQryUserInvestor(self->pCtpTraderApi);      
+    }    
     break;
   case TRADERONRSPQRYINVESTORPOSITION:
     pInvestorPosition->IsSHFE = 0;
@@ -881,14 +885,17 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     
     self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, &traderPosition);
 
-    if(pMsg->IsLast){   
+    if(pMsg->IsLast){
       sleep(1);
       CMN_DEBUG("xQryTradingAccount!\n");
       self->pCtpTraderApi->pMethod->xQryTradingAccount(self->pCtpTraderApi);
+      
+      self->bQueried = 1;
+      // 通知登陆成功
+      trader_svr_client_notify_login(self, 0, "SUCCESS");
     }
     break;
   case TRADERONRTNORDER:
-    
     CMN_INFO("订单变化!\n");
     CMN_INFO("pOrder->ExchangeID[%s]\n", pOrder->ExchangeID);
     CMN_INFO("pOrder->OrderSysID[%s]\n", pOrder->OrderSysID);

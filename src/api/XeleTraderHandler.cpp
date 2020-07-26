@@ -5,6 +5,7 @@
 
 #include "CXeleTraderApi.hpp"
 #include "XeleTraderHandler.h"
+#include "XeleTraderOrderApi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,8 +30,6 @@ CXeleTraderHandler::~CXeleTraderHandler()
 {
 
 }
-
-
 
 void CXeleTraderHandler::OnFrontConnected()
 {
@@ -69,6 +68,7 @@ void CXeleTraderHandler::OnRspUserLogin(CXeleFtdcRspUserLoginField *pRspUserLogi
 {
   trader_trader_api* self = (trader_trader_api*)m_Arg;
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
+  CXeleTraderOrderApi* pTraderApi = (CXeleTraderOrderApi*)pImp->pTraderApi;
   
   int errNo = 0;
   char* errMsg = NULL;
@@ -76,16 +76,28 @@ void CXeleTraderHandler::OnRspUserLogin(CXeleFtdcRspUserLoginField *pRspUserLogi
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
   }
-  if(pRspUserLogin){  
-    // 获取交易日期
-    strncpy(pImp->sTradingDay, pRspUserLogin->TradingDay, sizeof(pImp->sTradingDay));
-
-    // 获取最大报单号
-    strncpy(pImp->sMaxOrderLocalID, pRspUserLogin->MaxOrderLocalID, sizeof(pImp->sMaxOrderLocalID));
-    trader_trader_api_get_max_order_local_id(self, pRspUserLogin->MaxOrderLocalID);
-  }
   
-  trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+  do{
+    if(errNo){
+      trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+      break;
+    }
+  
+    if(pRspUserLogin){  
+      // 获取交易日期
+      strncpy(pImp->sTradingDay, pRspUserLogin->TradingDay, sizeof(pImp->sTradingDay));
+
+      // 获取最大报单号
+      strncpy(pImp->sMaxOrderLocalID, pRspUserLogin->MaxOrderLocalID, sizeof(pImp->sMaxOrderLocalID));
+      trader_trader_api_get_max_order_local_id(self, pRspUserLogin->MaxOrderLocalID);
+
+      pTraderApi->Init(pRspUserLogin->ClientIndex, pRspUserLogin->Token);
+      
+    }
+
+    
+  }while(0);
+  
   return;
 }
 
@@ -104,49 +116,6 @@ void CXeleTraderHandler::OnRspUserLogout(CXeleFtdcRspUserLogoutField *pRspUserLo
   
   trader_trader_api_on_rsp_user_logout(self, errNo, errMsg);
   return ;
-}
-
-void CXeleTraderHandler::OnRspOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
-                            CXeleFtdcRspInfoField *pRspInfo,
-                            int nRequestID,
-                            bool bIsLast)
-{
-  CMN_DEBUG("%s\n", __FUNCTION__);
-  trader_trader_api* self = (trader_trader_api*)m_Arg;
-  int errNo = 0;
-  char* errMsg = NULL;
-  if(pRspInfo){
-    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
-      "pRspInfo->ErrorMsg=[%s]\n",
-      pRspInfo->ErrorID,
-      pRspInfo->ErrorMsg);
-    errNo = pRspInfo->ErrorID;
-    errMsg = pRspInfo->ErrorMsg;
-  }
-  trader_trader_api_on_rsp_order_insert(self, errNo, errMsg);
-  return;
-}
-
-void CXeleTraderHandler::OnRspOrderAction(CXeleFtdcOrderActionField *pOrderAction,
-                            CXeleFtdcRspInfoField *pRspInfo,
-                            int nRequestID,
-                            bool bIsLast)
-{
-  CMN_DEBUG("%s\n", __FUNCTION__);
-  trader_trader_api* self = (trader_trader_api*)m_Arg;
-  int errNo = 0;
-  char* errMsg = NULL;
-  if(pRspInfo){
-    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
-      "pRspInfo->ErrorMsg=[%s]\n",
-      pRspInfo->ErrorID,
-      pRspInfo->ErrorMsg);
-    errNo = pRspInfo->ErrorID;
-    errMsg = pRspInfo->ErrorMsg;
-  }
-  trader_trader_api_on_rsp_order_action(self, errNo, errMsg);
-  return;
-
 }
 
 void CXeleTraderHandler::OnRspQryClientPosition(CXeleFtdcRspClientPositionField *pRspClientPosition,
@@ -372,73 +341,7 @@ void CXeleTraderHandler::OnRspQryClientAccount(CXeleFtdcRspClientAccountField *p
 
 }
 
-void CXeleTraderHandler::OnRtnTrade(CXeleFtdcTradeField *pTrade)
-{
-  CMN_DEBUG("%s\n", __FUNCTION__);
-  PrintTrade(pTrade);
-  trader_trader_api* self = (trader_trader_api*)m_Arg;
-  trader_trade traderTrade;
-  memset(&traderTrade, 0, sizeof(traderTrade));
-  
-  ///合约代码
-  strncpy(traderTrade.InstrumentID, pTrade->InstrumentID, sizeof(traderTrade.InstrumentID));
-  ///本地报单编号
-  strncpy(traderTrade.UserOrderLocalID, pTrade->OrderLocalID, sizeof(traderTrade.UserOrderLocalID));
-  ///交易日
-  strncpy(traderTrade.TradingDay, pTrade->TradingDay, sizeof(traderTrade.TradingDay));
-  ///成交时间
-  strncpy(traderTrade.TradeTime, pTrade->TradeTime, sizeof(traderTrade.TradeTime));
-  ///买卖方向
-  traderTrade.Direction = pTrade->Direction;
-  ///开平标志
-  traderTrade.OffsetFlag = pTrade->OffsetFlag;
-  ///成交价格
-  traderTrade.TradePrice = pTrade->Price;
-  ///成交数量
-  traderTrade.TradeVolume = pTrade->Volume;
-  //成交编号
-  strncpy(traderTrade.TradeID, pTrade->TradeID, sizeof(traderTrade.TradeID));
 
-  trader_trader_api_on_rtn_trade(self, &traderTrade);
-}
-
-void CXeleTraderHandler::OnRtnOrder(CXeleFtdcOrderField *pOrder)
-{
-  CMN_DEBUG("%s\n", __FUNCTION__);
-  PrintOrder(pOrder);
-  
-  trader_trader_api* self = (trader_trader_api*)m_Arg;
-
-  trader_order traderOrder;
-  memset(&traderOrder, 0, sizeof(traderOrder));
-	///交易所代码
-  strncpy(traderOrder.ExchangeID, "CFFEX", sizeof(traderOrder.ExchangeID));
-	///系统报单编号
-  strncpy(traderOrder.OrderSysID, pOrder->OrderSysID, sizeof(traderOrder.OrderSysID));
-  // 合约代码
-  strncpy(traderOrder.InstrumentID, pOrder->InstrumentID, sizeof(traderOrder.InstrumentID));
-  // 本地报单编号
-  strncpy(traderOrder.UserOrderLocalID, pOrder->OrderLocalID, sizeof(traderOrder.UserOrderLocalID));
-  // 买卖
-  traderOrder.Direction = pOrder->Direction;
-  // 开平
-  traderOrder.OffsetFlag = pOrder->CombOffsetFlag[0];
-  ///投机套保标志
-  traderOrder.HedgeFlag = pOrder->CombHedgeFlag[0];
-  // 报单价格
-  traderOrder.LimitPrice = pOrder->LimitPrice;
-  // 报单手数
-  traderOrder.VolumeOriginal = pOrder->VolumeTotal;
-  // 成交手数
-  traderOrder.VolumeTraded = pOrder->VolumeTraded;
-  // 订单状态
-  traderOrder.OrderStatus = pOrder->OrderStatus;
-  ///插入时间
-  strncpy(traderOrder.InsertTime, pOrder->InsertTime, sizeof(traderOrder.InsertTime));
-
-  trader_trader_api_on_rtn_order(self, &traderOrder);
-
-}
 
 void CXeleTraderHandler::OnRtnInsInstrument(CXeleFtdcInstrumentField *pInstrument)
 {
@@ -483,86 +386,7 @@ void CXeleTraderHandler::OnRtnInsInstrument(CXeleFtdcInstrumentField *pInstrumen
 
 }
 
-void CXeleTraderHandler::OnErrRtnOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
-                               CXeleFtdcRspInfoField *pRspInfo)
-{
-  CMN_DEBUG("%s\n", __FUNCTION__);
-  trader_trader_api* self = (trader_trader_api*)m_Arg;
-  int errNo = 0;
-  char* errMsg = NULL;
-  if(pRspInfo) {
-    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
-      "pRspInfo->ErrorMsg=[%s]\n",
-      pRspInfo->ErrorID,
-      pRspInfo->ErrorMsg);
-    errNo = pRspInfo->ErrorID;
-    errMsg = pRspInfo->ErrorMsg;
-  }
-  trader_order traderOrder;
 
-  if(pInputOrder){
-    memset(&traderOrder, 0, sizeof(traderOrder));
-  	///交易所代码
-    strncpy(traderOrder.ExchangeID, "CFFEX", sizeof(traderOrder.ExchangeID));
-  	///系统报单编号
-    strncpy(traderOrder.OrderSysID, pInputOrder->OrderSysID, sizeof(traderOrder.OrderSysID));
-    // 合约代码
-    strncpy(traderOrder.InstrumentID, pInputOrder->InstrumentID, sizeof(traderOrder.InstrumentID));
-    // 本地报单编号
-    strncpy(traderOrder.UserOrderLocalID, pInputOrder->OrderLocalID, sizeof(traderOrder.UserOrderLocalID));
-    // 买卖
-    traderOrder.Direction = pInputOrder->Direction;
-    // 开平
-    traderOrder.OffsetFlag = pInputOrder->CombOffsetFlag[0];
-    ///投机套保标志
-    traderOrder.HedgeFlag = pInputOrder->CombHedgeFlag[0];
-    // 报单价格
-    traderOrder.LimitPrice = pInputOrder->LimitPrice;
-    // 报单手数
-    traderOrder.VolumeOriginal = pInputOrder->VolumeTotalOriginal;
-    // 成交手数
-    traderOrder.VolumeTraded = 0;
-    // 订单状态
-    traderOrder.OrderStatus = TRADER_ORDER_OS_CANCELED;
-
-    trader_trader_api_on_rtn_order(self, &traderOrder);
-  }
-  
-  trader_trader_api_on_err_rtn_order_insert(self, errNo, errMsg);
-  return;
-}
-
-void CXeleTraderHandler::OnErrRtnOrderAction(CXeleFtdcOrderActionField *pOrderAction,
-                               CXeleFtdcRspInfoField *pRspInfo)
-{
-  CMN_DEBUG("%s\n", __FUNCTION__);
-  trader_trader_api* self = (trader_trader_api*)m_Arg;
-  int errNo = 0;
-  char* errMsg = NULL;
-  if(pRspInfo) {
-    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
-      "pRspInfo->ErrorMsg=[%s]\n",
-      pRspInfo->ErrorID,
-      pRspInfo->ErrorMsg);
-    errNo = pRspInfo->ErrorID;
-    errMsg = pRspInfo->ErrorMsg;
-  }
-  
-  if(pOrderAction){
-    CMN_DEBUG(
-      "pOrderAction->OrderSysID[%s]\n"
-      "pOrderAction->UserID[%s]\n"
-      "pOrderAction->UserOrderActionLocalID[%s]\n"
-      "pOrderAction->UserOrderLocalID[%s]\n"
-      , pOrderAction->OrderSysID
-      , pOrderAction->ClientID
-      , pOrderAction->ActionLocalID
-      , pOrderAction->OrderLocalID
-      );
-  }
-  trader_trader_api_on_err_rtn_order_action(self, errNo, errMsg);
-  return;
-}
 
 void CXeleTraderHandler::OnRspQryOrder(CXeleFtdcOrderField* pOrderField, CXeleFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast)
 {
@@ -598,7 +422,7 @@ void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
     "pTrade->SettlementID=[%d]"
     "pTrade->TradeID=[%s]"
     "pTrade->Direction=[%c]"
-    "pTrade->OrderSysID=[%s]"
+    "pTrade->OrderSystemNo=[%d]"
     "pTrade->ParticipantID=[%s]"
     "pTrade->ClientID=[%s]"
     "pTrade->TradingRole=[%c]"
@@ -612,7 +436,7 @@ void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
     "pTrade->TradeType=[%c]"
     "pTrade->PriceSource=[%c]"
     "pTrade->UserID=[%s]"
-    "pTrade->OrderLocalID=[%s]"
+    "pTrade->OrderLocalNo=[%d]"
     "pTrade->ExchangeOrderSysID=[%s]"
     "\n"
     ,pTrade->TradingDay
@@ -620,7 +444,7 @@ void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
     ,pTrade->SettlementID
     ,pTrade->TradeID
     ,pTrade->Direction
-    ,pTrade->OrderSysID
+    ,pTrade->OrderSystemNo
     ,pTrade->ParticipantID
     ,pTrade->ClientID
     ,pTrade->TradingRole
@@ -634,7 +458,7 @@ void CXeleTraderHandler::PrintTrade(CXeleFtdcTradeField *pTrade)
     ,pTrade->TradeType
     ,pTrade->PriceSource
     ,pTrade->UserID
-    ,pTrade->OrderLocalID
+    ,pTrade->OrderLocalNo
     ,pTrade->ExchangeOrderSysID
   );
 
@@ -647,7 +471,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     "pOrder->TradingDay=[%s]"
     "pOrder->SettlementGroupID=[%s]"
     "pOrder->SettlementID=[%d]"
-    "pOrder->OrderSysID=[%s]"
+    "pOrder->OrderSystemNo=[%d]"
     "pOrder->ParticipantID=[%s]"
     "pOrder->ClientID=[%s]"
     "pOrder->UserID=[%s]"
@@ -665,7 +489,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     "pOrder->ContingentCondition=[%c]"
     "pOrder->StopPrice=[%lf]"
     "pOrder->ForceCloseReason=[%c]"
-    "pOrder->OrderLocalID=[%s]"
+    "pOrder->OrderLocalNo=[%d]"
     "pOrder->IsAutoSuspend=[%d]"
     "pOrder->OrderSource=[%c]"
     "pOrder->OrderStatus=[%c]"
@@ -686,7 +510,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     ,pOrder->TradingDay
     ,pOrder->SettlementGroupID
     ,pOrder->SettlementID
-    ,pOrder->OrderSysID
+    ,pOrder->OrderSystemNo
     ,pOrder->ParticipantID
     ,pOrder->ClientID
     ,pOrder->UserID
@@ -704,7 +528,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     ,pOrder->ContingentCondition
     ,pOrder->StopPrice
     ,pOrder->ForceCloseReason
-    ,pOrder->OrderLocalID
+    ,pOrder->OrderLocalNo
     ,pOrder->IsAutoSuspend
     ,pOrder->OrderSource
     ,pOrder->OrderStatus
@@ -723,6 +547,259 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     ,pOrder->ExchangeOrderSysID
   );
 
+}
+
+CXeleTraderOrderHandler::CXeleTraderOrderHandler(void* arg)
+:m_Arg(arg)
+{
+
+}
+
+CXeleTraderOrderHandler::~CXeleTraderOrderHandler()
+{
+
+}
+
+void CXeleTraderOrderHandler::OnFrontConnected()
+{
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+  trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
+  CXeleTraderOrderApi* pTraderApi = (CXeleTraderOrderApi*)pImp->pTraderApi;
+  //trader_trader_api_on_front_connected(self);
+  pTraderApi->ReqUserLogin(pImp->nTraderRequestID++);
+  return ;
+}
+
+void CXeleTraderOrderHandler::OnFrontDisconnected(int nReason)
+{
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+  //trader_trader_api_on_front_disconnected(self, nReason);
+  return;
+}
+
+void CXeleTraderOrderHandler::OnRspUserLogin(CXeleFtdcRspUserLoginField *pRspUserLogin,
+                          CXeleFtdcRspInfoField *pRspInfo,
+                          int nRequestID,
+                          bool bIsLast)
+{
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+  trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
+  
+  int errNo = 0;
+  char* errMsg = NULL;
+  if(pRspInfo) {
+    errNo = pRspInfo->ErrorID;
+    errMsg = pRspInfo->ErrorMsg;
+    trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+  }
+
+  return;
+}
+
+void CXeleTraderOrderHandler::OnRspUserLogout(CXeleFtdcRspUserLogoutField *pRspUserLogout,
+                           CXeleFtdcRspInfoField *pRspInfo,
+                           int nRequestID,
+                           bool bIsLast)
+{
+  if(pRspInfo){
+    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+  return ;
+}
+
+void CXeleTraderOrderHandler::OnRspOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
+                            CXeleFtdcRspInfoField *pRspInfo,
+                            int nRequestID,
+                            bool bIsLast)
+{
+  CMN_DEBUG("%s\n", __FUNCTION__);
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+  int errNo = 0;
+  char* errMsg = NULL;
+  if(pRspInfo){
+    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+    errNo = pRspInfo->ErrorID;
+    errMsg = pRspInfo->ErrorMsg;
+  }
+  trader_trader_api_on_rsp_order_insert(self, errNo, errMsg);
+  return;
+}
+
+void CXeleTraderOrderHandler::OnRspOrderAction(CXeleFtdcOrderActionField *pOrderAction,
+                            CXeleFtdcRspInfoField *pRspInfo,
+                            int nRequestID,
+                            bool bIsLast)
+{
+  CMN_DEBUG("%s\n", __FUNCTION__);
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+  int errNo = 0;
+  char* errMsg = NULL;
+  if(pRspInfo){
+    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+    errNo = pRspInfo->ErrorID;
+    errMsg = pRspInfo->ErrorMsg;
+  }
+  trader_trader_api_on_rsp_order_action(self, errNo, errMsg);
+  return;
+
+}
+
+void CXeleTraderOrderHandler::OnRtnTrade(CXeleFtdcTradeField *pTrade)
+{
+  CMN_DEBUG("%s\n", __FUNCTION__);
+  CXeleTraderHandler::PrintTrade(pTrade);
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+  trader_trade traderTrade;
+  memset(&traderTrade, 0, sizeof(traderTrade));
+  
+  ///合约代码
+  strncpy(traderTrade.InstrumentID, pTrade->InstrumentID, sizeof(traderTrade.InstrumentID));
+  ///本地报单编号
+  snprintf(traderTrade.UserOrderLocalID, sizeof(traderTrade.UserOrderLocalID), "%08d", pTrade->OrderLocalNo);
+  ///交易日
+  strncpy(traderTrade.TradingDay, pTrade->TradingDay, sizeof(traderTrade.TradingDay));
+  ///成交时间
+  strncpy(traderTrade.TradeTime, pTrade->TradeTime, sizeof(traderTrade.TradeTime));
+  ///买卖方向
+  traderTrade.Direction = pTrade->Direction;
+  ///开平标志
+  traderTrade.OffsetFlag = pTrade->OffsetFlag;
+  ///成交价格
+  traderTrade.TradePrice = pTrade->Price;
+  ///成交数量
+  traderTrade.TradeVolume = pTrade->Volume;
+  //成交编号
+  strncpy(traderTrade.TradeID, pTrade->TradeID, sizeof(traderTrade.TradeID));
+
+  trader_trader_api_on_rtn_trade(self, &traderTrade);
+}
+
+void CXeleTraderOrderHandler::OnRtnOrder(CXeleFtdcOrderField *pOrder)
+{
+  CMN_DEBUG("%s\n", __FUNCTION__);
+  CXeleTraderHandler::PrintOrder(pOrder);
+  
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+
+  trader_order traderOrder;
+  memset(&traderOrder, 0, sizeof(traderOrder));
+	///交易所代码
+  strncpy(traderOrder.ExchangeID, "CFFEX", sizeof(traderOrder.ExchangeID));
+	///系统报单编号
+  snprintf(traderOrder.OrderSysID, sizeof(traderOrder.OrderSysID), "%d", pOrder->OrderSystemNo);
+  // 合约代码
+  strncpy(traderOrder.InstrumentID, pOrder->InstrumentID, sizeof(traderOrder.InstrumentID));
+  // 本地报单编号
+  snprintf(traderOrder.UserOrderLocalID, sizeof(traderOrder.UserOrderLocalID), "%08d", pOrder->OrderLocalNo);
+  // 买卖
+  traderOrder.Direction = pOrder->Direction;
+  // 开平
+  traderOrder.OffsetFlag = pOrder->CombOffsetFlag[0];
+  ///投机套保标志
+  traderOrder.HedgeFlag = pOrder->CombHedgeFlag[0];
+  // 报单价格
+  traderOrder.LimitPrice = pOrder->LimitPrice;
+  // 报单手数
+  traderOrder.VolumeOriginal = pOrder->VolumeTotal;
+  // 成交手数
+  traderOrder.VolumeTraded = pOrder->VolumeTraded;
+  // 订单状态
+  traderOrder.OrderStatus = pOrder->OrderStatus;
+  ///插入时间
+  strncpy(traderOrder.InsertTime, pOrder->InsertTime, sizeof(traderOrder.InsertTime));
+
+  trader_trader_api_on_rtn_order(self, &traderOrder);
+
+}
+
+void CXeleTraderOrderHandler::OnErrRtnOrderInsert(CXeleFtdcInputOrderField *pInputOrder,
+                               CXeleFtdcRspInfoField *pRspInfo)
+{
+  CMN_DEBUG("%s\n", __FUNCTION__);
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+  int errNo = 0;
+  char* errMsg = NULL;
+  if(pRspInfo) {
+    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+    errNo = pRspInfo->ErrorID;
+    errMsg = pRspInfo->ErrorMsg;
+  }
+  trader_order traderOrder;
+
+  if(pInputOrder){
+    memset(&traderOrder, 0, sizeof(traderOrder));
+  	///交易所代码
+    strncpy(traderOrder.ExchangeID, "CFFEX", sizeof(traderOrder.ExchangeID));
+  	///系统报单编号
+    snprintf(traderOrder.OrderSysID, sizeof(traderOrder.OrderSysID), "%d", pInputOrder->OrderSystemNo);
+    // 合约代码
+    strncpy(traderOrder.InstrumentID, pInputOrder->InstrumentID, sizeof(traderOrder.InstrumentID));
+    // 本地报单编号
+    snprintf(traderOrder.UserOrderLocalID, sizeof(traderOrder.UserOrderLocalID), "%08d", pInputOrder->OrderLocalNo);
+    // 买卖
+    traderOrder.Direction = pInputOrder->Direction;
+    // 开平
+    traderOrder.OffsetFlag = pInputOrder->CombOffsetFlag[0];
+    ///投机套保标志
+    traderOrder.HedgeFlag = pInputOrder->CombHedgeFlag[0];
+    // 报单价格
+    traderOrder.LimitPrice = pInputOrder->LimitPrice;
+    // 报单手数
+    traderOrder.VolumeOriginal = pInputOrder->VolumeTotalOriginal;
+    // 成交手数
+    traderOrder.VolumeTraded = 0;
+    // 订单状态
+    traderOrder.OrderStatus = TRADER_ORDER_OS_CANCELED;
+
+    trader_trader_api_on_rtn_order(self, &traderOrder);
+  }
+  
+  trader_trader_api_on_err_rtn_order_insert(self, errNo, errMsg);
+  return;
+}
+
+void CXeleTraderOrderHandler::OnErrRtnOrderAction(CXeleFtdcOrderActionField *pOrderAction,
+                               CXeleFtdcRspInfoField *pRspInfo)
+{
+  CMN_DEBUG("%s\n", __FUNCTION__);
+  trader_trader_api* self = (trader_trader_api*)m_Arg;
+  int errNo = 0;
+  char* errMsg = NULL;
+  if(pRspInfo) {
+    CMN_DEBUG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+    errNo = pRspInfo->ErrorID;
+    errMsg = pRspInfo->ErrorMsg;
+  }
+  
+  if(pOrderAction){
+    CMN_DEBUG(
+      "pOrderAction->OrderSysID[%d]\n"
+      "pOrderAction->UserID[%s]\n"
+      "pOrderAction->UserOrderActionLocalID[%s]\n"
+      "pOrderAction->UserOrderLocalID[%d]\n"
+      , pOrderAction->OrderSystemNo
+      , pOrderAction->ClientID
+      , pOrderAction->ActionLocalID
+      , pOrderAction->OrderLocalNo
+      );
+  }
+  trader_trader_api_on_err_rtn_order_action(self, errNo, errMsg);
+  return;
 }
 
 
