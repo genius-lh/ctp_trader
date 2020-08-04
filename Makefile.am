@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS=foreign
 noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libxeletrader.so \
-				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so\
+				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so libgfmduser.so\
 				libfemasmduserAF.so libfemastraderAF.so \
 				libctpminimduser.so libctpminitrader.so \
 				libxspeedmduser.so libxspeedtrader.so
@@ -68,6 +68,10 @@ libfemasmduser_udp_so_SOURCES=src/api/trader_mduser_api_femas.cpp\
 	src/api/FemasMduserHandler.cpp
 libfemasmduser_udp_so_CPPFLAGS=-DFEMAS_UDP -DFEMAS20 -fPIC -Ifemas20 -Ilibevent -Ilibevent/compat/sys
 libfemasmduser_udp_so_LDFLAGS=-shared -fPIC
+
+libgfmduser_so_SOURCES=src/api/trader_mduser_api_gf.cpp
+libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ilibevent -Ilibevent/compat/sys
+libgfmduser_so_LDFLAGS=-shared -fPIC
 
 libfemastrader_so_SOURCES=src/api/trader_trader_api_femas.cpp\
 	src/api/FemasTraderHandler.cpp
@@ -236,13 +240,12 @@ traderMduserFemasUDP_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserFemasUDP_CFLAGS=-DFEMAS\
+traderMduserFemasUDP_CFLAGS=-DGF_CFFEX\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
 traderMduserFemasUDP_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
-	-L. -ltradercmn -lmduserapi\
-	-Lfemas20 -lfemasmduser_udp -lUSTPmduserapiAF
+	-L. -lgfmduser -ltradercmn -lmduserapi
 
 
 traderStrategyFemasAF_SOURCES=\
@@ -347,7 +350,7 @@ traderStrategyXele_LDADD=\
         -lc -lstdc++ -lm -lpthread -lresolv -ldl\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
-        -Lxele -lxeletrader -lXeleTdAPI64
+        -Lxele -lxeletrader -lXeleTdAPI64 -lXeleTraderOrderApi
 
 testMduserClient_SOURCES=\
         src/test/trader_mduser_client_test.c\

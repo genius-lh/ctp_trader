@@ -112,6 +112,7 @@ struct trader_trader_api_def {
   long userLocalId;
   char timeCondition;
   char hedgeFlag;
+  char* pUserParam;
 
   void* pUserApi;
   

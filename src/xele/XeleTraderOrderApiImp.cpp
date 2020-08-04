@@ -257,7 +257,6 @@ void CXeleTraderOrderApiImp::ProcessMessage()
     std::this_thread::sleep_for(std::chrono::seconds(2));
     return ;
   }
-  this->m_originalTraderSpi->OnFrontConnected();
 
   while(subLoop){
 		FD_ZERO( &readSet);
@@ -266,6 +265,9 @@ void CXeleTraderOrderApiImp::ProcessMessage()
     
 		FD_SET(m_down_sock, &readSet);
 		FD_SET(m_down_sock, &errorSet);
+    
+    tval.tv_usec = 100 * 1000; //100 ms
+    tval.tv_sec = 0;
 
     nRet = select(m_down_sock + 1, &readSet, &writeSet, &errorSet, &tval);
 		if( nRet == 0) { // timeout

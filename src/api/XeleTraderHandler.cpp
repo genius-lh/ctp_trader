@@ -137,6 +137,7 @@ void CXeleTraderHandler::OnRspQryClientPosition(CXeleFtdcRspClientPositionField 
     errMsg = pRspInfo->ErrorMsg;
   }
 
+  memset(&traderPosition, 0, sizeof(traderPosition));
   if(pRspClientPosition) {
     CMN_DEBUG( 
       "pRspClientPosition->TradingDay=[%s]"
@@ -162,25 +163,24 @@ void CXeleTraderHandler::OnRspQryClientPosition(CXeleFtdcRspClientPositionField 
       ,pRspClientPosition->AccountID
     );
     
-    memset(&traderPosition, 0, sizeof(traderPosition));
     snprintf(traderPosition.InstrumentID, sizeof(traderPosition.InstrumentID), "%s", pRspClientPosition->InstrumentID);
     traderPosition.PositionDate = '1';
     traderPosition.IsSHFE = 0;
     traderPosition.PosiDirection = TRADER_POSITION_LONG;
     traderPosition.YdPosition = pRspClientPosition->LongYdPosition;
-    traderPosition.TodayPosition = 0;
-    traderPosition.Position = pRspClientPosition->LongPosition;
+    traderPosition.TodayPosition = pRspClientPosition->LongPosition;
+    traderPosition.Position = pRspClientPosition->LongPosition + pRspClientPosition->LongYdPosition;
     traderPosition.LongFrozen = 0;
     trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, 0);
 
     traderPosition.PosiDirection = TRADER_POSITION_SHORT;
     traderPosition.YdPosition = pRspClientPosition->ShortYdPosition;
-    traderPosition.TodayPosition = 0;
-    traderPosition.Position = pRspClientPosition->ShortPosition;
+    traderPosition.TodayPosition = pRspClientPosition->ShortPosition;
+    traderPosition.Position = pRspClientPosition->ShortPosition + pRspClientPosition->ShortYdPosition;
     traderPosition.LongFrozen = 0;    
   }
-  
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);
+  
   return;
 }
 
@@ -213,7 +213,6 @@ void CXeleTraderHandler::OnRspQryInstrument(CXeleFtdcRspInstrumentField *pRspIns
       "pRspInstrument->ProductClass=[%c]"
       "pRspInstrument->PositionType=[%c]"
       "pRspInstrument->StrikePrice=[%lf]"
-      "pRspInstrument->OptionsType=[%c]"
       "pRspInstrument->VolumeMultiple=[%d]"
       "pRspInstrument->UnderlyingMultiple=[%lf]"
       "pRspInstrument->InstrumentID=[%s]"
@@ -242,7 +241,6 @@ void CXeleTraderHandler::OnRspQryInstrument(CXeleFtdcRspInstrumentField *pRspIns
       ,pRspInstrument->ProductClass
       ,pRspInstrument->PositionType
       ,pRspInstrument->StrikePrice
-      ,pRspInstrument->OptionsType
       ,pRspInstrument->VolumeMultiple
       ,pRspInstrument->UnderlyingMultiple
       ,pRspInstrument->InstrumentID

@@ -78,12 +78,17 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
 
 #ifdef XSPEED_STOCK
 #include "trader_mduser_api_xspeed.h"
-    api_imp = trader_mduser_api_xspeed_stock_method_get();
+  api_imp = trader_mduser_api_xspeed_stock_method_get();
 #endif
 
 #ifdef XSPEED
 #include "trader_mduser_api_xspeed.h"
-      api_imp = trader_mduser_api_xspeed_sop_method_get();
+  api_imp = trader_mduser_api_xspeed_sop_method_get();
+#endif
+
+#ifdef GF_CFFEX
+extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
+  api_imp = trader_mduser_api_gf_method_get();
 #endif
 
   self->pCnnMain->pMethod->xInit(self->pCnnMain, self->pBase,

@@ -92,6 +92,8 @@ static int trader_svr_order_cancel_init(trader_svr* self, trader_contract* contr
 static int trader_svr_order_cancel_do(trader_svr* self, char* contract_id);
 static trader_contract* trader_svr_get_contract(trader_svr* self, char* contract_id);
 
+static int trader_svr_api_load_param(trader_svr* self, char* user_id);
+
 int trader_svr_init(trader_svr* self, evutil_socket_t sock)
 {
   CMN_DEBUG("Enter!\n");
@@ -775,25 +777,6 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
       self->bQueried = 0;
     }
     
-    #ifdef XELE
-    // 根据AccountID查询ClientID
-    char sQueryCmd[64];
-    char sResult[64];
-    int nRet = 0;
-    snprintf(sQueryCmd, sizeof(sQueryCmd), "XELE_CLIENTID_%s", self->UserId);
-    nRet = trader_svr_redis_get_param(self, sQueryCmd, sResult, sizeof(sResult));
-    if(!nRet){
-      CMN_DEBUG("%s[%s]\n", sQueryCmd, sResult);
-      self->pCtpTraderApi->pMethod->xSetParam(self->pCtpTraderApi, "XELE_CLIENTID", sResult);
-    }else{
-      CMN_INFO("redis failed![%s]\n", sQueryCmd);
-      trader_svr_client_notify_login(self, 99, "Not set XELE_CLIENTID");
-      self->bProcessing = 0;
-      return -1;
-    }
-      
-    #endif
-
     // 查询合约
     sleep(1);
     self->pCtpTraderApi->pMethod->xQryInstrument(self->pCtpTraderApi);
@@ -954,6 +937,8 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
   CMN_DEBUG("Enter!\n");
   struct trader_cmd_login_req_def* pLoginInf = &(req->body.login);
   CMN_DEBUG("UserID=[%s]\n", pLoginInf->UserID);
+
+  int nRet;
   
   // 参数保存
   strcpy(&self->CurrentTraceNo[0], req->traceNo);
@@ -973,6 +958,15 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
     now.tm_year+1900, now.tm_mon+1, now.tm_mday);
   
   self->pTraderDB->pMethod->xInit(self->pTraderDB, sDate);
+
+  // 查询参数
+  nRet = trader_svr_api_load_param(self, self->UserId);
+  if(nRet < 0){
+    CMN_INFO("trader_svr_api_load_param failed![%s]\n", self->UserId);
+    trader_svr_client_notify_login(self, 99, "Not set XELE_CLIENTID");
+    self->bProcessing = 0;
+    return -1;
+  }
 
   // 交易登录
   
@@ -1582,6 +1576,29 @@ int trader_svr_redis_get_param(trader_svr* self, char* key, char* val, int size)
   freeReplyObject(reply);
   return nRet;
 }
+
+int trader_svr_api_load_param(trader_svr* self, char* user_id)
+{
+#ifdef XELE
+  // 根据AccountID查询ClientID
+  char sQueryCmd[64];
+  char sResult[64];
+  int nRet = 0;
+  snprintf(sQueryCmd, sizeof(sQueryCmd), "XELE_USER_PARAM_%s", self->UserId);
+  nRet = trader_svr_redis_get_param(self, sQueryCmd, sResult, sizeof(sResult));
+  if(!nRet){
+    CMN_DEBUG("%s[%s]\n", sQueryCmd, sResult);
+    self->pCtpTraderApi->pMethod->xSetParam(self->pCtpTraderApi, "USER_PARAM", sResult);
+  }else{
+    CMN_INFO("redis failed![%s]\n", sQueryCmd);
+    return -1;
+  }
+    
+#endif
+  
+  return 0;
+}
+
 
 int trade_main(char* cfg_file, evutil_socket_t sock)
 {

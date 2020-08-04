@@ -18,6 +18,7 @@ struct trader_trader_api_xele_def {
   char sTradingDay[9];
   char sMaxOrderLocalID[13];
   char sClientID[11];
+  char sLocalPort[6];
   int nTraderRequestID;
 };
 

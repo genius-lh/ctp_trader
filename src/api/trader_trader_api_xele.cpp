@@ -35,7 +35,6 @@ static int trader_trader_api_xele_qry_user_investor(trader_trader_api* self);
 static int trader_trader_api_xele_qry_investor_position(trader_trader_api* self);
 static int trader_trader_api_xele_qry_trading_account(trader_trader_api* self);
 
-static void trader_trader_api_xele_set_param(trader_trader_api* self, char* key, char* val);
 
 
 #ifdef __cplusplus
@@ -50,7 +49,7 @@ trader_trader_api_method* trader_trader_api_xele_method_get()
     trader_trader_api_set_workspace,
     trader_trader_api_set_app_id,
     trader_trader_api_set_auth_code,
-    trader_trader_api_xele_set_param,
+    trader_trader_api_set_param,
     trader_trader_api_xele_get_trading_day,
     trader_trader_api_xele_get_max_order_local_id,
     trader_trader_api_xele_start,
@@ -92,26 +91,12 @@ void trader_trader_api_xele_start(trader_trader_api* self)
   CXeleTraderOrderApi* pTraderApi = CXeleTraderOrderApi::CreateTraderApi();
   CXeleTraderOrderHandler* pTraderHandler = new CXeleTraderOrderHandler((void*)self);
   
-  char sAddress[256];
   char* pSavePtr;
-  char* pFrontAddress;
+  char sAddress[256];
+  char sFrontAddress[64];
   char* pQueryFrontAddress;
   char* pUdpFrontAddress;
   char* pTcpFrontAddress;
-
-  strncpy(sAddress, self->pAddress, sizeof(sAddress));
-  
-  pFrontAddress = strtok_r(sAddress, "|", &pSavePtr);
-  CMN_ASSERT (pFrontAddress);
-  
-  pQueryFrontAddress = strtok_r(NULL, "|", &pSavePtr);
-  CMN_ASSERT (pQueryFrontAddress);
-  
-  pUdpFrontAddress = strtok_r(NULL, "|", &pSavePtr);
-  CMN_ASSERT (pUdpFrontAddress);
-  
-  pTcpFrontAddress = strtok_r(NULL, "|", &pSavePtr);
-  CMN_ASSERT (pTcpFrontAddress);
 
   trader_trader_api_xele* pImp = (trader_trader_api_xele*)malloc(sizeof(trader_trader_api_xele));
   pImp->pQueryApi = (void*)pQueryApi;
@@ -121,13 +106,35 @@ void trader_trader_api_xele_start(trader_trader_api* self)
 
   pImp->nTraderRequestID = 0;
 
+  // 获取clientId和localPort
+  strncpy(sAddress, self->pUserParam, sizeof(sAddress));
+  pQueryFrontAddress = strtok_r(sAddress, "|", &pSavePtr);
+  strncpy(pImp->sClientID, pQueryFrontAddress, sizeof(pImp->sClientID));
+  
+  pQueryFrontAddress = strtok_r(NULL, "|", &pSavePtr);
+  strncpy(pImp->sLocalPort, pQueryFrontAddress, sizeof(pImp->sLocalPort));
+
   self->pUserApi = (void*)pImp;
   
   self->timeCondition = XELE_FTDC_TC_GFD;
   self->hedgeFlag = XELE_FTDC_HF_Speculation;
+
+  
+  snprintf(sFrontAddress, sizeof(sFrontAddress), "xxx://0.0.0.0:%s", pImp->sLocalPort);
+
+  strncpy(sAddress, self->pAddress, sizeof(sAddress));
+  
+  pQueryFrontAddress = strtok_r(sAddress, "|", &pSavePtr);
+  CMN_ASSERT (pQueryFrontAddress);
+  
+  pUdpFrontAddress = strtok_r(NULL, "|", &pSavePtr);
+  CMN_ASSERT (pUdpFrontAddress);
+  
+  pTcpFrontAddress = strtok_r(NULL, "|", &pSavePtr);
+  CMN_ASSERT (pTcpFrontAddress);
   
 	pQueryApi->RegisterSpi(pQueryHandler);
-  pQueryApi->RegisterFront(pFrontAddress, pQueryFrontAddress);
+  pQueryApi->RegisterFront(sFrontAddress, pQueryFrontAddress);
   
   /*	 * 准备login的结构体	 */
   /*	 * 订阅相应的流	 */
@@ -158,12 +165,12 @@ void trader_trader_api_xele_stop(trader_trader_api* self)
   CXeleTraderOrderApi* pTraderApi = (CXeleTraderOrderApi*)pImp->pTraderApi;
   CXeleTraderOrderHandler* pTraderHandler = (CXeleTraderOrderHandler*)pImp->pTraderHandler;
   
-  pQueryApi->RegisterSpi(NULL);
+  //pQueryApi->RegisterSpi(NULL);
   pQueryApi->Release();
   delete pQueryHandler;
 
   
-  pQueryApi->Release();
+  pTraderApi->Release();
   delete pTraderApi;
   delete pTraderHandler;
   
@@ -314,17 +321,6 @@ int trader_trader_api_xele_qry_trading_account(trader_trader_api* self)
 
   pTraderApi->ReqQryClientAccount(&qryTradingAccountField, pImp->nTraderRequestID++);
   return 0;
-}
-
-void trader_trader_api_xele_set_param(trader_trader_api* self, char* key, char* val)
-{
-  trader_trader_api_xele* pImp = (trader_trader_api_xele*)self->pUserApi;
-  if(!strcmp("XELE_CLIENTID", key)){
-    strncpy(pImp->sClientID, val, sizeof(pImp->sClientID));
-    return ;
-  }
-
-  trader_trader_api_set_param(self, key, val);
 }
 
 

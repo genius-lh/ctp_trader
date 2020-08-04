@@ -14,6 +14,7 @@ trader_trader_api* trader_trader_api_new(evutil_socket_t fd, trader_trader_api_m
   trader_trader_api* self = (trader_trader_api*)malloc(sizeof(trader_trader_api));
   self->fd = fd;
   self->pMethod = method;
+  self->pUserParam = NULL;
 
   return self;
 
@@ -22,6 +23,10 @@ trader_trader_api* trader_trader_api_new(evutil_socket_t fd, trader_trader_api_m
 void trader_trader_api_free(trader_trader_api* self)
 {
   if(self){
+    if(self->pUserParam) {
+      free(self->pUserParam);
+      self->pUserParam = NULL;
+    }
     free(self);
   }
 }
@@ -57,12 +62,20 @@ void trader_trader_api_set_auth_code(trader_trader_api* self, char* authcode)
 
 void trader_trader_api_set_param(trader_trader_api* self, char* key, char* val)
 {
+  int nLen = 0;
   if(!strcmp("TIME_CONDITION", key)){
     self->timeCondition = val[0];
   }
   
   if(!strcmp("HEDGE_FLAG", key)){
     self->hedgeFlag = val[0];
+  }
+
+  
+  if(!strcmp("USER_PARAM", key)){
+    nLen = strlen(val) + 1;
+    self->pUserParam = (char*)malloc(nLen * sizeof(char));
+    strncpy(self->pUserParam, val, nLen);
   }
 }
 
