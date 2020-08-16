@@ -94,5 +94,6 @@ int ParsedMsgLen(void* data);
 int ChangeStringToArray(char* s,char* b);
 string GetProgramDirectory();
 string TrimLineBreakSuffix(string str);
+int BindCpu(int i);
 
 #endif // COMMON_H

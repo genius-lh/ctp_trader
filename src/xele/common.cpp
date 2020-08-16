@@ -80,6 +80,17 @@ int CreateTcpConnection(string strProto, string strIP, string strPort)
         {
             return -1;
         }
+
+
+        //
+        int rcv_size = 1024*1024;
+        socklen_t optlen = sizeof(rcv_size);
+        int err = setsockopt(socketFd, SOL_SOCKET,SO_RCVBUF, (char*)&rcv_size, optlen); //zb:
+        if (err < 0) {
+            return -1;
+        }
+
+        //
         inet_aton(strIP.c_str(), &server_addr.sin_addr);
         if (connect(socketFd, (struct sockaddr*)&server_addr, sizeof(struct sockaddr_in)) != 0)
         {
@@ -199,3 +210,19 @@ string TrimLineBreakSuffix(string str)
     }
     return string(buf);
 }
+
+
+int BindCpu(int i)
+{
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+    CPU_SET(i,&mask);
+    DbgPrint("========thread %u, i = %d\n", pthread_self(), i);
+    if(-1 == pthread_setaffinity_np(pthread_self() ,sizeof(mask),&mask))
+    {
+        fprintf(stderr, "pthread_setaffinity_np erro\n");
+        return -1;
+    }
+    return 0;
+}
+

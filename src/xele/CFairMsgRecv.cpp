@@ -25,7 +25,7 @@ CFairMsgRecv::~CFairMsgRecv()
 bool CFairMsgRecv::RecvMsg(faircpp::FairMessageParse& msg)
 {
     unsigned char type;
-    unsigned short extLen;
+    unsigned char extLen; //zb:
     unsigned short contentLen;
     int curMsgLen;
     int n;
@@ -36,15 +36,7 @@ bool CFairMsgRecv::RecvMsg(faircpp::FairMessageParse& msg)
         {
             type = *m_data;
             extLen = *(m_data + 1);
-            if (type == 0 && extLen == 2) //Heartbeat packet: 000200000500
-            {
-                contentLen = 0;
-            }
-            else
-            {
-                contentLen = *(unsigned short*)(m_data + 2);
-            }
-            contentLen = *(unsigned short*)(m_data + 2);
+            contentLen = *(unsigned short*)(m_data + 2); //zb:
             curMsgLen = 4 + extLen + contentLen;
             if (m_data_len >= curMsgLen)
             {

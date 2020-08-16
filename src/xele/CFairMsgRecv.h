@@ -9,7 +9,10 @@
 #include <sys/socket.h>
 
 
-#define RECV_BUF_SIZE 6000
+//zb:
+//#define RECV_BUF_SIZE 6000
+#define RECV_BUF_SIZE 64000
+
 
 class CFairMsgRecv
 {

@@ -491,7 +491,7 @@ void CXeleTraderHandler::PrintOrder(CXeleFtdcOrderField *pOrder)
     "pOrder->IsAutoSuspend=[%d]"
     "pOrder->OrderSource=[%c]"
     "pOrder->OrderStatus=[%c]"
-    "pOrder->OrderType=[%c]"
+    "pOrder->OrderType=[%02x]"
     "pOrder->VolumeTraded=[%d]"
     "pOrder->VolumeTotal=[%d]"
     "pOrder->InsertDate=[%s]"
@@ -707,7 +707,7 @@ void CXeleTraderOrderHandler::OnRtnOrder(CXeleFtdcOrderField *pOrder)
   // 报单价格
   traderOrder.LimitPrice = pOrder->LimitPrice;
   // 报单手数
-  traderOrder.VolumeOriginal = pOrder->VolumeTotal;
+  traderOrder.VolumeOriginal = pOrder->VolumeTotalOriginal;
   // 成交手数
   traderOrder.VolumeTraded = pOrder->VolumeTraded;
   // 订单状态
