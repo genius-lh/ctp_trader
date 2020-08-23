@@ -21,6 +21,7 @@ static int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data
 static int trader_strategy_on_order(trader_strategy* self, trader_order* order_data);
 static int trader_strategy_on_trade(trader_strategy* self, trader_trade* trade_data);
 static int trader_strategy_on_status(trader_strategy* self, instrument_status* status_data);
+static int trader_strategy_on_timer_status(trader_strategy* self);
 
 static int trader_strategy_tick_not_finished(trader_strategy* self);
 static int trader_strategy_tick_finished(trader_strategy* self);
@@ -78,6 +79,7 @@ trader_strategy_method* trader_strategy_method_get()
     trader_strategy_on_order,
     trader_strategy_on_trade,
     trader_strategy_on_status,
+    trader_strategy_on_timer_status,
     trader_strategy_reset_position,
     trader_strategy_query_position
   };
@@ -373,6 +375,20 @@ int trader_strategy_on_status(trader_strategy* self, instrument_status* status_d
   return 0;
 }
 
+int trader_strategy_on_timer_status(trader_strategy* self)
+{
+  if(!self->used){
+    return 0;
+  }
+
+  // 成交队列处理
+  trader_strategy_tick_finished(self);
+
+  // 新建委托判断
+  trader_strategy_tick_open(self);
+
+  return 0;
+}
 
 // 重置仓位
 int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int volume)

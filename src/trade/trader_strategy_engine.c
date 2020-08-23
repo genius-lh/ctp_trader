@@ -43,6 +43,14 @@ static trader_strategy_engine_method* trader_strategy_engine_method_get();
 
 static void  trader_strategy_engine_timeout_cb(evutil_socket_t fd, short event, void *arg);
 
+static void trader_strategy_engine_status_timer_init(trader_strategy_engine* self);
+
+static void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char* pUpdateTime, int pUpdateMillisec);
+
+static void  trader_strategy_engine_status_timer_timeout_cb(evutil_socket_t fd, short event, void *arg);
+
+static void trader_strategy_engine_status_timer_event(trader_strategy_engine* self);
+
 trader_strategy_engine_method* trader_strategy_engine_method_get()
 {
   static trader_strategy_engine_method trader_strategy_engine_method_st = {
@@ -73,6 +81,10 @@ trader_strategy_engine_method* trader_strategy_engine_method_get()
 
 int trader_strategy_engine_init(trader_strategy_engine* self)
 {
+  // 获取当前时间
+  // 计算下一个时间节点
+  trader_strategy_engine_status_timer_init(self);
+
   return 0;
 }
 
@@ -188,6 +200,8 @@ int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick
     pStrategy = self->trader_strategys[i];
     pStrategy->pMethod->xOnTick(pStrategy, &oTick);
   }
+
+  trader_strategy_engine_status_timer_tick(self, oTick.UpdateTime, oTick.UpdateMillisec);
 
   return 0;
 }
@@ -556,4 +570,61 @@ void trader_strategy_engine_free(trader_strategy_engine* self)
   
 }
 
+void trader_strategy_engine_status_timer_init(trader_strategy_engine* self)
+{
+  CMN_INFO("Enter!\n");
+  self->statusFlag = 1;
+  self->tickTimerEvent = evtimer_new(self->pBase, trader_strategy_engine_status_timer_timeout_cb, (void*)self);
+  strncpy(self->currentTime, "09:29:00", sizef(self->currentTime));
+  return;
+}
+
+void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char* pUpdateTime, int pUpdateMillisec)
+{
+  if(!self->statusFlag){
+    return;
+  }
+
+  if(0 != strncmp(self->currentTime, pUpdateTime, sizeof(self->currentTime))){
+    return;
+  }
+
+  CMN_INFO("Enter!\n");
+  self->statusFlag = 0;
+  int UpdateMillisec = 1000 - pUpdateMillisec;
+
+  if(0 == pUpdateMillisec){
+    UpdateMillisec = 995;
+  }
+
+  struct timeval t1_timeout = {
+    59, UpdateMillisec*1000
+  };
+
+  evtimer_add(self->tickTimerEvent, &t1_timeout);
+
+  return ;
+}
+
+void  trader_strategy_engine_status_timer_timeout_cb(evutil_socket_t fd, short event, void *arg)
+{
+  trader_strategy_engine* self = (trader_strategy_engine*)arg;
+  evtimer_del(self->tickTimerEvent);
+  event_free(self->tickTimerEvent);
+  trader_strategy_engine_status_timer_event(self);
+  return;
+}
+
+void trader_strategy_engine_status_timer_event(trader_strategy_engine* self)
+{
+  CMN_INFO("Enter!\n");
+  int i;
+  trader_strategy* pStrategy;
+  for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
+    pStrategy = self->trader_strategys[i];
+    pStrategy->pMethod->xOnTimerStatus(pStrategy);  
+  }
+
+  return;
+}
 

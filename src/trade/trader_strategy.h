@@ -169,6 +169,7 @@ struct trader_strategy_method_def{
   int (*xOnOrder)(trader_strategy* self, trader_order* order_data);
   int (*xOnTrade)(trader_strategy* self, trader_trade* trade_data);
   int (*xOnStatus)(trader_strategy* self, instrument_status* status_data);
+  int (*xOnTimerStatus)(trader_strategy* self);
   // 重置仓位
   int (*xResetPosition)(trader_strategy* self, char buy_sell, int volume);
   // 查询仓位

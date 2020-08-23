@@ -51,7 +51,12 @@ struct trader_strategy_engine_def {
 
   // 持仓信息
   trader_strategy_limit* pTraderStrategyLimit;
-  
+
+  // 计时器
+  struct event* tickTimerEvent;
+  char currentTime[9];
+  int statusFlag;
+
   // 外部接口
   trader_strategy_engine_method* pMethod;
 };
