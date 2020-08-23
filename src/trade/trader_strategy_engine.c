@@ -575,7 +575,7 @@ void trader_strategy_engine_status_timer_init(trader_strategy_engine* self)
   CMN_INFO("Enter!\n");
   self->statusFlag = 1;
   self->tickTimerEvent = evtimer_new(self->pBase, trader_strategy_engine_status_timer_timeout_cb, (void*)self);
-  strncpy(self->currentTime, "09:29:00", sizef(self->currentTime));
+  strncpy(self->currentTime, "09:29:00", sizeof(self->currentTime));
   return;
 }
 
