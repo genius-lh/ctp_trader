@@ -591,10 +591,10 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
 
   CMN_INFO("Enter!\n");
   self->statusFlag = 0;
-  int UpdateMillisec = 1000 - pUpdateMillisec;
+  int UpdateMillisec = 1000 - pUpdateMillisec + 100;
 
-  if(0 == pUpdateMillisec){
-    UpdateMillisec = 995;
+  if(0 >= pUpdateMillisec){
+    UpdateMillisec = 950;
   }
 
   struct timeval t1_timeout = {
