@@ -56,6 +56,7 @@ struct trader_strategy_engine_def {
   struct event* tickTimerEvent;
   char currentTime[9];
   int statusFlag;
+  int pendingMicroSec;
 
   // 外部接口
   trader_strategy_engine_method* pMethod;

@@ -234,6 +234,7 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pStrategyEngine->pBase = self->pBase;
   self->pStrategyEngine->pCtpTraderApi = self->pCtpTraderApi;
   self->pStrategyEngine->pTraderDb = self->pTraderDB;
+  self->pStrategyEngine->pendingMicroSec = self->pendingMicroSec;
 
   self->pStrategyEngine->pMethod->xInit(self->pStrategyEngine);
   
@@ -358,6 +359,12 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
   nRet = glbPflGetString("TRADER", "REDIS_ADDR", cfg_file, self->pRedisIp);
   nRet = glbPflGetInt("TRADER", "REDIS_PORT", cfg_file, &self->nRedisPort);
   nRet = glbPflGetString("TRADER", "REDIS_INST_KEY", cfg_file, self->redisInstrumentKey);
+
+  nRet = glbPflGetInt("TRADER", "PENDING_MSEC", cfg_file, &self->pendingMicroSec);
+  if(nRet < 0){
+    self->pendingMicroSec = 50;
+  }
+  CMN_DEBUG("self->pendingMicroSec[%d]\n", self->pendingMicroSec);
 
   return 0;
 }

@@ -67,6 +67,8 @@ struct trader_svr_def {
 
   // 策略Engine
   trader_strategy_engine* pStrategyEngine;
+  // 开盘报单等待时间
+  int pendingMicroSec;
 
   // Redis
   redisContext* pRedis;

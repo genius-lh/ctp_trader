@@ -69,6 +69,8 @@ static int trader_strategy_print_tick(trader_strategy* self);
 static int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data);
 static int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data);
 
+static int trader_strategy_print_order_time(trader_strategy* self, trader_order* order_data);
+
 static trader_strategy_method* trader_strategy_method_get();
 
 trader_strategy_method* trader_strategy_method_get()
@@ -719,6 +721,7 @@ int trader_strategy_order_update(trader_strategy* self, trader_order* order_data
     pOrder->HedgeFlag = order_data->HedgeFlag;
     strcpy(pOrder->InsertTime, order_data->InsertTime);
     gettimeofday(&pOrder->UpdateTime, NULL);
+    trader_strategy_print_order_time(self, order_data);
   }
   
   return 0;
@@ -1854,6 +1857,25 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
 
 }
 
+int trader_strategy_print_order_time(trader_strategy* self, trader_order* order_data)
+{
+  struct timeval* begin = &order_data->CreateTime;
+  struct timeval* end = &order_data->UpdateTime;
+  int sec = end->tv_sec - begin->tv_sec;
+  int usec = end->tv_usec - begin->tv_usec;
+  if(usec < 0){
+    sec--;
+    usec += 1000000;
+  }
+  
+  CMN_INFO("ConsumingTime[%d.%d]\n"
+    "UserOrderLocalID[%s]OrderSysID[%s]\n"
+    , sec, usec
+    , order_data->UserOrderLocalID
+    , order_data->OrderSysID);
+
+  return 0;
+}
 
 trader_strategy* trader_strategy_new()
 {
@@ -1861,9 +1883,7 @@ trader_strategy* trader_strategy_new()
 
   self->pMethod = trader_strategy_method_get();
 
-
   return self;
-
 }
 
 void trader_strategy_free(trader_strategy* self)
