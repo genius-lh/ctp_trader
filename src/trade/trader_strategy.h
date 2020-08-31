@@ -29,6 +29,7 @@ typedef struct trader_strategy_position_def trader_strategy_position;
 struct trader_strategy_order_def {
   TAILQ_ENTRY(trader_strategy_order_def) next;
   char ref[21];
+  char needCancel;
   trader_order* order;
   
 };

@@ -579,6 +579,7 @@ int trader_strategy_tick_not_finished(trader_strategy* self)
     // 超过等待条件，撤单
     if(bCancel){
       trader_strategy_cancel_order(self, pStrategyOrder->ref);
+      pStrategyOrder->needCancel = 1;
     }
   }
 
@@ -708,6 +709,8 @@ int trader_strategy_order_update(trader_strategy* self, trader_order* order_data
   }
   
   CMN_DEBUG("user_order_id[%s]pOrder[%x]!\n", order_data->UserOrderLocalID, pOrder);
+  char origOrderStatus = pOrder->OrderStatus;
+  trader_strategy_order* pIter = NULL;
   
   // 更新订单数据
   pOrder->OrderStatus = order_data->OrderStatus;
@@ -721,8 +724,30 @@ int trader_strategy_order_update(trader_strategy* self, trader_order* order_data
     pOrder->HedgeFlag = order_data->HedgeFlag;
     strcpy(pOrder->InsertTime, order_data->InsertTime);
     gettimeofday(&pOrder->UpdateTime, NULL);
-    trader_strategy_print_order_time(self, order_data);
+    trader_strategy_print_order_time(self, pOrder);
   }
+
+  // 判断是否需要撤单
+  do{
+    // 判断进入队列
+    if(TRADER_ORDER_OS_NOTRADEQUEUEING == origOrderStatus){
+      break;
+    }
+
+    if(TRADER_ORDER_OS_NOTRADEQUEUEING != pOrder->OrderStatus){
+      break;
+    }
+    
+    TAILQ_FOREACH(pIter, &self->listNotFinishedOrder,  next){
+      if(!strncmp(pIter->ref, pOrder->UserOrderLocalID, sizeof(pIter->ref))){
+        if(pIter->needCancel){
+          trader_strategy_cancel_order(self, pOrder->UserOrderLocalID);
+        }
+        break;
+      }
+    }
+  }while(0);
+  
   
   return 0;
 }
@@ -1212,6 +1237,7 @@ int trader_strategy_insert_t1_open(trader_strategy* self, char long_short)
   trader_strategy_order* pStrategyOrder = (trader_strategy_order*)malloc(sizeof(trader_strategy_order));
   strcpy(pStrategyOrder->ref, sLocalUserId);
   pStrategyOrder->order = pOrder;
+  pStrategyOrder->needCancel = 0;
   TAILQ_INSERT_TAIL(&self->listNotFinishedOrder, pStrategyOrder, next);
 
   // 300毫秒撤单
@@ -1337,6 +1363,7 @@ int trader_strategy_insert_t2_open(trader_strategy* self, trader_strategy_trade*
   trader_strategy_order* pStrategyOrder = (trader_strategy_order*)malloc(sizeof(trader_strategy_order));
   strcpy(pStrategyOrder->ref, sLocalUserId);
   pStrategyOrder->order = pOrder;
+  pStrategyOrder->needCancel = 0;
   TAILQ_INSERT_TAIL(&self->listNotFinishedOrder, pStrategyOrder, next);  
 
   // 300毫秒撤单
@@ -1523,6 +1550,7 @@ int trader_strategy_t1_close_imp(trader_strategy* self, char long_short, char of
   trader_strategy_order* pStrategyOrder = (trader_strategy_order*)malloc(sizeof(trader_strategy_order));
   strcpy(pStrategyOrder->ref, sLocalUserId);
   pStrategyOrder->order = pOrder;
+  pStrategyOrder->needCancel = 0;
   TAILQ_INSERT_TAIL(&self->listNotFinishedOrder, pStrategyOrder, next);  
 
   // 300毫秒撤单
@@ -1575,6 +1603,7 @@ int trader_strategy_t2_close_imp(trader_strategy* self, trader_strategy_trade* s
   trader_strategy_order* pStrategyOrder = (trader_strategy_order*)malloc(sizeof(trader_strategy_order));
   strcpy(pStrategyOrder->ref, sLocalUserId);
   pStrategyOrder->order = pOrder;
+  pStrategyOrder->needCancel = 0;
   TAILQ_INSERT_TAIL(&self->listNotFinishedOrder, pStrategyOrder, next);  
 
   // 300毫秒撤单
@@ -1861,14 +1890,14 @@ int trader_strategy_print_order_time(trader_strategy* self, trader_order* order_
 {
   struct timeval* begin = &order_data->CreateTime;
   struct timeval* end = &order_data->UpdateTime;
-  int sec = end->tv_sec - begin->tv_sec;
-  int usec = end->tv_usec - begin->tv_usec;
+  long sec = end->tv_sec - begin->tv_sec;
+  long usec = end->tv_usec - begin->tv_usec;
   if(usec < 0){
     sec--;
     usec += 1000000;
   }
   
-  CMN_INFO("ConsumingTime[%d.%d]\n"
+  CMN_INFO("ConsumingTime[%ld.%ld]\n"
     "UserOrderLocalID[%s]OrderSysID[%s]\n"
     , sec, usec
     , order_data->UserOrderLocalID
