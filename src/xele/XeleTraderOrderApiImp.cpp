@@ -4,6 +4,10 @@
 
 #include <pthread.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <linux/tcp.h>
+
 #include "CXeleFtdcUserApiStruct.h"
 #include "CXeleTraderApi.hpp"
 
@@ -327,6 +331,8 @@ bool CXeleTraderOrderApiImp::OnReceive()
   unsigned short contentLen;
   int curMsgLen;
 
+  int flag = 1;
+
   int nPos = 0;
   int nRest = 0;
   char* pData;
@@ -335,6 +341,8 @@ bool CXeleTraderOrderApiImp::OnReceive()
   if(0 == n){
     return false;
   }
+
+  setsockopt(m_down_sock, IPPROTO_TCP, TCP_QUICKACK, &flag, sizeof(flag));
   
   m_CachePos += n;
 
