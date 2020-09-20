@@ -100,6 +100,11 @@ extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
   if(!self->pCnnBackup){
     return 0;
   }
+#ifdef GF_CFFEX
+    //CTP
+extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
+    api_imp = trader_mduser_api_ctp_method_get();
+#endif
   
   self->pCnnBackup->pMethod->xInit(self->pCnnBackup, self->pBase,
     self->backupBrokerId, self->backupUser, self->backupPasswd, self->backupAddr, self->backupWorkspace,

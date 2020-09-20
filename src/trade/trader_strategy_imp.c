@@ -455,6 +455,11 @@ int trader_strategy_check_t1_price(trader_strategy* self, double price)
 {
   trader_tick* t1 = &self->oT1Tick;
 
+  if(0 == price){
+    CMN_ERROR("price[%lf]\n", price); 
+    return -1;
+  }
+
   if(price <= t1->LowerLimitPrice){
     CMN_ERROR("price[%lf] <= LowerLimitPrice[%lf]\n", price, t1->LowerLimitPrice); 
     return -1;
@@ -471,6 +476,11 @@ int trader_strategy_check_t1_price(trader_strategy* self, double price)
 int trader_strategy_check_t2_price(trader_strategy* self, double price)
 {
   trader_tick* t2 = &self->oT2Tick;
+  
+  if(0 == price){
+    CMN_ERROR("price[%lf]\n", price); 
+    return -1;
+  }
 
   if(price < t2->LowerLimitPrice){
     CMN_ERROR("price[%lf] < LowerLimitPrice[%lf]\n", price, t2->LowerLimitPrice); 

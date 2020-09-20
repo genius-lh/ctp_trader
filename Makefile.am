@@ -245,8 +245,8 @@ traderMduserFemasUDP_CFLAGS=-DGF_CFFEX\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
 traderMduserFemasUDP_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
-	-L. -lgfmduser -ltradercmn -lmduserapi
-
+	-L. -lgfmduser -ltradercmn -lmduserapi \
+	-Lctp -lctpmduser -lthostmduserapi_se
 
 traderStrategyFemasAF_SOURCES=\
 	src/log/cmn_log_catalog.c\
