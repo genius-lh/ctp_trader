@@ -236,8 +236,10 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pStrategyEngine->pTraderDb = self->pTraderDB;
   self->pStrategyEngine->pendingMicroSec = self->pendingMicroSec;
 
+#ifdef XELE
   self->pStrategyEngine->pMethod->xInit(self->pStrategyEngine);
-  
+#endif
+
   self->nContractNum = 0;
   TAILQ_INIT(&self->listTraderContract);
   
@@ -397,7 +399,6 @@ int trader_svr_on_client_recv(trader_svr* self)
         
         cmn_util_bufferevent_send(self->BufClient, pPkg, nPkgSize);
       }else{
-        self->bProcessing = 1;
         trader_svr_proc_client_login(self, &oMsg);
       }
       break;
@@ -748,6 +749,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
   switch(nType){
   case TRADERONFRONTCONNECTED:    
     CMN_DEBUG("trader connected!\n");
+    // 在登录状态下进行用户登录
     if(self->bProcessing){      
       self->pCtpTraderApi->pMethod->xLogin(self->pCtpTraderApi);
     }
@@ -757,6 +759,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     break;
   case TRADERONRSPUSERLOGOUT:    
     CMN_DEBUG("trader disconnected!\n");
+    // 登出，退出登录状态
     self->bProcessing = 0;    
     self->pCtpTraderApi->pMethod->xStop(self->pCtpTraderApi);
     break;
@@ -764,6 +767,7 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     if(pMsg->ErrorCd){
       // 登陆失败
       trader_svr_client_notify_login(self, pMsg->ErrorCd, pMsg->ErrorMsg);
+      // 此处不用执行
       self->bProcessing = 0;
       return -1;
     }
@@ -783,7 +787,6 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
 
     if(0 != strcmp(sTradingDay, self->TradingDay)){
       strcpy(self->TradingDay, sTradingDay);
-      self->bQueried = 0;
     }
     
     // 查询合约
@@ -882,7 +885,6 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
       CMN_DEBUG("xQryTradingAccount!\n");
       self->pCtpTraderApi->pMethod->xQryTradingAccount(self->pCtpTraderApi);
       
-      self->bQueried = 1;
       // 通知登陆成功
       trader_svr_client_notify_login(self, 0, "SUCCESS");
     }
@@ -946,6 +948,10 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
   CMN_DEBUG("Enter!\n");
   struct trader_cmd_login_req_def* pLoginInf = &(req->body.login);
   CMN_DEBUG("UserID=[%s]\n", pLoginInf->UserID);
+  // 进入登陆状态
+  self->bProcessing = 1;
+  // 开始登陆
+  self->bQueried = 1;
 
   int nRet;
   
@@ -994,6 +1000,8 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
 int trader_svr_proc_client_logout(trader_svr* self)
 {
   CMN_DEBUG("Enter!\n");
+  // 调用登出，退出登录状态
+  self->bProcessing = 0;
 
   // 特殊处理
   self->pStrategyEngine->pMethod->xCloseAll(self->pStrategyEngine);
@@ -1207,10 +1215,12 @@ trader_svr_method* trader_svr_method_get()
 int trader_svr_client_notify_login(trader_svr* self, int err_cd, char* error_msg)
 {
 
-  if(!self->bProcessing){
+  if(!self->bQueried){
     // 非登陆状态
     return 0;
   }
+  // 登录过程结束
+  self->bQueried = 0;
   
   trader_msg_rsp_struct oRsp;
   oRsp.cmd = TRADER_CMD_TYPE_LOGIN;
@@ -1222,8 +1232,6 @@ int trader_svr_client_notify_login(trader_svr* self, int err_cd, char* error_msg
   unsigned char* pPkg = (unsigned char*)&oRsp;
   int nPkgSize = offsetof(trader_msg_rsp_struct, recNum);
   cmn_util_bufferevent_send(self->BufClient, pPkg, nPkgSize);
-
-  self->bProcessing = 0;
 
   return 0;
 }
