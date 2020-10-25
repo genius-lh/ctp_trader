@@ -3,13 +3,13 @@ AUTOMAKE_OPTIONS=foreign
 noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libxeletrader.so \
-				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so libgfmduser.so\
+				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so libgfmduser.so libxelegdmduser.so\
 				libfemasmduserAF.so libfemastraderAF.so \
 				libctpminimduser.so libctpminitrader.so \
 				libxspeedmduser.so libxspeedtrader.so
 
 bin_PROGRAMS=\
-			traderMduserCtp traderStrategyCtp traderStrategyXele \
+			traderMduserCtp traderStrategyCtp traderStrategyXele traderMduserXeleGD\
 			traderMduserCtpMini traderStrategyCtpMini \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF traderMduserFemasUDP\
@@ -72,6 +72,10 @@ libfemasmduser_udp_so_LDFLAGS=-shared -fPIC
 libgfmduser_so_SOURCES=src/api/trader_mduser_api_gf.cpp
 libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ilibevent -Ilibevent/compat/sys
 libgfmduser_so_LDFLAGS=-shared -fPIC
+
+libxelegdmduser_so_SOURCES=src/api/trader_mduser_api_gd.cpp
+libxelegdmduser_so_CPPFLAGS=-fPIC -Ilibevent -Ilibevent/compat/sys
+libxelegdmduser_so_LDFLAGS=-shared -fPIC
 
 libfemastrader_so_SOURCES=src/api/trader_trader_api_femas.cpp\
 	src/api/FemasTraderHandler.cpp
@@ -247,6 +251,17 @@ traderMduserFemasUDP_CFLAGS=-DGF_CFFEX\
 traderMduserFemasUDP_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
 	-L. -lgfmduser -ltradercmn -lmduserapi \
 	-Lctp -lctpmduser -lthostmduserapi_se
+
+traderMduserXeleGD_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserXeleGD_CFLAGS=-DGD_CFFEX\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserXeleGD_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
+	-L. -lxelegdmduser -ltradercmn -lmduserapi
 
 traderStrategyFemasAF_SOURCES=\
 	src/log/cmn_log_catalog.c\
