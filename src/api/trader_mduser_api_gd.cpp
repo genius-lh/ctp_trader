@@ -31,6 +31,7 @@ static void trader_mduser_api_gd_logout(trader_mduser_api* self);
 static void trader_mduser_api_gd_subscribe(trader_mduser_api* self, char* instrument);
 
 static void* trader_mduser_api_gd_thread(void* arg);
+static void* trader_mduser_api_gd_tcp_thread(void* arg);
 
 static int trader_mduser_api_gd_prase_url(const char* url, char* local_host, char* remote_host, int* port);
 static void gd_mduser_on_rtn_depth_market_data(void* arg, CXeleCffexLevelOneMarketData *pMarketData);
@@ -56,13 +57,17 @@ struct trader_mduser_api_gd_def{
 	char local_ip[16];				///< ±¾µØIP
 	pthread_t thread_id;
   int loop_flag;
+  pthread_mutex_t thread_mutex;
+	pthread_t thread_tcp_id;
 
   TAILQ_HEAD(xele_md_static_inf_list, xele_md_static_inf_def) md_static_list;
   int md_static_num;
   CXeleCffexMarketDataStaticField* md_static_field_list;
 };
 
-static int trader_mduser_api_static_inf_load(void* self, char* ip, int port);
+static int trader_mduser_api_static_inf_init(void* arg);
+
+static int trader_mduser_api_static_inf_load(void* self, const char* ip, int port);
 
 static int trader_mduser_api_static_inf_add(void* self, CXeleCffexMarketDataStaticField* pMarketDataStaticField);
 
@@ -104,16 +109,11 @@ void trader_mduser_api_gd_start(trader_mduser_api* self)
 
   pImp->remote_port = (unsigned short)port;
 
-  //TODO
-  char* tcp_ip = "172.37.88.12";
-  int tcp_port = 10007;
-  ret = trader_mduser_api_static_inf_load((void*)pImp, tcp_ip, tcp_port);
-  if(ret < 0){
-    GDXELE_LOG("trader_mduser_api_static_inf_load ret=[%d]\n", ret);
-    exit(-1);
-  }
+  trader_mduser_api_static_inf_init((void*)pImp);
 
 	ret = pthread_create(&pImp->thread_id, NULL, trader_mduser_api_gd_thread, (void*)self);
+  
+	ret = pthread_create(&pImp->thread_tcp_id, NULL, trader_mduser_api_gd_tcp_thread, (void*)self);
 
   return ;
 }
@@ -127,6 +127,11 @@ void trader_mduser_api_gd_stop(trader_mduser_api* self)
   if(pImp->thread_id){
     pthread_join(pImp->thread_id, &ret);
   }
+  
+  if(pImp->thread_tcp_id){
+    pthread_join(pImp->thread_tcp_id, &ret);
+  }
+
   free(pImp);
   self->pUserApi = (void*)NULL;
   
@@ -167,17 +172,33 @@ void gd_mduser_on_rtn_depth_market_data(void* arg, CXeleCffexLevelOneMarketData 
   strncpy(marketDataStaticField.InstrumentID, pMarketData->InstrumentID, sizeof(marketDataStaticField.InstrumentID));
 
   ret = trader_mduser_api_static_inf_search((void*)self->pUserApi, &marketDataStaticField);
-  if(ret < 0){
-    return;
+  if(!ret){
+    oTick.UpperLimitPrice= marketDataStaticField.UpperLimitPrice;
+    oTick.LowerLimitPrice= marketDataStaticField.LowerLimitPrice;
+  }else{
+    oTick.UpperLimitPrice= oTick.AskPrice1 * 1.1;
+    oTick.LowerLimitPrice= oTick.BidPrice1 * 0.9;
   }
   
   //strcpy(oTick.TradingDay, marketDataStaticField.TradingDay);//
-  oTick.UpperLimitPrice= marketDataStaticField.UpperLimitPrice;
-  oTick.LowerLimitPrice= marketDataStaticField.LowerLimitPrice;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
   return;
+}
+void* trader_mduser_api_gd_tcp_thread(void* arg)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+  trader_mduser_api_gd* pImp = (trader_mduser_api_gd*)self->pUserApi;
+  const char* tcp_ip = "172.37.88.12";
+  int tcp_port = 10007;
+  int ret = trader_mduser_api_static_inf_load((void*)pImp, tcp_ip, tcp_port);
+  if(ret < 0){
+    GDXELE_LOG("trader_mduser_api_static_inf_load ret=[%d]\n", ret);
+    exit(-1);
+  }
+
+  return (void*)NULL;
 }
 
 void* trader_mduser_api_gd_thread(void* arg)
@@ -251,7 +272,8 @@ void* trader_mduser_api_gd_thread(void* arg)
 			break;
 		}
 
-    pImp->loop_flag = 1;
+    int ret = 0;
+
     while (pImp->loop_flag)
     {
     	FD_ZERO( &readSet);
@@ -282,6 +304,10 @@ void* trader_mduser_api_gd_thread(void* arg)
     	}					
     	else
     	{
+    	  if(!ret){
+          GDXELE_LOG("gd_mduser_on_rtn_depth_market_data\n");
+          ret = 1;
+        }
     		gd_mduser_on_rtn_depth_market_data(self, (CXeleCffexLevelOneMarketData*)(line + sizeof(CXeleCffexMdMessageHead)));				
     	}
     }
@@ -334,13 +360,26 @@ int trader_mduser_api_gd_prase_url(const char* url, char* local_host, char* remo
   return 0;
 }
 
-int trader_mduser_api_static_inf_load(void* arg, char* ip, int port)
+int trader_mduser_api_static_inf_init(void* arg)
 {
-  GDXELE_LOG("trader_mduser_api_static_inf_load enter\n");
+  GDXELE_LOG("trader_mduser_api_static_inf_init enter\n");
 
   trader_mduser_api_gd* self = (trader_mduser_api_gd*)arg;
   TAILQ_INIT(&self->md_static_list);
   self->md_static_num = 0;
+  pthread_mutex_init(&self->thread_mutex, NULL);
+  
+  self->loop_flag = 1;
+
+  return 0;
+}
+
+
+int trader_mduser_api_static_inf_load(void* arg, const char* ip, int port)
+{
+  GDXELE_LOG("trader_mduser_api_static_inf_load enter\n");
+
+  trader_mduser_api_gd* self = (trader_mduser_api_gd*)arg;
 
   // ½¨Á´
   int ret = 0;
@@ -362,13 +401,18 @@ int trader_mduser_api_static_inf_load(void* arg, char* ip, int port)
   tcp_server_addr.sin_family = AF_INET;
   inet_aton(ip, &tcp_server_addr.sin_addr);
   tcp_server_addr.sin_port = htons(port);
-  ret = connect(fd, (struct sockaddr *) &tcp_server_addr, sizeof(tcp_server_addr));
-  if (ret == -1) {
-    return -3;
-  }
+  do {
+    ret = connect(fd, (struct sockaddr *) &tcp_server_addr, sizeof(tcp_server_addr));
+    if (ret == -1) {
+      GDXELE_LOG("trader_mduser_api_static_inf_load connect failed\n");
+      usleep(500 * 1000);
+    }
+  }while((ret < 0) && self->loop_flag);
+
+  pthread_mutex_lock(&self->thread_mutex);
 
   char buf[MSG_MAX_LEN];
-   while (true) {
+  while (true) {
     GDXELE_LOG("trader_mduser_api_static_inf_load recv\n");
     ret = recv(fd, buf, sizeof(CXeleCffexMdMessageHead) + sizeof(CXeleCffexMarketDataStaticField), MSG_WAITALL);
     if (ret == 0) {
@@ -380,6 +424,7 @@ int trader_mduser_api_static_inf_load(void* arg, char* ip, int port)
   }
   close(fd);
   trader_mduser_api_static_inf_sort(arg);
+  pthread_mutex_unlock(&self->thread_mutex);
 
   return 0;
 }
@@ -436,6 +481,8 @@ int trader_mduser_api_static_inf_sort(void* arg)
 int trader_mduser_api_static_inf_search(void* arg, CXeleCffexMarketDataStaticField* pMarketDataStaticField)
 {
   trader_mduser_api_gd* self = (trader_mduser_api_gd*)arg;
+  
+  pthread_mutex_lock(&self->thread_mutex);
 
 	int low = 0;
 	int high = self->md_static_num - 1;
@@ -448,6 +495,7 @@ int trader_mduser_api_static_inf_search(void* arg, CXeleCffexMarketDataStaticFie
 		if(0 == ret){
       pMarketDataStaticField->UpperLimitPrice = self->md_static_field_list[mid].UpperLimitPrice;
       pMarketDataStaticField->LowerLimitPrice = self->md_static_field_list[mid].LowerLimitPrice;
+      pthread_mutex_unlock(&self->thread_mutex);
 			return 0;    
 		}else if(ret > 0){
 			low = mid + 1;
@@ -455,6 +503,8 @@ int trader_mduser_api_static_inf_search(void* arg, CXeleCffexMarketDataStaticFie
 			high = mid - 1;
     }
 	}
+  
+  pthread_mutex_unlock(&self->thread_mutex);
 	return -1; 
 
 }
