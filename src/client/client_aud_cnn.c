@@ -427,6 +427,10 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
 #else
   update->stage[num].TriggerType = 3;
 #endif
+#ifdef XELE
+  update->stage[num].TriggerType = 0;
+#endif
+
 
   for(pChild = pRequest->child; pChild != NULL; pChild = pChild->next){
     if(!strcmp(pChild->string, "whichGrid")){
