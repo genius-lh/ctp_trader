@@ -123,11 +123,11 @@ void gf_mduser_on_rtn_depth_market_data(void* arg, CUstpFtdcDepthMarketDataField
   strcpy(oTick.UpdateTime, pMarketData->UpdateTime);
   oTick.UpdateMillisec = pMarketData->UpdateMillisec;
   oTick.BidPrice1 = pMarketData->BidPrice1;
-  oTick.BidVolume1= pMarketData->BidVolume1;
+  oTick.BidVolume1 = pMarketData->BidVolume1;
   oTick.AskPrice1 = pMarketData->AskPrice1;
-  oTick.AskVolume1= pMarketData->AskVolume1;
-  oTick.UpperLimitPrice= pMarketData->UpperLimitPrice;
-  oTick.LowerLimitPrice= pMarketData->LowerLimitPrice;
+  oTick.AskVolume1 = pMarketData->AskVolume1;
+  oTick.UpperLimitPrice = pMarketData->UpperLimitPrice + 1;
+  oTick.LowerLimitPrice = pMarketData->LowerLimitPrice - 1;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
