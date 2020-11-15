@@ -141,13 +141,21 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
     //CMN_DEBUG("Not Focused[%s]!\n", tick_data->InstrumentID);
     return 0;
   }
+  
+  if(self->used){
+    CMN_INFO("SID[%02d]tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", self->idx, tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
+  }
 
   if((0 == self->oT1Tick.AskVolume1)
   || (0 == self->oT1Tick.BidVolume1)
   || (0 == self->oT2Tick.AskVolume1)
   || (0 == self->oT2Tick.BidVolume1)){
     // 行情不正常
-    CMN_INFO("T1.AskVolume1=[%d]T1.BidVolume1=[%d]T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
+    CMN_INFO("T1.InstrumentID=[%s]T2.InstrumentID=[%s]\n"
+      "T1.AskVolume1=[%d]T1.BidVolume1=[%d]\n"
+      "T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
+      self->T1,
+      self->T2,
       self->oT1Tick.AskVolume1,
       self->oT1Tick.BidVolume1,
       self->oT2Tick.AskVolume1,
@@ -196,9 +204,6 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
     return 0;
   }
 */
-  if(self->used){
-    CMN_INFO("SID[%02d]tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", self->idx, tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
-  }
 
   // 收盘判断
   trader_strategy_check_closing(self, tick_data);
