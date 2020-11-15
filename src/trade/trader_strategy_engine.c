@@ -51,6 +51,11 @@ static void  trader_strategy_engine_status_timer_timeout_cb(evutil_socket_t fd, 
 
 static void trader_strategy_engine_status_timer_event(trader_strategy_engine* self);
 
+static void trader_strategy_engine_status_timer_err_order_insert(trader_strategy_engine* self);
+
+static int trader_strategy_engine_on_err_rtn_order_insert(trader_strategy_engine* self, int error_id);
+
+
 trader_strategy_engine_method* trader_strategy_engine_method_get()
 {
   static trader_strategy_engine_method trader_strategy_engine_method_st = {
@@ -74,7 +79,8 @@ trader_strategy_engine_method* trader_strategy_engine_method_get()
     trader_strategy_engine_query_position,
     trader_strategy_engine_save_order,
     trader_strategy_engine_save_trade,
-    trader_strategy_engine_init_investor_position
+    trader_strategy_engine_init_investor_position,
+    trader_strategy_engine_on_err_rtn_order_insert
   };
   return &trader_strategy_engine_method_st;
 }
@@ -574,9 +580,9 @@ void trader_strategy_engine_status_timer_init(trader_strategy_engine* self)
 {
   CMN_INFO("Enter!\n");
   self->statusFlag = 1;
-  self->tickTimerEvent = evtimer_new(self->pBase, trader_strategy_engine_status_timer_timeout_cb, (void*)self);
   strncpy(self->currentTime, "09:29:00", sizeof(self->currentTime));
-  self->pendingMicroSec = 20;
+  self->tickTimerEvent = NULL;
+  //self->pendingMicroSec = 20;
   return;
 }
 
@@ -586,7 +592,8 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
     return;
   }
 
-  if(0 != strncmp(self->currentTime, pUpdateTime, sizeof(self->currentTime))){
+  if(0 != strncmp(self->currentTime, pUpdateTime, sizeof(self->currentTime))){    
+    self->statusFlag = 0;
     return;
   }
 
@@ -607,6 +614,7 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
     UpdateSec, UpdateMillisec*1000
   };
 
+  self->tickTimerEvent = evtimer_new(self->pBase, trader_strategy_engine_status_timer_timeout_cb, (void*)self);
   evtimer_add(self->tickTimerEvent, &t1_timeout);
 
   return ;
@@ -615,8 +623,12 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
 void  trader_strategy_engine_status_timer_timeout_cb(evutil_socket_t fd, short event, void *arg)
 {
   trader_strategy_engine* self = (trader_strategy_engine*)arg;
-  evtimer_del(self->tickTimerEvent);
-  event_free(self->tickTimerEvent);
+  self->statusFlag = 1;
+  if(self->tickTimerEvent){
+    evtimer_del(self->tickTimerEvent);
+    event_free(self->tickTimerEvent);
+    self->tickTimerEvent = NULL;
+  }
   trader_strategy_engine_status_timer_event(self);
   return;
 }
@@ -633,4 +645,31 @@ void trader_strategy_engine_status_timer_event(trader_strategy_engine* self)
 
   return;
 }
+
+void trader_strategy_engine_status_timer_err_order_insert(trader_strategy_engine* self)
+{
+  if(!self->statusFlag){
+    return ;
+  }
+  CMN_INFO("Enter!\n");
+  self->statusFlag = 0;
+
+  struct timeval t1_timeout = {
+    0, self->pendingMicroSec * 1000
+  };
+
+  self->tickTimerEvent = evtimer_new(self->pBase, trader_strategy_engine_status_timer_timeout_cb, (void*)self);
+  evtimer_add(self->tickTimerEvent, &t1_timeout);
+  return ;
+}
+
+int trader_strategy_engine_on_err_rtn_order_insert(trader_strategy_engine* self, int error_id)
+{
+  if(26 == error_id){
+    trader_strategy_engine_status_timer_err_order_insert(self);
+  }
+
+  return 0;
+}
+
 

@@ -105,6 +105,9 @@ struct trader_strategy_engine_method_def {
 
   // 初始化持仓
   int (*xInitInvestorPosition)(trader_strategy_engine* self, investor_position* pInvestorPsition);
+
+  // 报单失败
+  int (*xOnErrRtnOrderInsert)(trader_strategy_engine* self, int error_id);
 };
 
 extern trader_strategy_engine* trader_strategy_engine_new();

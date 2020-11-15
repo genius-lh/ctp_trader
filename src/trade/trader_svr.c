@@ -930,6 +930,11 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     CMN_INFO("InstrumentID[%s]InstrumentStatus[%c]\n", pInstrumentStatus->InstrumentID, pInstrumentStatus->InstrumentStatus);
     self->pStrategyEngine->pMethod->xUpdateStatus(self->pStrategyEngine, pInstrumentStatus);
     break;
+  case TRADERONERRRTNORDERINSERT:
+#ifdef XELE
+    self->pStrategyEngine->pMethod->xOnErrRtnOrderInsert(self->pStrategyEngine, msg->ErrorCd);
+#endif
+    break;
   case TRADERONRSPERROR:
     CMN_ERROR("½»Ò×³ö´í!\n");
     // TODO
