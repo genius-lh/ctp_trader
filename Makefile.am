@@ -70,7 +70,7 @@ libfemasmduser_udp_so_CPPFLAGS=-DFEMAS_UDP -DFEMAS20 -fPIC -Ifemas20 -Ilibevent 
 libfemasmduser_udp_so_LDFLAGS=-shared -fPIC
 
 libgfmduser_so_SOURCES=src/api/trader_mduser_api_gf.cpp
-libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ilibevent -Ilibevent/compat/sys
+libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ictp -Ilibevent -Ilibevent/compat/sys
 libgfmduser_so_LDFLAGS=-shared -fPIC
 
 libxelegdmduser_so_SOURCES=src/api/trader_mduser_api_gd.cpp
