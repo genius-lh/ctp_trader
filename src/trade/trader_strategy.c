@@ -1851,14 +1851,16 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
 {
 
   if(0 == self->TriggerType){
-    self->TriggerType = 2;
+    self->TriggerType = 0;
     if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
     && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
       if(0 == strcmp(self->T1, tick_data->InstrumentID)){
         self->TriggerType = 1;
+      }else{
+        self->TriggerType = 2;
       }
     }
-    CMN_INFO("self->TriggerType=[%d]\n", self->TriggerType);
+    CMN_INFO("self->TriggerType=[%d]self->T1=[%s]self->T2=[%s]\n", self->TriggerType, self->T1, self->T2);
   }
   
   if(1 == self->TriggerType){
