@@ -163,8 +163,10 @@ int trader_mduser_boardcast_exit(trader_mduser_boardcast* self)
     }
     free(cnn);
   }
-  evconnlistener_free(self->listener);
-
+  if(self->listener){
+    evconnlistener_free(self->listener);
+    self->listener = NULL;
+  }
   return 0;
 }
 
