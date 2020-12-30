@@ -15,6 +15,7 @@
 
 int main(int argc, char* argv[])
 {
+  char sQryAddress[128];
   char sAddress[128];
   char sAppID[128];
   char sAuthCode[128];
@@ -23,7 +24,9 @@ int main(int argc, char* argv[])
   char sPasswd[128];
   int i = 1;
 
-  if(argc < 5){
+  if(argc < 6){
+    printf("input sQryAddress:\n");
+    scanf("%s", sQryAddress);
     printf("input sAddress:\n");
     scanf("%s", sAddress);
     printf("input sAppID:\n");
@@ -37,6 +40,7 @@ int main(int argc, char* argv[])
     printf("input sPasswd:\n");
     scanf("%s", sPasswd);
   }else{
+    strncpy(sQryAddress, argv[i++], sizeof(sQryAddress));
     strncpy(sAddress, argv[i++], sizeof(sAddress));
     strncpy(sAppID, argv[i++], sizeof(sAppID));
     strncpy(sAuthCode, argv[i++], sizeof(sAuthCode));
@@ -65,6 +69,7 @@ int main(int argc, char* argv[])
   // 交易
   pTraderApi->RegisterSpi(pTraderHandler);
   pTraderApi->RegisterFront(sAddress);
+  pTraderApi->RegisterQryFront(sQryAddress);
   
   // 连接交易服务器
   pTraderApi->Init();
@@ -143,6 +148,19 @@ void CFemas20TestHandler::OnRspUserLogin(CUstpFtdcRspUserLoginField *pRspUserLog
   }
   return ;
 }
+
+void CFemas20TestHandler::OnRspQueryUserLogin(CUstpFtdcRspUserLoginField *pRspUserLogin, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
+{
+  FEMAS20_TEST_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    FEMAS20_TEST_LOG("pRspInfo->ErrorID=[%d]"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+  return ;
+}
+
 
 ///用户退出应答
 void CFemas20TestHandler::OnRspUserLogout(CUstpFtdcRspUserLogoutField *pRspUserLogout, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
@@ -368,6 +386,7 @@ void CFemas20TestHandler::Loop()
       Logout();
       m_Loop = 0;
       sleep(1);
+      break;
     case 3:
       OrderInsert();
       break;

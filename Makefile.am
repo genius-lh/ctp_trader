@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS=foreign
 noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libxeletrader.so \
-				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so libgfmduser.so libxelegdmduser.so\
+				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so libgfmduser.so libxelegdmduser.so libsfmduser.so\
 				libfemasmduserAF.so libfemastraderAF.so \
 				libctpminimduser.so libctpminitrader.so \
 				libxspeedmduser.so libxspeedtrader.so
@@ -13,6 +13,7 @@ bin_PROGRAMS=\
 			traderMduserCtpMini traderStrategyCtpMini \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF traderMduserFemasUDP\
+			traderMduserSolarFlare \
 			traderMduserXSpeedSOP traderStrategyXSpeedSOP \
 			traderMduserXSpeedStock \
 			testMduserShm testMduserClient \
@@ -73,6 +74,10 @@ libgfmduser_so_SOURCES=src/api/trader_mduser_api_gf.cpp
 libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ictp -Ilibevent -Ilibevent/compat/sys
 libgfmduser_so_LDFLAGS=-shared -fPIC
 
+libsfmduser_so_SOURCES=src/api/trader_mduser_api_sf.cpp
+libsfmduser_so_CPPFLAGS=-fPIC -Isolarflare -Ilibevent -Ilibevent/compat/sys
+libsfmduser_so_LDFLAGS=-shared -fPIC
+
 libxelegdmduser_so_SOURCES=src/api/trader_mduser_api_gd.cpp
 libxelegdmduser_so_CPPFLAGS=-fPIC -Ilibevent -Ilibevent/compat/sys
 libxelegdmduser_so_LDFLAGS=-shared -fPIC
@@ -88,8 +93,8 @@ libfemasmduserAF_so_SOURCES=src/api/trader_mduser_api_femas.cpp\
 libfemasmduserAF_so_CPPFLAGS=-fPIC -DFEMAS20 -Ifemas20 -Ilibevent -Ilibevent/compat/sys
 libfemasmduserAF_so_LDFLAGS=-shared -fPIC
 
-libfemastraderAF_so_SOURCES=src/api/trader_trader_api_femas.cpp\
-	src/api/FemasTraderHandler.cpp
+libfemastraderAF_so_SOURCES=src/api/trader_trader_api_femas_af.cpp\
+	src/api/FemasAFTraderHandler.cpp
 libfemastraderAF_so_CPPFLAGS=-fPIC -DFEMAS20 -Ifemas20 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libfemastraderAF_so_LDFLAGS=-shared -fPIC
 
@@ -251,6 +256,18 @@ traderMduserFemasUDP_CFLAGS=-DGF_CFFEX\
 traderMduserFemasUDP_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
 	-L. -lgfmduser -ltradercmn -lmduserapi \
 	-Lctp -lctpmduser -lthostmduserapi_se
+
+traderMduserSolarFlare_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserSolarFlare_CFLAGS=-DGF_SOLARFLARE\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserSolarFlare_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
+	-L. -lsfmduser -ltradercmn -lmduserapi \
+	-Lsolarflare -lefvi-common -lciul1
 
 traderMduserXeleGD_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \

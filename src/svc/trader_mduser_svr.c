@@ -96,6 +96,10 @@ extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
     api_imp = trader_mduser_api_gd_method_get();
 #endif
 
+#ifdef GF_SOLARFLARE
+    extern trader_mduser_api_method* trader_mduser_api_sf_method_get();
+      api_imp = trader_mduser_api_sf_method_get();
+#endif
 
   self->pCnnMain->pMethod->xInit(self->pCnnMain, self->pBase,
     self->mainBrokerId, self->mainUser, self->mainPasswd, self->mainAddr, self->mainWorkspace,
