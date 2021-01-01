@@ -296,7 +296,7 @@ traderStrategyFemasAF_SOURCES=\
 	src/client/client_aud_svr.c \
 	src/client/client_aud_pool.c
 
-traderStrategyFemasAF_CFLAGS=-DFEMAS -Isrc/api \
+traderStrategyFemasAF_CFLAGS=-DFEMAS20 -Isrc/api \
 	-Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 

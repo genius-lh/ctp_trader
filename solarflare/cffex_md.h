@@ -2,6 +2,7 @@
 extern "C" {
 #endif
 
+#pragma pack(1)
 typedef struct MarketDepthUpdate 
 {
     int8_t          ETH_IP_UDP[42];
@@ -41,6 +42,7 @@ typedef struct MarketDepthUpdate
     double          SettlementPrice;
     double          CurrDelta;
 }cffex_md_t;
+#pragma pack()
 
 #ifdef __cplusplus
 }
