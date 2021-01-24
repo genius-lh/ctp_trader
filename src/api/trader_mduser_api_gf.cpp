@@ -15,6 +15,8 @@
 #include "ThostFtdcUserApiDataType.h"
 #include "ThostFtdcUserApiStruct.h"
 
+#include "future_tick.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,6 +39,7 @@ static void* trader_mduser_api_gf_thread(void* arg);
 static int trader_mduser_api_gf_prase_url(const char* url, char* local_host, char* remote_host, int* port);
 static void gf_mduser_on_rtn_depth_market_data(void* arg, CUstpFtdcDepthMarketDataField *pMarketData);
 static void gf_ctp_mduser_on_rtn_depth_market_data(void* arg, CThostFtdcDepthMarketDataField *pMarketData);
+static void gf_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMarketData);
 
 #ifdef __cplusplus
 }
@@ -163,6 +166,27 @@ void gf_ctp_mduser_on_rtn_depth_market_data(void* arg, CThostFtdcDepthMarketData
 
 }
 
+void gf_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMarketData)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+  trader_tick oTick;
+  memset(&oTick, 0, sizeof(trader_tick));
+
+  strcpy(oTick.InstrumentID, pMarketData->instrument_id);
+  strcpy(oTick.TradingDay, "20210101");
+  strcpy(oTick.UpdateTime, pMarketData->update_time);
+  oTick.UpdateMillisec = pMarketData->update_msec;
+  oTick.BidPrice1 = pMarketData->depth[0].bid_price;
+  oTick.BidVolume1 = pMarketData->depth[0].bid_volume;
+  oTick.AskPrice1 = pMarketData->depth[0].ask_price;
+  oTick.AskVolume1 = pMarketData->depth[0].ask_volume;
+  oTick.UpperLimitPrice = pMarketData->upper_limit + 1;
+  oTick.LowerLimitPrice = pMarketData->lower_limit - 1;
+
+  trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
+
+  return;
+}
 
 void* trader_mduser_api_gf_thread(void* arg)
 {
@@ -264,12 +288,13 @@ void* trader_mduser_api_gf_thread(void* arg)
     	}					
     	else
     	{
-    		//gf_mduser_on_rtn_depth_market_data(self, (CUstpFtdcDepthMarketDataField*)line);
-    		if(!flag){
+        //gf_mduser_on_rtn_depth_market_data(self, (CUstpFtdcDepthMarketDataField*)line);
+        if(!flag){
           flag = 1;
-      		GFXELE_LOG("gf_ctp_mduser_on_rtn_depth_market_data\n");
+          GFXELE_LOG("gf_ctp_mduser_on_rtn_depth_market_data\n");
         }
-    		gf_ctp_mduser_on_rtn_depth_market_data(self, (CThostFtdcDepthMarketDataField*)line);
+        //gf_ctp_mduser_on_rtn_depth_market_data(self, (CThostFtdcDepthMarketDataField*)line);
+        gf_x10_mduser_on_rtn_depth_market_data(self, (struct ShfeDataField*)line);
     	}
     }
   }while(0);

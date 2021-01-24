@@ -14,6 +14,7 @@ bin_PROGRAMS=\
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF traderMduserFemasUDP\
 			traderMduserSolarFlare \
+			traderMduserGfShfe \
 			traderMduserXSpeedSOP traderStrategyXSpeedSOP \
 			traderMduserXSpeedStock \
 			testMduserShm testMduserClient \
@@ -261,13 +262,26 @@ traderMduserSolarFlare_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserSolarFlare_CFLAGS=-DGF_SOLARFLARE\
+traderMduserSolarFlare_CFLAGS=-DGF_SOLARFLARE -DGF_CTP_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
 traderMduserSolarFlare_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
 	-L. -lsfmduser -ltradercmn -lmduserapi \
-	-Lsolarflare -lefvi-common -lciul1
+	-Lsolarflare -lefvi-common -lciul1 \
+	-Lctp -lctpmduser -lthostmduserapi_se
+
+traderMduserGfShfe_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserGfShfe_CFLAGS=-DGF_SHFE -DGF_CTP_BACKUP\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserGfShfe_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core \
+	-L. -lgfmduser -ltradercmn -lmduserapi \
+	-Lctp -lctpmduser -lthostmduserapi_se
 
 traderMduserXeleGD_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \

@@ -91,6 +91,11 @@ extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
   api_imp = trader_mduser_api_gf_method_get();
 #endif
 
+#ifdef GF_SHFE
+extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
+  api_imp = trader_mduser_api_gf_method_get();
+#endif
+
 #ifdef GD_CFFEX
   extern trader_mduser_api_method* trader_mduser_api_gd_method_get();
     api_imp = trader_mduser_api_gd_method_get();
@@ -110,7 +115,7 @@ extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
   if(!self->pCnnBackup){
     return 0;
   }
-#ifdef GF_CFFEX
+#ifdef GF_CTP_BACKUP
     //CTP
 extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
     api_imp = trader_mduser_api_ctp_method_get();
