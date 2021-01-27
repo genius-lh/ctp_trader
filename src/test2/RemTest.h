@@ -42,7 +42,7 @@ public:
 	/// \param  nResult                  服务器响应的成功与否返回码
 	/// \return void 
 
-	virtual void OnRspChangePassword(EES_ChangePasswordResult nResult){}
+	void OnRspChangePassword(EES_ChangePasswordResult nResult);
 
 	/// 查询用户下面帐户的返回事件
 	
@@ -271,6 +271,7 @@ public:
   void QryInvestorPosition();
   void PrintOrder(void* data);
   void PrintTrade(void* data);
+  void ChangePassword();
 
 };
 

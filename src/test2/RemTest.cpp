@@ -78,7 +78,8 @@ int main(int argc, char* argv[])
 
   pTraderHandler->m_Arg = (void*)pTraderApi;
   pTraderHandler->m_RequestId = 1;
-  
+
+  RESULT ret_err;
 	EES_TradeSvrInfo svrInfo;
 	strncpy(svrInfo.m_remoteTradeIp, remoteTradeIp, sizeof(svrInfo.m_remoteTradeIp));
 	svrInfo.m_remoteTradeTCPPort = atoi(remoteTradeTCPPort);
@@ -87,7 +88,11 @@ int main(int argc, char* argv[])
 	svrInfo.m_remoteQueryTCPPort = atoi(remoteQueryTCPPort);
 	strncpy(svrInfo.m_LocalTradeIp, localTradeIp, sizeof(svrInfo.m_LocalTradeIp));
 	svrInfo.m_LocalTradeUDPPort = atoi(localTradeUDPPort);
-	RESULT ret_err = pTraderApi->ConnServer(svrInfo, pTraderHandler);
+  if(0 != svrInfo.m_LocalTradeUDPPort){
+	  ret_err = pTraderApi->ConnServer(svrInfo, pTraderHandler);
+  }else{
+    ret_err = pTraderApi->ConnServer(svrInfo.m_remoteTradeIp, svrInfo.m_remoteTradeTCPPort, pTraderHandler, svrInfo.m_remoteQueryIp, svrInfo.m_remoteQueryTCPPort);
+  }
 	if (ret_err != NO_ERROR)
 	{
 		REM_TEST_LOG("connect to REM server failed!\n");
@@ -151,6 +156,13 @@ void CRemTestHandler::OnUserLogon(EES_LogonResponse* pLogon)
     
 }
 
+void CRemTestHandler::OnRspChangePassword(EES_ChangePasswordResult nResult)
+{
+  REM_TEST_LOG("%s\n", __FUNCTION__);
+
+}
+
+
 void CRemTestHandler::OnQueryUserAccount(EES_AccountInfo * pAccoutnInfo, bool bFinish)
 {
   REM_TEST_LOG("%s\n", __FUNCTION__);
@@ -158,6 +170,10 @@ void CRemTestHandler::OnQueryUserAccount(EES_AccountInfo * pAccoutnInfo, bool bF
     return;
   }
 
+  if('\0' == pAccoutnInfo->m_Account[0]){
+    return ;
+  }
+  
   strncpy(m_InvestorID, pAccoutnInfo->m_Account, sizeof(m_InvestorID));
 	
   REM_TEST_LOG(
@@ -628,6 +644,9 @@ void CRemTestHandler::Loop()
     case 10:
       QryInvestorPosition();
       break;
+    case 11:
+      ChangePassword();
+      break;
     default:
       break;
     }
@@ -650,6 +669,7 @@ int CRemTestHandler::ShowMenu()
         "8-QryInvestorAccount\n"
         "9-QryInstrument\n"
         "10-QryInvestorPosition\n"
+        "11-ChangePassword\n"
         "**********************\n"
         "ÇëÑ¡Ôñ£º"
   );
@@ -840,4 +860,17 @@ void CRemTestHandler::PrintTrade(void* data)
 
 }
 
+void CRemTestHandler::ChangePassword()
+{
+  REM_TEST_LOG("%s\n", __FUNCTION__);
+
+  char newPasswd[10];
+  
+  printf("input newPasswd:\n");
+  scanf("%s", newPasswd);
+  
+  EESTraderApi* pTraderApi = (EESTraderApi*)m_Arg;
+  pTraderApi->ChangePassword(m_Passwd, newPasswd);
+
+}
 
