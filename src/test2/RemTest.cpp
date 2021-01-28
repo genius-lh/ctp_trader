@@ -870,7 +870,9 @@ void CRemTestHandler::ChangePassword()
   scanf("%s", newPasswd);
   
   EESTraderApi* pTraderApi = (EESTraderApi*)m_Arg;
-  pTraderApi->ChangePassword(m_Passwd, newPasswd);
+  REM_TEST_LOG("ChangePassword(%s, %s)\n", m_Passwd, newPasswd);
+  RESULT ret = pTraderApi->ChangePassword(m_Passwd, newPasswd);
+  REM_TEST_LOG("ChangePassword[%d]\n", ret);
 
 }
 
