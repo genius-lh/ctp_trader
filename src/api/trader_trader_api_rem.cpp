@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "EesTraderApi.h"
 #include "RemTraderHandler.h"
 
 
@@ -80,8 +81,16 @@ int trader_trader_api_rem_get_max_order_local_id(trader_trader_api* self, long* 
 
 void trader_trader_api_rem_start(trader_trader_api* self)
 {
-  CUstpFtdcTraderApi* pTraderApi = CUstpFtdcTraderApi::CreateFtdcTraderApi(self->pWorkspace);
-  CFemasAFTraderHandler* pTraderHandler = new CFemasAFTraderHandler(rem_trader_api_cb_get(), (void*)self);
+  char remoteTradeIp[128];
+  char remoteTradeTCPPort[128];
+  char remoteTradeUDPPort[128];
+  char remoteQueryIp[128];
+  char remoteQueryTCPPort[128];
+  char localTradeIp[128];
+  char localTradeUDPPort[128];
+
+  EESTraderApi* pTraderApi = CreateEESTraderApi();
+  CRemTraderHandler* pTraderHandler = new CRemTraderHandler(pTraderApi, (void*)self);
   
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)malloc(sizeof(trader_trader_api_rem));
   pImp->pTraderApi = (void*)pTraderApi;
@@ -90,40 +99,28 @@ void trader_trader_api_rem_start(trader_trader_api* self)
   pImp->nTraderRequestID = 0;
 
   self->pUserApi = (void*)pImp;
-  
-  self->timeCondition = USTP_FTDC_TC_GFD;
-  self->hedgeFlag = USTP_FTDC_CHF_Speculation;
-  
-  pTraderApi->SubscribePrivateTopic(USTP_TERT_RESUME);
 
-  pTraderApi->SubscribePublicTopic(USTP_TERT_RESUME);
-  
-  // 交易
-  pTraderApi->RegisterSpi(pTraderHandler);
-  
-#ifndef FEMAS20
-  pTraderApi->RegisterFront(self->pAddress);
-#else
-  char* pSavePtr;
-  char sAddress[256];
-  char* pQueryFrontAddress;
-  char* pTcpFrontAddress;
+  //NOT USED
+  self->timeCondition = '0';
+  self->hedgeFlag = '0';
 
-  do{
-    strncpy(sAddress, self->pAddress, sizeof(sAddress));
-    
-    pQueryFrontAddress = strtok_r(sAddress, "|", &pSavePtr);
-    CMN_ASSERT (pQueryFrontAddress);
-        
-    pTcpFrontAddress = strtok_r(NULL, "|", &pSavePtr);
-    CMN_ASSERT (pTcpFrontAddress);
-    pTraderApi->RegisterFront(pTcpFrontAddress);
-    pTraderApi->RegisterQryFront(pQueryFrontAddress);
+  //TODO
+  
 
-  }while(0);
-#endif
   // 连接交易服务器
-  pTraderApi->Init();
+  RESULT retErr;
+	EES_TradeSvrInfo svrInfo;
+	strncpy(svrInfo.m_remoteTradeIp, remoteTradeIp, sizeof(svrInfo.m_remoteTradeIp));
+	svrInfo.m_remoteTradeTCPPort = atoi(remoteTradeTCPPort);
+	svrInfo.m_remoteTradeUDPPort = atoi(remoteTradeUDPPort);
+	strncpy(svrInfo.m_remoteQueryIp, remoteQueryIp, sizeof(svrInfo.m_remoteQueryIp));
+	svrInfo.m_remoteQueryTCPPort = atoi(remoteQueryTCPPort);
+	strncpy(svrInfo.m_LocalTradeIp, localTradeIp, sizeof(svrInfo.m_LocalTradeIp));
+	svrInfo.m_LocalTradeUDPPort = atoi(localTradeUDPPort);
+  retErr = pTraderApi->ConnServer(svrInfo, pTraderHandler);
+  if(retErr != NO_ERROR){
+    CMN_ERROR("ConnServer[%d]\n", retErr);
+  }
 
   return;
 
@@ -132,14 +129,24 @@ void trader_trader_api_rem_start(trader_trader_api* self)
 void trader_trader_api_rem_stop(trader_trader_api* self)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-  CFemasAFTraderHandler* pTraderHandler = (CFemasAFTraderHandler*)pImp->pTraderHandler;
+  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
+  CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
+
+  if(pTraderApi){
+    pTraderApi->DisConnServer();
+    DestroyEESTraderApi(pTraderApi);
+  }
+
+  if(pTraderHandler){
+    delete pTraderHandler;
+    pTraderHandler = NULL;
+  }
   
-  pTraderApi->RegisterSpi(NULL);
-  pTraderApi->Release();
-  delete pTraderHandler;
+  if(pImp){
+    free(pImp);
+    pImp = NULL;
+  }
   
-  free(pImp);
   self->pUserApi = (void*)NULL;
   
   return;
@@ -148,31 +155,20 @@ void trader_trader_api_rem_stop(trader_trader_api* self)
 void trader_trader_api_rem_login(trader_trader_api* self)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-  CUstpFtdcDSUserInfoField reqDSUserInfoField;
-  
-  memset(&reqDSUserInfoField, 0, sizeof(reqDSUserInfoField));
-  strncpy(reqDSUserInfoField.AppID, self->pAppID, sizeof(reqDSUserInfoField.AppID));
-  strncpy(reqDSUserInfoField.AuthCode, self->pAuthCode, sizeof(reqDSUserInfoField.AuthCode));
-  reqDSUserInfoField.EncryptType = '1';
+  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
 
-  CMN_DEBUG("reqDSUserInfoField.AppID[%s]\n", reqDSUserInfoField.AppID);
-  CMN_DEBUG("reqDSUserInfoField.AuthCode[%s]\n", reqDSUserInfoField.AuthCode);
-
-  pTraderApi->ReqDSUserCertification(&reqDSUserInfoField, pImp->nTraderRequestID++);
+  RESULT retErr = pTraderApi->UserLogon(self->pUser, self->pPwd, self->pAppID, self->pAuthCode);
+  if(retErr != NO_ERROR){
+    CMN_ERROR("UserLogon[%d]\n", retErr);
+  }
+  return ;
 }
 
 void trader_trader_api_rem_logout(trader_trader_api* self)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
 
-  CUstpFtdcReqUserLogoutField userLogoutField;
-  
-  memset(&userLogoutField, 0, sizeof(userLogoutField));
-  strcpy(userLogoutField.BrokerID, self->pBrokerID);
-  strcpy(userLogoutField.UserID, self->pUser);
-  pTraderApi->ReqUserLogout(&userLogoutField, pImp->nTraderRequestID++);
+  trader_trader_api_on_rsp_user_logout(self, 0, "OK");
 
   return;
 }
@@ -181,161 +177,120 @@ void trader_trader_api_rem_logout(trader_trader_api* self)
 int trader_trader_api_rem_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
+  CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
-  CUstpFtdcInputOrderField inputOrderField;
-
-  memset(&inputOrderField, 0, sizeof(inputOrderField));
-	///经纪公司代码
-	strcpy(inputOrderField.BrokerID, self->pBrokerID);
-	///交易所代码
-	if(('I' == inst[0]) || ('T' == inst[0])){
-  	strcpy(inputOrderField.ExchangeID, "CFFEX");
+  EES_SideType SideType;
+  if('0' == open_close){
+    if('0' == buy_sell){
+      SideType = EES_SideType_open_long;
+    }else{
+      SideType = EES_SideType_open_short;
+    }
   }else{
-  	strcpy(inputOrderField.ExchangeID, "SHFE");
+    if('0' == buy_sell){
+      SideType = EES_SideType_close_long;
+    }else{
+      SideType = EES_SideType_close_short;
+    }
   }
-	///投资者代码
-	strcpy(inputOrderField.InvestorID, pImp->sInvestorID);
-	///合约代码
-	strcpy(inputOrderField.InstrumentID, inst);
-	///报单引用
-	strcpy(inputOrderField.UserOrderLocalID, local_id);
-	///用户代码
-	strcpy(inputOrderField.UserID, self->pUser);
-	///报单价格条件
-	inputOrderField.OrderPriceType = USTP_FTDC_OPT_LimitPrice;
-	///买卖方向
-	inputOrderField.Direction = buy_sell;
-	///组合开平标志
-	inputOrderField.OffsetFlag = open_close;
-	///组合投机套保标志
-	inputOrderField.HedgeFlag = self->hedgeFlag;
-	///价格
-	inputOrderField.LimitPrice = price;
-	///数量
-	inputOrderField.Volume = vol;
-	///有效期类型
-	inputOrderField.TimeCondition = self->timeCondition;
-	///成交量类型
-	inputOrderField.VolumeCondition = USTP_FTDC_VC_AV;
-	///最小成交量
-	inputOrderField.MinVolume = 1;
-	///强平原因
-	inputOrderField.ForceCloseReason = USTP_FTDC_FCR_NotForceClose;
-	///自动挂起标志
-	inputOrderField.IsAutoSuspend = 0;
-
-  pTraderApi->ReqOrderInsert(&inputOrderField, pImp->nTraderRequestID++);
-
   
+
+	EES_ClientToken order_token = 0;
+	pTraderApi->GetMaxToken(&order_token);
+
+	EES_EnterOrderField temp;
+  memset(&temp, 0, sizeof(EES_EnterOrderField));
+  temp.m_Tif = EES_OrderTif_Day;
+  temp.m_HedgeFlag = EES_HedgeFlag_Speculation;
+  strncpy(temp.m_Account, pTraderHandler->GetAccountId(), sizeof(temp.m_Account));
+  strncpy(temp.m_Symbol, inst);
+  temp.m_Side = SideType;
+  // DEFAULT CFFEX
+  temp.m_Exchange = (unsigned char)102;
+  temp.m_SecType = EES_SecType_fut;
+  temp.m_Price = price;
+  temp.m_Qty = vol;
+  //TODO
+	temp.m_ClientOrderToken = order_token + 1;
+  temp.m_CustomField = atol(local_id);
+
+	RESULT ret = pTraderApi->EnterOrder(&temp);
+	if (ret != NO_ERROR)
+	{
+		CMN_ERROR("send order failed(%d)\n", ret);
+	}
+
+  return 0;
 }
 
 int trader_trader_api_rem_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-
-  CUstpFtdcOrderActionField inputOrderActionField;
+  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
+  CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
   
-  memset(&inputOrderActionField, 0, sizeof(inputOrderActionField));
+	EES_CancelOrder  temp;
+	memset(&temp, 0, sizeof(EES_CancelOrder));
 
-	///经纪公司代码
-	strcpy(inputOrderActionField.BrokerID, self->pBrokerID);
-	///投资者代码
-	strcpy(inputOrderActionField.InvestorID, pImp->sInvestorID);
-	///报单操作引用
-	strcpy(inputOrderActionField.UserOrderActionLocalID, local_id);
-	///报单引用
-	strcpy(inputOrderActionField.UserOrderLocalID, org_local_id);
-	///前置编号
-	//inputOrderActionField.FrontID = front_id;
-	///会话编号
-	//inputOrderActionField.SessionID = session_id;
-	///交易所代码
-	strncpy(inputOrderActionField.ExchangeID, exchange_id, sizeof(inputOrderActionField.ExchangeID));
-	///操作标志
-	inputOrderActionField.ActionFlag = USTP_FTDC_AF_Delete;
-	///用户代码
-	strcpy(inputOrderActionField.UserID, self->pUser);
-  
-  pTraderApi->ReqOrderAction(&inputOrderActionField, pImp->nTraderRequestID++);
+  strncpy(temp.m_Account, pTraderHandler->GetAccountId(), sizeof(temp.m_Account));
+  //TODO
+	temp.m_Quantity = Quantity;
+	temp.m_MarketOrderToken = aotl(order_sys_id);
 
+	RESULT ret = pTraderApi->CancelOrder(&temp);
+	if (ret != NO_ERROR)
+	{
+		CMN_ERROR("send cancel failed(%d)\n", ret);
+	}
+
+  return 0;
 }
 
  
 int trader_trader_api_rem_qry_instrument(trader_trader_api* self)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
 
-  CUstpFtdcQryInstrumentField qryInstrumentField;
-  
-  memset(&qryInstrumentField, 0, sizeof(qryInstrumentField));
-	///合约代码
-	//TUstpFtdcInstrumentIDType	InstrumentID;
-	///交易所代码
-	//TUstpFtdcExchangeIDType	ExchangeID;
-	strcpy(qryInstrumentField.ExchangeID, "");
-
-  pTraderApi->ReqQryInstrument(&qryInstrumentField, pImp->nTraderRequestID++);
-
+  RESULT retErr = pTraderApi->QuerySymbolList();
+  if(retErr != NO_ERROR){
+    CMN_ERROR("QuerySymbolList[%d]\n", retErr);
+  }
+  return 0;
 }
 
 int trader_trader_api_rem_qry_user_investor(trader_trader_api* self)
 {
   CMN_DEBUG("Enter!\n");
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-
-  CUstpFtdcQryUserInvestorField qryInvestorField;
-
-  memset(&qryInvestorField, 0, sizeof(qryInvestorField));
-	///经纪公司代码
-	strcpy(qryInvestorField.BrokerID, self->pBrokerID);
-	///用户代码
-	strcpy(qryInvestorField.UserID, self->pUser);  
-  
-  pTraderApi->ReqQryUserInvestor(&qryInvestorField, pImp->nTraderRequestID++);
-
+  //TODO
+  return 0;
 }
 
 int trader_trader_api_rem_qry_investor_position(trader_trader_api* self)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
+  CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
-  CUstpFtdcQryInvestorPositionField qryInvestorPositionField;
-  memset(&qryInvestorPositionField, 0, sizeof(qryInvestorPositionField));
-
-	///经纪公司代码
-	strcpy(qryInvestorPositionField.BrokerID, self->pBrokerID);
-	///用户代码
-	strcpy(qryInvestorPositionField.UserID, self->pUser);  
-	///投资者代码
-	strcpy(qryInvestorPositionField.InvestorID, pImp->sInvestorID);
-	///合约代码
-	//TUstpFtdcInstrumentIDType	InstrumentID;
-
-  pTraderApi->ReqQryInvestorPosition(&qryInvestorPositionField, pImp->nTraderRequestID++);
-
+  RESULT retErr = pTraderApi->QueryAccountPosition(pTraderHandler->GetAccountId(), pImp->nTraderRequestID++);
+  if(retErr != NO_ERROR){
+    CMN_ERROR("QuerySymbolList[%d]\n", retErr);
+  }
+  return 0;
 }
 
 int trader_trader_api_rem_qry_trading_account(trader_trader_api* self)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
-  
-  CUstpFtdcQryInvestorAccountField qryTradingAccountField;
-  memset(&qryTradingAccountField, 0, sizeof(qryTradingAccountField));
+  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
+  CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
-	///经纪公司代码
-	strcpy(qryTradingAccountField.BrokerID, self->pBrokerID);
-	///用户代码
-	strcpy(qryTradingAccountField.UserID, self->pUser);  
-	///投资者代码
-	strcpy(qryTradingAccountField.InvestorID, pImp->sInvestorID);
-
-  pTraderApi->ReqQryInvestorAccount(&qryTradingAccountField, pImp->nTraderRequestID++);
-
+  RESULT retErr = pTraderApi->QueryAccountBP(pTraderHandler->GetAccountId(), pImp->nTraderRequestID++);
+  if(retErr != NO_ERROR){
+    CMN_ERROR("QuerySymbolList[%d]\n", retErr);
+  }
+  return 0;
 }
 

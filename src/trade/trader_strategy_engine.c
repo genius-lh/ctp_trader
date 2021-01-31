@@ -322,10 +322,18 @@ int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strat
     volume,
     user_local_id
   );
-  
+
+  trader_trader_api_insert_order_field insertOrder;
+  memset(&insertOrder, 0, sizeof(insertOrder));
+  insertOrder.inst = contract;
+  insertOrder.local_id = user_local_id;
+  insertOrder.buy_sell = direction;
+  insertOrder.open_close = offset;
+  insertOrder.price = price;
+  insertOrder.vol = volume;
   // ÏÂµ¥
   self->pCtpTraderApi->pMethod->xOrderInsert(self->pCtpTraderApi, 
-    contract, user_local_id, direction, offset, price, volume);
+    &insertOrder);
   
   self->orderStrategyMap->pMethod->xPut(self->orderStrategyMap, user_local_id, (void*)strategy);
 
@@ -334,9 +342,17 @@ int trader_strategy_engine_send_order(trader_strategy_engine* self, trader_strat
 
 int trader_strategy_engine_cancel_order(trader_strategy_engine* self, char* contract, char* user_local_id, char* org_user_local_id, char* exchange_id, char* order_sys_id)
 {
+  trader_trader_api_cancel_order_field cancelOrder;
+  memset(&cancelOrder, 0, sizeof(cancelOrder));
+  cancelOrder.inst = contract;
+  cancelOrder.local_id = user_local_id;
+  cancelOrder.org_local_id = org_user_local_id;
+  cancelOrder.exchange_id = exchange_id;
+  cancelOrder.order_sys_id = order_sys_id;
+
   // ³·µ¥
   self->pCtpTraderApi->pMethod->xOrderAction(self->pCtpTraderApi, 
-    contract, user_local_id, org_user_local_id, exchange_id, order_sys_id);
+    &cancelOrder);
 
   CMN_DEBUG("OUT\n");
 

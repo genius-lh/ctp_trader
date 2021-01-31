@@ -10,7 +10,7 @@
 class CRemTraderHandler : public EESTraderEvent
 {
 public:
-  CRemTraderHandler();
+  CRemTraderHandler(EESTraderApi* pApi, void* pArg);
   virtual ~CRemTraderHandler();
 	/// 连接消息的回调
 	
@@ -243,6 +243,9 @@ public:
 	/// \param	bFinish: 当为true时，表示查询所有结果返回。此时pMarketMBLData内容中,仅m_RequestId有效
 	/// \return void 
 	virtual void OnQueryMarketMBLData(EES_MarketMBLData* pMarketMBLData, bool bFinish) {}
+
+public 
+  const char* GetAccountId();
 
 private:  
   void* m_Arg;

@@ -22,7 +22,9 @@ extern "C" {
 #endif
 
 
-CRemTraderHandler::CRemTraderHandler()
+CRemTraderHandler::CRemTraderHandler(EESTraderApi* pApi, void* pArg)
+  : m_Arg(pArg)
+  , m_TraderApi(pApi)
 {
 
 }
@@ -763,6 +765,11 @@ void CRemTraderHandler::OnSymbolStatusReport(EES_SymbolStatus* pSymbolStatus)
   
   trader_trader_api_on_rtn_instrument_status(self, &oInstrumentStatus);
 
+}
+
+const char* CRemTraderHandler::GetAccountId()
+{
+  return m_Account;
 }
 
 
