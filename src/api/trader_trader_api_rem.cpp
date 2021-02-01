@@ -234,8 +234,7 @@ int trader_trader_api_rem_order_action(trader_trader_api* self, char* inst, char
 	memset(&temp, 0, sizeof(EES_CancelOrder));
 
   strncpy(temp.m_Account, pTraderHandler->GetAccountId(), sizeof(temp.m_Account));
-  //TODO
-	temp.m_Quantity = Quantity;
+	temp.m_Quantity = 0;
 	temp.m_MarketOrderToken = aotl(order_sys_id);
 
 	RESULT ret = pTraderApi->CancelOrder(&temp);

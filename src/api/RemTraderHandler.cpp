@@ -334,27 +334,40 @@ void CRemTraderHandler::OnOrderAccept(EES_OrderAcceptField* pAccept )
   memset(&traderOrder, 0, sizeof(traderOrder));
   //TODO
 	///交易所代码
-  strcpy(traderOrder.ExchangeID, pAccept->ExchangeID);
+  strcpy(traderOrder.ExchangeID, "CFFEX");
 	///系统报单编号
-  strcpy(traderOrder.OrderSysID, pAccept->OrderSysID);
+  snprintf(traderOrder.OrderSysID, sizeof(traderOrder.OrderSysID), "%ld", pAccept->m_MarketOrderToken);
   // 合约代码
-  strcpy(traderOrder.InstrumentID, pAccept->InstrumentID);
+  strcpy(traderOrder.InstrumentID, pAccept->m_Symbol);
   // 本地报单编号
-  strcpy(traderOrder.UserOrderLocalID, pAccept->UserOrderLocalID);
+  snprintf(traderOrder.UserOrderLocalID, sizeof(traderOrder.UserOrderLocalID), "%ld" pAccept->m_CustomField);
   // 买卖
-  traderOrder.Direction = pAccept->Direction;
+  if((EES_SideType_open_long == pAccept->m_Side)
+  ||EES_SideType_close_long == pAccept->m_Side)){
+    // 买
+    traderOrder.Direction = '0';
+  }else{
+    // 卖
+    traderOrder.Direction = '1';
+  }
   // 开平
-  traderOrder.OffsetFlag = pAccept->OffsetFlag;
+  if((EES_SideType_open_long == pAccept->m_Side)
+  ||EES_SideType_open_short == pAccept->m_Side)){
+    traderOrder.OffsetFlag = '0';
+  }else{
+    traderOrder.OffsetFlag = '1';
+  }
+
   ///投机套保标志
-  traderOrder.HedgeFlag = pAccept->HedgeFlag;
+  traderOrder.HedgeFlag = pAccept->m_HedgeFlag + '0';
   // 报单价格
-  traderOrder.LimitPrice = pAccept->LimitPrice;
+  traderOrder.LimitPrice = pAccept->m_Price;
   // 报单手数
-  traderOrder.VolumeOriginal = pAccept->Volume;
+  traderOrder.VolumeOriginal = pAccept->m_Qty;
   // 成交手数
-  traderOrder.VolumeTraded = pAccept->VolumeTraded;
+  traderOrder.VolumeTraded = 0;
   // 订单状态
-  traderOrder.OrderStatus = pAccept->OrderStatus;
+  traderOrder.OrderStatus = TRADER_ORDER_OS_UNKNOW;
   ///插入时间
   strcpy(traderOrder.InsertTime, pAccept->InsertTime);
 
@@ -562,7 +575,7 @@ void CRemTraderHandler::OnOrderExecution(EES_OrderExecutionField* pExec )
   memset(&traderTrade, 0, sizeof(traderTrade));
   
   ///合约代码
-  strcpy(traderTrade.InstrumentID, pTrade->InstrumentID);
+  strcpy(traderTrade.InstrumentID, pExec->InstrumentID);
   ///本地报单编号
   strcpy(traderTrade.UserOrderLocalID, pTrade->UserOrderLocalID);
   ///交易日

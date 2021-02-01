@@ -96,25 +96,6 @@ struct trader_trader_evt_def {
   } Body;
 };
 
-typedef struct trader_trader_api_insert_order_field_def trader_trader_api_insert_order_field;
-typedef struct trader_trader_api_cancel_order_field_def trader_trader_api_cancel_order_field;
-
-struct trader_trader_api_insert_order_field_def{
-  char* inst;
-  char* local_id;
-  char buy_sell;
-  char open_close;
-  double price;
-  int vol;
-};
-
-struct trader_trader_api_cancel_order_field_def{
-  char* inst;
-  char* local_id;
-  char* org_local_id;
-  char* exchange_id;
-  char* order_sys_id;
-};
 
 typedef struct trader_trader_api_method_def trader_trader_api_method;
 typedef struct trader_trader_api_def trader_trader_api;
@@ -161,8 +142,8 @@ struct trader_trader_api_method_def{
   void (*xLogin)(trader_trader_api* self);
   void (*xLogout)(trader_trader_api* self);
   
-  int (*xOrderInsert)(trader_trader_api* self, trader_trader_api_insert_order_field* param);
-  int (*xOrderAction)(trader_trader_api* self, trader_trader_api_cancel_order_field* param);
+  int (*xOrderInsert)(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol);
+  int (*xOrderAction)(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id);
   
   int (*xQryInstrument)(trader_trader_api* self);
   int (*xQryUserInvestor)(trader_trader_api* self);
