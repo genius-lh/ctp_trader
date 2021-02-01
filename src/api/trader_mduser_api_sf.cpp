@@ -133,6 +133,11 @@ void trader_mduser_api_sf_subscribe(trader_mduser_api* self, char* instrument)
 void sf_mduser_on_rtn_depth_market_data(void* arg, cffex_md_t *pMarketData)
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
+
+  if(0 == memcmp(pMarketData->InstrumentID, "IO", 2)){
+    return ;
+  }
+  
   trader_tick oTick;
   memset(&oTick, 0, sizeof(trader_tick));
 

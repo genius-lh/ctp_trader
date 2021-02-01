@@ -987,6 +987,9 @@ void femas_af_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStat
 {
   trader_trader_api* self = (trader_trader_api*)arg;
   if(pInstrumentStatus){
+    if(0 == memcmp(pInstrumentStatus->InstrumentID, "IO", 2)){
+      return ;
+    }
     CMN_DEBUG(
       "pInstrumentStatus->ExchangeID[%s]\n"
       "pInstrumentStatus->InstrumentID[%s]\n"
