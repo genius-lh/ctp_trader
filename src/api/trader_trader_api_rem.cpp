@@ -66,15 +66,17 @@ trader_trader_api_method* trader_trader_api_rem_method_get()
 int trader_trader_api_rem_get_trading_day(trader_trader_api* self, char* tradingday)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)pImp->pTraderApi;
+  CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
-  strcpy(tradingday, pTraderApi->GetTradingDay());
+  sprintf(tradingday, "%d", pTraderHandler->GetTradingDate());
   return 0;
 }
 
 int trader_trader_api_rem_get_max_order_local_id(trader_trader_api* self, long* local_id)
 {
-  *local_id = self->userLocalId;
+  trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
+  CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
+  *local_id = pTraderHandler->GetMaxToken();
   return 0;
 }
 
@@ -177,49 +179,9 @@ void trader_trader_api_rem_logout(trader_trader_api* self)
 int trader_trader_api_rem_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
   CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
-  EES_SideType SideType;
-  if('0' == open_close){
-    if('0' == buy_sell){
-      SideType = EES_SideType_open_long;
-    }else{
-      SideType = EES_SideType_open_short;
-    }
-  }else{
-    if('0' == buy_sell){
-      SideType = EES_SideType_close_long;
-    }else{
-      SideType = EES_SideType_close_short;
-    }
-  }
-  
-
-	EES_ClientToken order_token = 0;
-	pTraderApi->GetMaxToken(&order_token);
-
-	EES_EnterOrderField temp;
-  memset(&temp, 0, sizeof(EES_EnterOrderField));
-  temp.m_Tif = EES_OrderTif_Day;
-  temp.m_HedgeFlag = EES_HedgeFlag_Speculation;
-  strncpy(temp.m_Account, pTraderHandler->GetAccountId(), sizeof(temp.m_Account));
-  strncpy(temp.m_Symbol, inst);
-  temp.m_Side = SideType;
-  // DEFAULT CFFEX
-  temp.m_Exchange = (unsigned char)102;
-  temp.m_SecType = EES_SecType_fut;
-  temp.m_Price = price;
-  temp.m_Qty = vol;
-  //TODO
-	temp.m_ClientOrderToken = order_token + 1;
-  temp.m_CustomField = atol(local_id);
-
-	RESULT ret = pTraderApi->EnterOrder(&temp);
-	if (ret != NO_ERROR)
-	{
-		CMN_ERROR("send order failed(%d)\n", ret);
-	}
+  pTraderHandler->InsertOrder(inst, local_id, buy_sell, open_close, price, vol);
 
   return 0;
 }
@@ -227,21 +189,9 @@ int trader_trader_api_rem_order_insert(trader_trader_api* self, char* inst, char
 int trader_trader_api_rem_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
-  EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
   CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
-  
-	EES_CancelOrder  temp;
-	memset(&temp, 0, sizeof(EES_CancelOrder));
 
-  strncpy(temp.m_Account, pTraderHandler->GetAccountId(), sizeof(temp.m_Account));
-	temp.m_Quantity = 0;
-	temp.m_MarketOrderToken = aotl(order_sys_id);
-
-	RESULT ret = pTraderApi->CancelOrder(&temp);
-	if (ret != NO_ERROR)
-	{
-		CMN_ERROR("send cancel failed(%d)\n", ret);
-	}
+  pTraderHandler->CancelOrder(inst, local_id, org_local_id, exchange_id, order_sys_id);
 
   return 0;
 }

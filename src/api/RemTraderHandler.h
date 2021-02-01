@@ -7,6 +7,7 @@
 
 #include <string>
 #include "EesTraderApi.h"
+
 class CRemTraderHandler : public EESTraderEvent
 {
 public:
@@ -246,11 +247,19 @@ public:
 
 public 
   const char* GetAccountId();
+  unsigned int GetTradingDate();
+  EES_ClientToken GetMaxToken();
+
+  void InsertOrder(char* inst, char* local_id, char buy_sell, char open_close, double price, int vol);
+  void CancelOrder(char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id);
 
 private:  
   void* m_Arg;
   EESTraderApi* m_TraderApi;
   EES_Account m_Account;
+	unsigned int		m_TradingDate;						///< 交易日，格式为yyyyMMdd的int型值
+	EES_ClientToken		m_MaxToken;							///< 以前的最大 token 
+	std:map<EES_ClientToken, void*> mapOrder;
 };
 
 #endif //_REM_TRADER_HANDLER_H_

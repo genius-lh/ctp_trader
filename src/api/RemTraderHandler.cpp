@@ -6,6 +6,9 @@
 
 #include <unistd.h>
 #include <string>
+#include <map>
+using namespace std;
+
 #include "EesTraderDefine.h"
 #include "EesTraderApi.h"
 
@@ -25,6 +28,8 @@ extern "C" {
 CRemTraderHandler::CRemTraderHandler(EESTraderApi* pApi, void* pArg)
   : m_Arg(pArg)
   , m_TraderApi(pApi)
+  , m_TradingDate(0)
+  , m_MaxToken(0)
 {
 
 }
@@ -330,48 +335,20 @@ void CRemTraderHandler::OnOrderAccept(EES_OrderAcceptField* pAccept )
   
   trader_trader_api* self = (trader_trader_api*)m_Arg;
 
-  trader_order traderOrder;
-  memset(&traderOrder, 0, sizeof(traderOrder));
-  //TODO
-	///交易所代码
-  strcpy(traderOrder.ExchangeID, "CFFEX");
-	///系统报单编号
-  snprintf(traderOrder.OrderSysID, sizeof(traderOrder.OrderSysID), "%ld", pAccept->m_MarketOrderToken);
-  // 合约代码
-  strcpy(traderOrder.InstrumentID, pAccept->m_Symbol);
-  // 本地报单编号
-  snprintf(traderOrder.UserOrderLocalID, sizeof(traderOrder.UserOrderLocalID), "%ld" pAccept->m_CustomField);
-  // 买卖
-  if((EES_SideType_open_long == pAccept->m_Side)
-  ||EES_SideType_close_long == pAccept->m_Side)){
-    // 买
-    traderOrder.Direction = '0';
-  }else{
-    // 卖
-    traderOrder.Direction = '1';
+  EES_ClientToken clientToken = pAccept->m_ClientOrderToken;
+  map<EES_ClientToken, void*>::iterator iter = mapOrder.find(clientToken);
+  if(iter == mapOrder.end()){
+		CMN_ERROR("find order failed(%ld)\n", clientToken);
+    return ;
   }
-  // 开平
-  if((EES_SideType_open_long == pAccept->m_Side)
-  ||EES_SideType_open_short == pAccept->m_Side)){
-    traderOrder.OffsetFlag = '0';
-  }else{
-    traderOrder.OffsetFlag = '1';
-  }
-
-  ///投机套保标志
-  traderOrder.HedgeFlag = pAccept->m_HedgeFlag + '0';
-  // 报单价格
-  traderOrder.LimitPrice = pAccept->m_Price;
-  // 报单手数
-  traderOrder.VolumeOriginal = pAccept->m_Qty;
-  // 成交手数
-  traderOrder.VolumeTraded = 0;
+  
+  trader_order* traderOrder = (trader_order*)iter->second;
   // 订单状态
-  traderOrder.OrderStatus = TRADER_ORDER_OS_UNKNOW;
+  traderOrder->OrderStatus = TRADER_ORDER_OS_UNKNOW;
   ///插入时间
-  strcpy(traderOrder.InsertTime, pAccept->InsertTime);
+  //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
 
-  trader_trader_api_on_rtn_order(self, &traderOrder);
+  trader_trader_api_on_rtn_order(self, traderOrder);
 }
 
 void CRemTraderHandler::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
@@ -396,37 +373,28 @@ void CRemTraderHandler::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
   );
 
   trader_trader_api* self = (trader_trader_api*)m_Arg;
-
-  trader_order traderOrder;
-  memset(&traderOrder, 0, sizeof(traderOrder));
-  //TODO
-	///交易所代码
-  strcpy(traderOrder.ExchangeID, pAccept->ExchangeID);
-	///系统报单编号
-  strcpy(traderOrder.OrderSysID, pAccept->OrderSysID);
-  // 合约代码
-  strcpy(traderOrder.InstrumentID, pAccept->InstrumentID);
-  // 本地报单编号
-  strcpy(traderOrder.UserOrderLocalID, pAccept->UserOrderLocalID);
-  // 买卖
-  traderOrder.Direction = pAccept->Direction;
-  // 开平
-  traderOrder.OffsetFlag = pAccept->OffsetFlag;
-  ///投机套保标志
-  traderOrder.HedgeFlag = pAccept->HedgeFlag;
-  // 报单价格
-  traderOrder.LimitPrice = pAccept->LimitPrice;
-  // 报单手数
-  traderOrder.VolumeOriginal = pAccept->Volume;
-  // 成交手数
-  traderOrder.VolumeTraded = pAccept->VolumeTraded;
+  EES_ClientToken clientToken = pAccept->m_ClientOrderToken;
+  map<EES_ClientToken, void*>::iterator iter = mapOrder.find(clientToken);
+  if(iter == mapOrder.end()){
+		CMN_ERROR("find order failed(%ld)\n", clientToken);
+    return ;
+  }
+  
+  trader_order* traderOrder = (trader_order*)iter->second;
   // 订单状态
-  traderOrder.OrderStatus = pAccept->OrderStatus;
+  traderOrder->OrderStatus = TRADER_ORDER_OS_NOTRADEQUEUEING;
+  // 订单状态
+  traderOrder->OrderStatus = pAccept->m_ExchangeStatus;
+  snprintf(traderOrder->OrderSysID, sizeof(traderOrder->OrderSysID), "%ld", pAccept->m_MarketOrderToken);
   ///插入时间
-  strcpy(traderOrder.InsertTime, pAccept->InsertTime);
+  //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
+  tm tradeTm;
+  unsigned int nanoSec;
+  m_TraderApi->ConvertFromTimestamp(pAccept->m_MarketTime, tradeTm, nanoSec);
+  ///成交时间
+  snprintf(traderOrder->InsertTime, sizeof(traderOrder->InsertTime), "%02d:%02d:%02d", tradeTm.tm_hour, tradeTm.tm_min, tradeTm.tm_sec);
 
-  trader_trader_api_on_rtn_order(self, &traderOrder);
-
+  trader_trader_api_on_rtn_order(self, traderOrder);
 }
 
 void CRemTraderHandler::OnOrderReject(EES_OrderRejectField* pReject )
@@ -455,40 +423,22 @@ void CRemTraderHandler::OnOrderReject(EES_OrderRejectField* pReject )
   );
 
   trader_trader_api* self = (trader_trader_api*)m_Arg;
-
-  trader_order traderOrder;
-  memset(&traderOrder, 0, sizeof(traderOrder));
-  //TODO
-	///交易所代码
-  strcpy(traderOrder.ExchangeID, pAccept->ExchangeID);
-	///系统报单编号
-  strcpy(traderOrder.OrderSysID, pAccept->OrderSysID);
-  // 合约代码
-  strcpy(traderOrder.InstrumentID, pAccept->InstrumentID);
-  // 本地报单编号
-  strcpy(traderOrder.UserOrderLocalID, pAccept->UserOrderLocalID);
-  // 买卖
-  traderOrder.Direction = pAccept->Direction;
-  // 开平
-  traderOrder.OffsetFlag = pAccept->OffsetFlag;
-  ///投机套保标志
-  traderOrder.HedgeFlag = pAccept->HedgeFlag;
-  // 报单价格
-  traderOrder.LimitPrice = pAccept->LimitPrice;
-  // 报单手数
-  traderOrder.VolumeOriginal = pAccept->Volume;
-  // 成交手数
-  traderOrder.VolumeTraded = pAccept->VolumeTraded;
-  // 订单状态
-  traderOrder.OrderStatus = pAccept->OrderStatus;
-  ///插入时间
-  strcpy(traderOrder.InsertTime, pAccept->InsertTime);
-
-  trader_trader_api_on_rtn_order(self, &traderOrder);
-
+  EES_ClientToken clientToken = pReject->m_ClientOrderToken;
+  map<EES_ClientToken, void*>::iterator iter = mapOrder.find(clientToken);
+  if(iter == mapOrder.end()){
+		CMN_ERROR("find order failed(%ld)\n", clientToken);
+    return ;
+  }
   
-  trader_trader_api_on_err_rtn_order_insert(self, errNo, errMsg);
+  trader_order* traderOrder = (trader_order*)iter->second;
+  // 订单状态
+  traderOrder->OrderStatus = TRADER_ORDER_OS_CANCELED;
+  ///插入时间
+  //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
 
+  trader_trader_api_on_rtn_order(self, traderOrder);
+
+  trader_trader_api_on_err_rtn_order_insert(self, 0, "");
 }
 
 void CRemTraderHandler::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
@@ -515,36 +465,23 @@ void CRemTraderHandler::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
   );
 
   trader_trader_api* self = (trader_trader_api*)m_Arg;
-
-  trader_order traderOrder;
-  memset(&traderOrder, 0, sizeof(traderOrder));
-  //TODO
-	///交易所代码
-  strcpy(traderOrder.ExchangeID, pAccept->ExchangeID);
-	///系统报单编号
-  strcpy(traderOrder.OrderSysID, pAccept->OrderSysID);
-  // 合约代码
-  strcpy(traderOrder.InstrumentID, pAccept->InstrumentID);
-  // 本地报单编号
-  strcpy(traderOrder.UserOrderLocalID, pAccept->UserOrderLocalID);
-  // 买卖
-  traderOrder.Direction = pAccept->Direction;
-  // 开平
-  traderOrder.OffsetFlag = pAccept->OffsetFlag;
-  ///投机套保标志
-  traderOrder.HedgeFlag = pAccept->HedgeFlag;
-  // 报单价格
-  traderOrder.LimitPrice = pAccept->LimitPrice;
-  // 报单手数
-  traderOrder.VolumeOriginal = pAccept->Volume;
-  // 成交手数
-  traderOrder.VolumeTraded = pAccept->VolumeTraded;
+  EES_ClientToken clientToken = pReject->m_ClientOrderToken;
+  map<EES_ClientToken, void*>::iterator iter = mapOrder.find(clientToken);
+  if(iter == mapOrder.end()){
+		CMN_ERROR("find order failed(%ld)\n", clientToken);
+    return ;
+  }
+  
+  trader_order* traderOrder = (trader_order*)iter->second;
   // 订单状态
-  traderOrder.OrderStatus = pAccept->OrderStatus;
+  traderOrder->OrderStatus = TRADER_ORDER_OS_CANCELED;
   ///插入时间
-  strcpy(traderOrder.InsertTime, pAccept->InsertTime);
+  //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
 
-  trader_trader_api_on_rtn_order(self, &traderOrder);
+  trader_trader_api_on_rtn_order(self, traderOrder);
+
+  trader_trader_api_on_err_rtn_order_insert(self, 0, "");
+
 
 }
 
@@ -571,27 +508,48 @@ void CRemTraderHandler::OnOrderExecution(EES_OrderExecutionField* pExec )
     , pExec->m_MarketExecID
   );
   trader_trader_api* self = (trader_trader_api*)m_Arg;
+  EES_ClientToken clientToken = pExec->m_ClientOrderToken;
+  map<EES_ClientToken, void*>::iterator iter = mapOrder.find(clientToken);
+  if(iter == mapOrder.end()){
+		CMN_ERROR("find order failed(%ld)\n", clientToken);
+    return ;
+  }
+  
+  trader_order* traderOrder = (trader_order*)iter->second;
+  traderOrder->VolumeTraded += pExec->m_Quantity;
+  if(traderOrder->VolumeTraded == traderOrder->VolumeOriginal){
+    // 订单状态
+    traderOrder->OrderStatus = TRADER_ORDER_OS_ALLTRADED;
+  }
+  ///插入时间
+  //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
+
+  trader_trader_api_on_rtn_order(self, traderOrder);
+  
   trader_trade traderTrade;
   memset(&traderTrade, 0, sizeof(traderTrade));
   
   ///合约代码
-  strcpy(traderTrade.InstrumentID, pExec->InstrumentID);
+  strcpy(traderTrade.InstrumentID, traderOrder->InstrumentID);
   ///本地报单编号
-  strcpy(traderTrade.UserOrderLocalID, pTrade->UserOrderLocalID);
+  strcpy(traderTrade.UserOrderLocalID, traderOrder->UserOrderLocalID);
+  tm tradeTm;
+  unsigned int nanoSec;
+  m_TraderApi->ConvertFromTimestamp(pExec->m_Timestamp, tradeTm, nanoSec);
   ///交易日
-  strcpy(traderTrade.TradingDay, pTrade->TradingDay);
+  snprintf(traderTrade.TradingDay, sizeof(traderTrade.TradingDay), "%04d%02d%02d", tradeTm.tm_year + 1900, tradeTm.tm_mon + 1, tradeTm.tm_mday);
   ///成交时间
-  strcpy(traderTrade.TradeTime, pTrade->TradeTime);
+  snprintf(traderTrade.TradeTime, sizeof(traderTrade.TradeTime), "%02d:%02d:%02d", tradeTm.tm_hour, tradeTm.tm_min, tradeTm.tm_sec);
   ///买卖方向
-  traderTrade.Direction = pTrade->Direction;
+  traderTrade.Direction = traderOrder->Direction;
   ///开平标志
-  traderTrade.OffsetFlag = pTrade->OffsetFlag;
+  traderTrade.OffsetFlag = traderOrder->OffsetFlag;
   ///成交价格
-  traderTrade.TradePrice = pTrade->TradePrice;
+  traderTrade.TradePrice = pExec->m_Price;
   ///成交数量
-  traderTrade.TradeVolume = pTrade->TradeVolume;
+  traderTrade.TradeVolume = pExec->m_Quantity;
   //成交编号
-  strcpy(traderTrade.TradeID, pTrade->TradeID);
+  strcpy(traderTrade.TradeID, pExec->m_MarketExecID);
 
   trader_trader_api_on_rtn_trade(self, &traderTrade);
 
@@ -616,36 +574,20 @@ void CRemTraderHandler::OnOrderCxled(EES_OrderCxled* pCxled )
     , pCxled->m_Reason
   );
   trader_trader_api* self = (trader_trader_api*)m_Arg;
-
-  trader_order traderOrder;
-  memset(&traderOrder, 0, sizeof(traderOrder));
-  //TODO
-	///交易所代码
-  strcpy(traderOrder.ExchangeID, pAccept->ExchangeID);
-	///系统报单编号
-  strcpy(traderOrder.OrderSysID, pAccept->OrderSysID);
-  // 合约代码
-  strcpy(traderOrder.InstrumentID, pAccept->InstrumentID);
-  // 本地报单编号
-  strcpy(traderOrder.UserOrderLocalID, pAccept->UserOrderLocalID);
-  // 买卖
-  traderOrder.Direction = pAccept->Direction;
-  // 开平
-  traderOrder.OffsetFlag = pAccept->OffsetFlag;
-  ///投机套保标志
-  traderOrder.HedgeFlag = pAccept->HedgeFlag;
-  // 报单价格
-  traderOrder.LimitPrice = pAccept->LimitPrice;
-  // 报单手数
-  traderOrder.VolumeOriginal = pAccept->Volume;
-  // 成交手数
-  traderOrder.VolumeTraded = pAccept->VolumeTraded;
+  EES_ClientToken clientToken = pReject->m_ClientOrderToken;
+  map<EES_ClientToken, void*>::iterator iter = mapOrder.find(clientToken);
+  if(iter == mapOrder.end()){
+		CMN_ERROR("find order failed(%ld)\n", clientToken);
+    return ;
+  }
+  
+  trader_order* traderOrder = (trader_order*)iter->second;
   // 订单状态
-  traderOrder.OrderStatus = pAccept->OrderStatus;
+  traderOrder->OrderStatus = TRADER_ORDER_OS_CANCELED;
   ///插入时间
-  strcpy(traderOrder.InsertTime, pAccept->InsertTime);
+  //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
 
-  trader_trader_api_on_rtn_order(self, &traderOrder);
+  trader_trader_api_on_rtn_order(self, traderOrder);
 
 }
 
@@ -674,7 +616,7 @@ void CRemTraderHandler::OnCxlOrderReject(EES_CxlOrderRej* pReject )
   );
 
   trader_trader_api* self = (trader_trader_api*)m_Arg;
-  trader_trader_api_on_err_rtn_order_action(self, errNo, errMsg);
+  trader_trader_api_on_err_rtn_order_action(self, 1, "");
 }
 
 void CRemTraderHandler::OnQueryTradeOrder(const char* pAccount, EES_QueryAccountOrder* pQueryOrder, bool bFinish  )
@@ -785,4 +727,99 @@ const char* CRemTraderHandler::GetAccountId()
   return m_Account;
 }
 
+unsigned int CRemTraderHandler::GetTradingDate()
+{
+  return m_TradingDate;
+}
+
+EES_ClientToken CRemTraderHandler::GetMaxToken()
+{
+  return m_MaxToken;
+}
+
+void CRemTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
+{
+  // 初始化订单
+  trader_order* traderOrder = (trader_order*)malloc(sizeof(trader_order));
+  memset(traderOrder, 0, sizeof(trader_order));
+	///交易所代码
+  strncpy(traderOrder->ExchangeID, "CFFEX", sizeof(traderOrder->ExchangeID));
+	///系统报单编号
+	
+  // 合约代码
+  strncpy(traderOrder->InstrumentID, inst, sizeof(traderOrder->InstrumentID));
+  // 本地报单编号
+  strncpy(traderOrder->UserOrderLocalID, local_id, sizeof(traderOrder->UserOrderLocalID));
+  // 买卖
+  traderOrder->Direction = buy_sell;
+  // 开平
+  traderOrder->OffsetFlag = open_close;
+  ///投机套保标志
+  traderOrder->HedgeFlag = '0';
+  // 报单价格
+  traderOrder->LimitPrice = price;
+  // 报单手数
+  traderOrder->VolumeOriginal = vol;
+  // 成交手数
+  traderOrder->VolumeTraded = 0;
+  // 订单状态
+  traderOrder->OrderStatus = TRADER_ORDER_OS_UNKNOW;
+  ///插入时间
+
+  EES_ClientToken clientToken = atol(local_id);
+  mapOrder.insert(map<EES_ClientToken, void*>::value_type(clientToken, (void*)traderOrder));
+
+  EES_SideType SideType;
+  if('0' == open_close){
+    if('0' == buy_sell){
+      SideType = EES_SideType_open_long;
+    }else{
+      SideType = EES_SideType_open_short;
+    }
+  }else{
+    if('0' == buy_sell){
+      SideType = EES_SideType_close_long;
+    }else{
+      SideType = EES_SideType_close_short;
+    }
+  }
+
+	EES_EnterOrderField temp;
+  memset(&temp, 0, sizeof(EES_EnterOrderField));
+  temp.m_Tif = EES_OrderTif_Day;
+  temp.m_HedgeFlag = EES_HedgeFlag_Speculation;
+  strncpy(temp.m_Account, GetAccountId(), sizeof(temp.m_Account));
+  strncpy(temp.m_Symbol, inst);
+  temp.m_Side = SideType;
+  // DEFAULT CFFEX
+  temp.m_Exchange = (unsigned char)102;
+  temp.m_SecType = EES_SecType_fut;
+  temp.m_Price = price;
+  temp.m_Qty = vol;
+	temp.m_ClientOrderToken = clientToken;
+
+	RESULT ret = m_TraderApi->EnterOrder(&temp);
+	if (ret != NO_ERROR)
+	{
+		CMN_ERROR("send order failed(%d)\n", ret);
+	}
+
+}
+
+void CRemTraderHandler::CancelOrder(char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
+{
+	EES_CancelOrder  temp;
+	memset(&temp, 0, sizeof(EES_CancelOrder));
+
+  strncpy(temp.m_Account, GetAccountId(), sizeof(temp.m_Account));
+	temp.m_Quantity = 0;
+	temp.m_MarketOrderToken = aotl(order_sys_id);
+
+	RESULT ret = m_TraderApi->CancelOrder(&temp);
+	if (ret != NO_ERROR)
+	{
+		CMN_ERROR("send cancel failed(%d)\n", ret);
+	}
+
+}
 
