@@ -141,8 +141,12 @@ void sf_mduser_on_rtn_depth_market_data(void* arg, cffex_md_t *pMarketData)
   trader_tick oTick;
   memset(&oTick, 0, sizeof(trader_tick));
 
+  struct timeval tm;
+  
+  gettimeofday(&tm, NULL);
+
   strcpy(oTick.InstrumentID, (char*)pMarketData->InstrumentID);
-  strcpy(oTick.TradingDay, "20201231");
+  snprintf(oTick.TradingDay, sizeof(oTick.TradingDay), "%02d%06d", tm.tv_sec % 60, tm.tv_usec);
   strcpy(oTick.UpdateTime, (char*)pMarketData->UpdateTime);
   oTick.UpdateMillisec = pMarketData->UpdateMillisec;
   oTick.BidPrice1 = pMarketData->BidPrice1;

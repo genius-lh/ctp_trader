@@ -6,6 +6,8 @@
 #include <string.h>
 
 #include <string>
+#include <map>
+
 #include "EesTraderApi.h"
 
 class CRemTraderHandler : public EESTraderEvent
@@ -245,7 +247,7 @@ public:
 	/// \return void 
 	virtual void OnQueryMarketMBLData(EES_MarketMBLData* pMarketMBLData, bool bFinish) {}
 
-public 
+public:
   const char* GetAccountId();
   unsigned int GetTradingDate();
   EES_ClientToken GetMaxToken();
@@ -259,7 +261,7 @@ private:
   EES_Account m_Account;
 	unsigned int		m_TradingDate;						///< 交易日，格式为yyyyMMdd的int型值
 	EES_ClientToken		m_MaxToken;							///< 以前的最大 token 
-	std:map<EES_ClientToken, void*> mapOrder;
+	std::map<EES_ClientToken, void*> mapOrder;
 };
 
 #endif //_REM_TRADER_HANDLER_H_

@@ -188,6 +188,10 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
     self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_femas_af_method_get());
 #endif
 
+#ifdef REM
+#include "trader_trader_api_rem.h"
+    self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_rem_method_get());
+#endif
 
   self->pCtpTraderApi->pMethod->xSetFrontAddr(self->pCtpTraderApi, self->TrFrontAdd);
   self->pCtpTraderApi->pMethod->xSetAppID(self->pCtpTraderApi, self->appId);

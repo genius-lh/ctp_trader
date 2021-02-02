@@ -83,13 +83,6 @@ int trader_trader_api_rem_get_max_order_local_id(trader_trader_api* self, long* 
 
 void trader_trader_api_rem_start(trader_trader_api* self)
 {
-  char remoteTradeIp[128];
-  char remoteTradeTCPPort[128];
-  char remoteTradeUDPPort[128];
-  char remoteQueryIp[128];
-  char remoteQueryTCPPort[128];
-  char localTradeIp[128];
-  char localTradeUDPPort[128];
 
   EESTraderApi* pTraderApi = CreateEESTraderApi();
   CRemTraderHandler* pTraderHandler = new CRemTraderHandler(pTraderApi, (void*)self);
@@ -106,8 +99,49 @@ void trader_trader_api_rem_start(trader_trader_api* self)
   self->timeCondition = '0';
   self->hedgeFlag = '0';
 
-  //TODO
-  
+  char remoteTradeIp[128];
+  char remoteTradeTCPPort[128];
+  char remoteTradeUDPPort[128];
+  char remoteQueryIp[128];
+  char remoteQueryTCPPort[128];
+  char localTradeIp[128];
+  char localTradeUDPPort[128];
+  char* pSavePtr;
+  char sAddress[256];
+  char* pIter;
+
+  do{
+    strncpy(sAddress, self->pAddress, sizeof(sAddress));
+    
+    pIter = strtok_r(sAddress, "|", &pSavePtr);
+    CMN_ASSERT (pIter);
+    strncpy(remoteTradeIp, pIter, sizeof(remoteTradeIp));
+        
+    pIter = strtok_r(NULL, "|", &pSavePtr);
+    CMN_ASSERT (pIter);
+    strncpy(remoteTradeTCPPort, pIter, sizeof(remoteTradeTCPPort));
+    
+    pIter = strtok_r(NULL, "|", &pSavePtr);
+    CMN_ASSERT (pIter);
+    strncpy(remoteTradeUDPPort, pIter, sizeof(remoteTradeUDPPort));
+    
+    pIter = strtok_r(NULL, "|", &pSavePtr);
+    CMN_ASSERT (pIter);
+    strncpy(remoteQueryIp, pIter, sizeof(remoteQueryIp));
+    
+    pIter = strtok_r(NULL, "|", &pSavePtr);
+    CMN_ASSERT (pIter);
+    strncpy(remoteQueryTCPPort, pIter, sizeof(remoteQueryTCPPort));
+    
+    pIter = strtok_r(NULL, "|", &pSavePtr);
+    CMN_ASSERT (pIter);
+    strncpy(localTradeIp, pIter, sizeof(localTradeIp));
+    
+    pIter = strtok_r(NULL, "|", &pSavePtr);
+    CMN_ASSERT (pIter);
+    strncpy(localTradeUDPPort, pIter, sizeof(localTradeUDPPort));
+
+  }while(0);
 
   // 连接交易服务器
   RESULT retErr;

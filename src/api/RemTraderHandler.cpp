@@ -20,6 +20,8 @@ extern "C" {
 
 #include "trader_trader_api.h"
 
+#include "cmn_log.h"
+
 #ifdef __cplusplus
 }
 #endif
@@ -182,7 +184,7 @@ void CRemTraderHandler::OnQueryAccountPosition(const char* pAccount, EES_Account
   traderPosition.LongFrozen = pAccoutnPosition->m_FrozenOvnQty + pAccoutnPosition->m_FrozenTodayQty;
 
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, 0, NULL, bFinish);
-  return 0;
+  return;
 }
 
 void CRemTraderHandler::OnQueryAccountBP(const char* pAccount, EES_AccountBP* pAccoutnPosition, int nReqId )
@@ -282,7 +284,7 @@ void CRemTraderHandler::OnQuerySymbol(EES_SymbolField* pSymbol, bool bFinish)
   
   strcpy(traderInstrument.InstrumentID, pSymbol->m_symbol);
   //TODO
-  strcpy(traderInstrument.ExchangeID, pSymbol->m_ExchangeID);
+  strcpy(traderInstrument.ExchangeID, "CFFEX");
   traderInstrument.VolumeMultiple = pSymbol->m_VolumeMultiple;
   traderInstrument.PriceTick = pSymbol->m_PriceTick;
   
@@ -574,7 +576,7 @@ void CRemTraderHandler::OnOrderCxled(EES_OrderCxled* pCxled )
     , pCxled->m_Reason
   );
   trader_trader_api* self = (trader_trader_api*)m_Arg;
-  EES_ClientToken clientToken = pReject->m_ClientOrderToken;
+  EES_ClientToken clientToken = pCxled->m_ClientOrderToken;
   map<EES_ClientToken, void*>::iterator iter = mapOrder.find(clientToken);
   if(iter == mapOrder.end()){
 		CMN_ERROR("find order failed(%ld)\n", clientToken);
@@ -789,7 +791,7 @@ void CRemTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, c
   temp.m_Tif = EES_OrderTif_Day;
   temp.m_HedgeFlag = EES_HedgeFlag_Speculation;
   strncpy(temp.m_Account, GetAccountId(), sizeof(temp.m_Account));
-  strncpy(temp.m_Symbol, inst);
+  strncpy(temp.m_Symbol, inst, sizeof(temp.m_Symbol));
   temp.m_Side = SideType;
   // DEFAULT CFFEX
   temp.m_Exchange = (unsigned char)102;
@@ -813,7 +815,7 @@ void CRemTraderHandler::CancelOrder(char* inst, char* local_id, char* org_local_
 
   strncpy(temp.m_Account, GetAccountId(), sizeof(temp.m_Account));
 	temp.m_Quantity = 0;
-	temp.m_MarketOrderToken = aotl(order_sys_id);
+	temp.m_MarketOrderToken = atol(order_sys_id);
 
 	RESULT ret = m_TraderApi->CancelOrder(&temp);
 	if (ret != NO_ERROR)

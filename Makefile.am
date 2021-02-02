@@ -5,6 +5,7 @@ noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libxeletrader.so \
 				libfemasmduser.so libfemastrader.so libfemasmduser_udp.so libgfmduser.so libxelegdmduser.so libsfmduser.so\
 				libfemasmduserAF.so libfemastraderAF.so \
+				libremtrader.so \
 				libctpminimduser.so libctpminitrader.so \
 				libxspeedmduser.so libxspeedtrader.so
 
@@ -12,6 +13,7 @@ bin_PROGRAMS=\
 			traderMduserCtp traderStrategyCtp traderStrategyXele traderMduserXeleGD\
 			traderMduserCtpMini traderStrategyCtpMini \
 			traderMduserFemas traderStrategyFemas \
+			traderStrategyRem \
 			traderMduserFemasAF traderStrategyFemasAF traderMduserFemasUDP\
 			traderMduserSolarFlare \
 			traderMduserGfShfe \
@@ -98,6 +100,12 @@ libfemastraderAF_so_SOURCES=src/api/trader_trader_api_femas_af.cpp\
 	src/api/FemasAFTraderHandler.cpp
 libfemastraderAF_so_CPPFLAGS=-fPIC -DFEMAS20 -Ifemas20 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libfemastraderAF_so_LDFLAGS=-shared -fPIC
+
+#libremtrader.so
+libremtrader_so_SOURCES=src/api/trader_trader_api_rem.cpp\
+	src/api/RemTraderHandler.cpp
+libremtrader_so_CPPFLAGS=-fPIC -Irem -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
+libremtrader_so_LDFLAGS=-shared -fPIC
 
 # libxspeedmduser.so libxspeedtrader.so
 libxspeedmduser_so_SOURCES=src/api/trader_mduser_api_xspeed.cpp\
@@ -233,6 +241,33 @@ traderStrategyFemas_LDADD=\
 	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
 	-L. -ltradercmn -ltraderapi\
 	-Lfemas -lfemastrader -lUSTPtraderapi
+	
+#traderStrategyRem
+traderStrategyRem_SOURCES=\
+	src/log/cmn_log_catalog.c\
+	src/log/cmn_log_appender.c\
+	src/log/cmn_log_svr.c\
+	src/daemon/trader_daemon.c \
+	src/trade/trader_db.c \
+	src/trade/trader_mduser_client.c \
+	src/trade/trader_strategy_engine.c \
+	src/trade/trader_strategy_imp.c \
+	src/trade/trader_strategy_limit.c \
+	src/trade/trader_strategy.c \
+	src/trade/trader_svr.c \
+	src/client/client_aud_cnn.c \
+	src/client/client_aud_svr.c \
+	src/client/client_aud_pool.c
+
+traderStrategyRem_CFLAGS=-DREM -Isrc/api \
+	-Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
+
+traderStrategyRem_LDADD=\
+	-lc -lstdc++ -lm -lpthread -lresolv -ldl\
+	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
+	-L. -ltradercmn -ltraderapi\
+	-Lrem -lremtrader -lEESTraderApi
 
 traderMduserFemasAF_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
