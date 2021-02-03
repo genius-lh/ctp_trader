@@ -828,11 +828,13 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     }
 
     if(pMsg->IsLast){
-      // 查询持仓
+      // 查询资金
       sleep(1);
-      CMN_DEBUG("xQryInvestorPosition!\n");
-      self->pCtpTraderApi->pMethod->xQryInvestorPosition(self->pCtpTraderApi);
+      CMN_DEBUG("xQryTradingAccount!\n");
+      self->pCtpTraderApi->pMethod->xQryTradingAccount(self->pCtpTraderApi);
 
+      // 通知登陆成功
+      trader_svr_client_notify_login(self, 0, "SUCCESS");
     }
     break;
   case TRADERONRSPQRYINVESTOR:    
@@ -840,10 +842,10 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     break;
   case TRADERONRSPQRYTRADINGACCOUNT:
     if(pMsg->IsLast){
-      // 查询投资者编号
+      // 查询持仓
       sleep(1);
-      CMN_DEBUG("xQryUserInvestor!\n");
-      self->pCtpTraderApi->pMethod->xQryUserInvestor(self->pCtpTraderApi);      
+      CMN_DEBUG("xQryInvestorPosition!\n");
+      self->pCtpTraderApi->pMethod->xQryInvestorPosition(self->pCtpTraderApi);
     }    
     break;
   case TRADERONRSPQRYINVESTORPOSITION:
@@ -892,12 +894,6 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, &traderPosition);
 
     if(pMsg->IsLast){
-      sleep(1);
-      CMN_DEBUG("xQryTradingAccount!\n");
-      self->pCtpTraderApi->pMethod->xQryTradingAccount(self->pCtpTraderApi);
-      
-      // 通知登陆成功
-      trader_svr_client_notify_login(self, 0, "SUCCESS");
     }
     break;
   case TRADERONRTNORDER:

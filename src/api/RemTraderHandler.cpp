@@ -106,29 +106,29 @@ void CRemTraderHandler::OnQueryUserAccount(EES_AccountInfo * pAccoutnInfo, bool 
     trader_trader_api_on_rsp_user_login(self, EES_LOGON_ACCOUNT_NOT_BOUND, NULL);
     return;
   }
-
-  strncpy(m_Account, pAccoutnInfo->m_Account, sizeof(m_Account));
-	
   CMN_DEBUG("bFinish=[%d]\n", bFinish);
 
-  CMN_DEBUG(
-    "pAccoutnInfo->m_Account=[%s]\n"
-    "pAccoutnInfo->m_Previlege=[%d]\n"
-    "pAccoutnInfo->m_InitialBp=[%lf]\n"
-    "pAccoutnInfo->m_AvailableBp=[%lf]\n"
-    "pAccoutnInfo->m_Margin=[%lf]\n"
-    "pAccoutnInfo->m_FrozenMargin=[%lf]\n"
-    "pAccoutnInfo->m_CommissionFee=[%lf]\n"
-    "pAccoutnInfo->m_FrozenCommission=[%lf]\n"
-    ,pAccoutnInfo->m_Account
-    ,pAccoutnInfo->m_Previlege
-    ,pAccoutnInfo->m_InitialBp
-    ,pAccoutnInfo->m_AvailableBp
-    ,pAccoutnInfo->m_Margin
-    ,pAccoutnInfo->m_FrozenMargin
-    ,pAccoutnInfo->m_CommissionFee
-    ,pAccoutnInfo->m_FrozenCommission
-  );
+  if('\0' != pAccoutnInfo->m_Account[0]){
+    strncpy(m_Account, pAccoutnInfo->m_Account, sizeof(m_Account));
+    CMN_DEBUG(
+      "pAccoutnInfo->m_Account=[%s]\n"
+      "pAccoutnInfo->m_Previlege=[%d]\n"
+      "pAccoutnInfo->m_InitialBp=[%lf]\n"
+      "pAccoutnInfo->m_AvailableBp=[%lf]\n"
+      "pAccoutnInfo->m_Margin=[%lf]\n"
+      "pAccoutnInfo->m_FrozenMargin=[%lf]\n"
+      "pAccoutnInfo->m_CommissionFee=[%lf]\n"
+      "pAccoutnInfo->m_FrozenCommission=[%lf]\n"
+      ,pAccoutnInfo->m_Account
+      ,pAccoutnInfo->m_Previlege
+      ,pAccoutnInfo->m_InitialBp
+      ,pAccoutnInfo->m_AvailableBp
+      ,pAccoutnInfo->m_Margin
+      ,pAccoutnInfo->m_FrozenMargin
+      ,pAccoutnInfo->m_CommissionFee
+      ,pAccoutnInfo->m_FrozenCommission
+    );
+  }
 
   if(bFinish){
     trader_trader_api_on_rsp_user_login(self, EES_LOGON_OK, NULL);
