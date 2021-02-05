@@ -333,24 +333,7 @@ void CRemTraderHandler::OnOrderAccept(EES_OrderAcceptField* pAccept )
     , pAccept->m_MarketSessionId
     , pAccept->m_HedgeFlag
   );
-
-  
-  trader_trader_api* self = (trader_trader_api*)m_Arg;
-
-  EES_ClientToken clientToken = pAccept->m_ClientOrderToken;
-  map<EES_ClientToken, void*>::iterator iter = mapOrder.find(clientToken);
-  if(iter == mapOrder.end()){
-		CMN_ERROR("find order failed(%ld)\n", clientToken);
-    return ;
-  }
-  
-  trader_order* traderOrder = (trader_order*)iter->second;
-  // 订单状态
-  traderOrder->OrderStatus = TRADER_ORDER_OS_UNKNOW;
-  ///插入时间
-  //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
-
-  trader_trader_api_on_rtn_order(self, traderOrder);
+  retrun;
 }
 
 void CRemTraderHandler::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
@@ -386,7 +369,7 @@ void CRemTraderHandler::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
   // 订单状态
   traderOrder->OrderStatus = TRADER_ORDER_OS_NOTRADEQUEUEING;
   // 订单状态
-  traderOrder->OrderStatus = pAccept->m_ExchangeStatus;
+  //traderOrder->OrderStatus = pAccept->m_ExchangeStatus;
   snprintf(traderOrder->OrderSysID, sizeof(traderOrder->OrderSysID), "%ld", pAccept->m_MarketOrderToken);
   ///插入时间
   //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
@@ -440,7 +423,7 @@ void CRemTraderHandler::OnOrderReject(EES_OrderRejectField* pReject )
 
   trader_trader_api_on_rtn_order(self, traderOrder);
 
-  trader_trader_api_on_err_rtn_order_insert(self, 0, "");
+  trader_trader_api_on_err_rtn_order_insert(self, pReject->m_ReasonCode, "");
 }
 
 void CRemTraderHandler::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
@@ -484,7 +467,7 @@ void CRemTraderHandler::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
 
   trader_trader_api_on_err_rtn_order_insert(self, 0, "");
 
-
+  return;
 }
 
 void CRemTraderHandler::OnOrderExecution(EES_OrderExecutionField* pExec )
@@ -555,6 +538,7 @@ void CRemTraderHandler::OnOrderExecution(EES_OrderExecutionField* pExec )
 
   trader_trader_api_on_rtn_trade(self, &traderTrade);
 
+  return;
 }
 
 void CRemTraderHandler::OnOrderCxled(EES_OrderCxled* pCxled )
@@ -591,6 +575,7 @@ void CRemTraderHandler::OnOrderCxled(EES_OrderCxled* pCxled )
 
   trader_trader_api_on_rtn_order(self, traderOrder);
 
+  return ;
 }
 
 void CRemTraderHandler::OnCxlOrderReject(EES_CxlOrderRej* pReject )
@@ -780,9 +765,9 @@ void CRemTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, c
     }
   }else{
     if('0' == buy_sell){
-      SideType = EES_SideType_close_long;
-    }else{
       SideType = EES_SideType_close_short;
+    }else{
+      SideType = EES_SideType_close_long;
     }
   }
 
