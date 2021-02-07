@@ -333,7 +333,7 @@ void CRemTraderHandler::OnOrderAccept(EES_OrderAcceptField* pAccept )
     , pAccept->m_MarketSessionId
     , pAccept->m_HedgeFlag
   );
-  retrun;
+  return;
 }
 
 void CRemTraderHandler::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)

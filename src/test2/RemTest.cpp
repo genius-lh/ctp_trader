@@ -6,6 +6,7 @@
 
 #include <unistd.h>
 #include <string>
+#include <iostream>
 #include "EesTraderApi.h"
 
 #include "RemTest.h"
@@ -862,16 +863,18 @@ void CRemTestHandler::PrintTrade(void* data)
 
 void CRemTestHandler::ChangePassword()
 {
-  REM_TEST_LOG("%s\n", __FUNCTION__);
+  using namespace std;
 
-  char newPasswd[10];
-  
-  printf("input newPasswd:\n");
-  scanf("%s", newPasswd);
-  
+  REM_TEST_LOG("%s\n", __FUNCTION__);
+  string oldPwd, newPwd;
+  cout<<"input oldPwd"<<endl;
+  cin>>oldPwd;
+  cout<<"input newPwd"<<endl;
+  cin>>newPwd;
+
   EESTraderApi* pTraderApi = (EESTraderApi*)m_Arg;
-  REM_TEST_LOG("ChangePassword(%s, %s)\n", m_Passwd, newPasswd);
-  RESULT ret = pTraderApi->ChangePassword(m_Passwd, newPasswd);
+  REM_TEST_LOG("ChangePassword(%s, %s)\n", oldPwd.c_str(), newPwd.c_str());
+  RESULT ret = pTraderApi->ChangePassword(oldPwd.c_str(), newPwd.c_str());
   REM_TEST_LOG("ChangePassword[%d]\n", ret);
 
 }
