@@ -87,6 +87,8 @@ void CRemTraderHandler::OnUserLogon(EES_LogonResponse* pLogon)
     //失败
     trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
   }else{
+    //交易日期
+    m_TradingDate = pLogon->m_TradingDate;
     // 查询QueryUserAccount
     RESULT ret = m_TraderApi->QueryUserAccount();
     if(ret){
@@ -699,6 +701,10 @@ void CRemTraderHandler::OnSymbolStatusReport(EES_SymbolStatus* pSymbolStatus)
     , pSymbolStatus->m_EnterReason
   );
 
+  // 过滤期权合约
+  if(0 == memcmp(pSymbolStatus->m_Symbol, "IO", 2)){
+    return ;
+  }
   
   trader_trader_api* self = (trader_trader_api*)m_Arg;
   instrument_status oInstrumentStatus;

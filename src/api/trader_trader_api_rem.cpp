@@ -137,9 +137,9 @@ void trader_trader_api_rem_start(trader_trader_api* self)
     CMN_ASSERT (pIter);
     strncpy(localTradeIp, pIter, sizeof(localTradeIp));
     
-    pIter = strtok_r(NULL, "|", &pSavePtr);
-    CMN_ASSERT (pIter);
-    strncpy(localTradeUDPPort, pIter, sizeof(localTradeUDPPort));
+    //pIter = strtok_r(NULL, "|", &pSavePtr);
+    //CMN_ASSERT (pIter);
+    strncpy(localTradeUDPPort, self->pUserParam, sizeof(localTradeUDPPort));
 
   }while(0);
 
