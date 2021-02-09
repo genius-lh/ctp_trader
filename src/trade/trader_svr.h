@@ -69,6 +69,9 @@ struct trader_svr_def {
   trader_strategy_engine* pStrategyEngine;
   // 开盘报单等待时间
   int pendingMicroSec;
+  
+  // 撤单笔数限制
+  int cancelLimit;
 
   // Redis
   redisContext* pRedis;

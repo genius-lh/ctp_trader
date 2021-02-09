@@ -379,6 +379,12 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
   }
   CMN_DEBUG("self->pendingMicroSec[%d]\n", self->pendingMicroSec);
 
+  nRet = glbPflGetInt("TRADER", "CANCEL_LIMIT", cfg_file, &self->cancelLimit);
+  if(nRet < 0){
+    self->cancelLimit = 400;
+  }
+  CMN_DEBUG("self->cancelLimit[%d]\n", self->cancelLimit);
+
   return 0;
 }
 
@@ -1042,9 +1048,17 @@ int trader_svr_proc_client_update(trader_svr* self, trader_msg_req_struct* req)
       if(!strcmp(pUpdate->stage[i].T1, iter->contract)){
         pUpdate->stage[i].PriceTick = iter->PriceTick;
         pUpdate->stage[i].IsSHFE = iter->isSHFE;
+        if(iter->nCancelNum > self->cancelLimit){
+          CMN_INFO("cancel number[%d]>[%d]\n", iter->nCancelNum, self->cancelLimit);
+          pUpdate->stage[i].Used = 0;
+        }
       }else if(!strcmp(pUpdate->stage[i].T2, iter->contract)){
         pUpdate->stage[i].T2PriceTick = iter->PriceTick;
         pUpdate->stage[i].T2IsSHFE = iter->isSHFE;
+        if(iter->nCancelNum > self->cancelLimit){
+          CMN_INFO("cancel number[%d]>[%d]\n", iter->nCancelNum, self->cancelLimit);
+          pUpdate->stage[i].Used = 0;
+        }
       }
     }
   }
