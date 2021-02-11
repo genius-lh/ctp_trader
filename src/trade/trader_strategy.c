@@ -1780,6 +1780,7 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
     }
 
     // ÏÂÎçÊÕÅÌÅÐ¶Ï
+    if(IS_CLOSING_15_00(self->NightClosingTime))
     if((0 == memcmp(tick_data->UpdateTime, "14:59:57", 8))
     ||(0 == memcmp(tick_data->UpdateTime, "14:59:58", 8))
     ||(0 == memcmp(tick_data->UpdateTime, "14:59:59", 8))){
@@ -1793,7 +1794,7 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
       break;
     }
 
-    if(CLOSING_TIME_23_00 == self->NightClosingTime){
+    if(IS_CLOSING_23_00(self->NightClosingTime)){
       if((0 == memcmp(tick_data->UpdateTime, "22:59:57", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "22:59:58", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "22:59:59", 8))){
@@ -1803,7 +1804,7 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
       }
     }
 
-    if(CLOSING_TIME_23_30 == self->NightClosingTime){
+    if(IS_CLOSING_23_30(self->NightClosingTime)){
       if((0 == memcmp(tick_data->UpdateTime, "23:29:57", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "23:29:58", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "23:29:59", 8))){
@@ -1813,7 +1814,7 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
       }
     }
 
-    if(CLOSING_TIME_01_00 == self->NightClosingTime){
+    if(IS_CLOSING_01_00(self->NightClosingTime)){
       if((0 == memcmp(tick_data->UpdateTime, "00:59:57", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "00:59:58", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "00:59:59", 8))){
@@ -1823,7 +1824,7 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
       }
     }
 
-    if(CLOSING_TIME_02_00 == self->NightClosingTime){
+    if(IS_CLOSING_02_00(self->NightClosingTime)){
       if((0 == memcmp(tick_data->UpdateTime, "01:59:57", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "01:59:58", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "01:59:59", 8))){
@@ -1833,7 +1834,7 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
       }
     }
 
-    if(CLOSING_TIME_02_30 == self->NightClosingTime){
+    if(IS_CLOSING_02_30(self->NightClosingTime)){
       if((0 == memcmp(tick_data->UpdateTime, "02:29:57", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "02:29:58", 8))
       ||(0 == memcmp(tick_data->UpdateTime, "02:29:59", 8))){
@@ -1904,11 +1905,13 @@ int trader_strategy_print_order_time(trader_strategy* self, trader_order* order_
     usec += 1000000;
   }
   
-  CMN_INFO("ConsumingTime[%ld.%ld]\n"
-    "UserOrderLocalID[%s]OrderSysID[%s]\n"
-    , sec, usec
+  CMN_INFO("UserOrderLocalID[%s]OrderSysID[%s]\n"
+    "ConsumingTime[%ld.%06ld]\n"   
     , order_data->UserOrderLocalID
-    , order_data->OrderSysID);
+    , order_data->OrderSysID
+    , sec
+    , usec
+    );
 
   return 0;
 }
