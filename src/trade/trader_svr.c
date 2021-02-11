@@ -965,7 +965,14 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
 {
   CMN_DEBUG("Enter!\n");
   struct trader_cmd_login_req_def* pLoginInf = &(req->body.login);
-  CMN_DEBUG("UserID=[%s]\n", pLoginInf->UserID);
+  // 更新日志文件名
+  char newCatalog[20];
+  snprintf(newCatalog, sizeof(newCatalog), "trade.%s", pLoginInf->UserID);
+  CMN_INFO("newCatalog[%s]\n", newCatalog);
+  CMN_LOG_UPD(newCatalog);
+  
+  CMN_DEBUG("Enter!\n");
+
   // 进入登陆状态
   self->bProcessing = 1;
   // 开始登陆
