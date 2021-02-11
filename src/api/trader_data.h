@@ -67,6 +67,8 @@ struct trader_tick_def {
 	double	UpperLimitPrice;
 	///µøÍ£°å¼Û
 	double	LowerLimitPrice;
+  ///±£Áô×Ö¶Î
+  long Reserved;
 };
 
 
