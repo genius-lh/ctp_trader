@@ -232,7 +232,7 @@ void CRemTraderHandler::OnQuerySymbol(EES_SymbolField* pSymbol, bool bFinish)
   CMN_DEBUG("Enter\n");
   
   CMN_DEBUG(
-    "pSymbol->m_SecType=[%c]\n"
+    "pSymbol->m_SecType=[%d]\n"
     "pSymbol->m_symbol=[%s]\n"
     "pSymbol->m_symbolName=[%s]\n"
     "pSymbol->m_ExchangeID=[%d]\n"
