@@ -422,15 +422,7 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
   update->stage[num].T2Weight = 1;
   update->stage[num].T2Ratio = 1;
   update->stage[num].NightClosingTime = 0;
-#ifdef FEMAS
-  update->stage[num].TriggerType = 0;
-#else
   update->stage[num].TriggerType = 3;
-#endif
-#ifdef XELE
-  update->stage[num].TriggerType = 0;
-#endif
-
 
   for(pChild = pRequest->child; pChild != NULL; pChild = pChild->next){
     if(!strcmp(pChild->string, "whichGrid")){
@@ -504,6 +496,13 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
       }
     }else{
       //EMPTY
+    }
+    if(3 == update->stage[num].TriggerType){
+      if((0 == memcmp(update->stage[num].T1, "IF", 2)
+      ||(0 == memcmp(update->stage[num].T1, "IH", 2)
+      ||(0 == memcmp(update->stage[num].T1, "IC", 2)){
+        update->stage[num].TriggerType = 0;
+      }
     }
   }
   
