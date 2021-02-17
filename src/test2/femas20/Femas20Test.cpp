@@ -69,8 +69,11 @@ int main(int argc, char* argv[])
   // 交易
   pTraderApi->RegisterSpi(pTraderHandler);
   pTraderApi->RegisterFront(sAddress);
+
+#ifndef FEMAS
   pTraderApi->RegisterQryFront(sQryAddress);
-  
+#endif
+
   // 连接交易服务器
   pTraderApi->Init();
 
