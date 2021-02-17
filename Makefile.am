@@ -25,6 +25,7 @@ bin_PROGRAMS=\
 # static library
 libtradercmn_a_SOURCES=src/util/cmn_util.c \
 	src/util/cJSON.c \
+	src/util/dict.c \
 	src/cfg/glbProfile.c \
 	src/cfg/cmn_cfg.c \
 	src/log/cmn_log_util.c \
@@ -74,7 +75,7 @@ libfemasmduser_udp_so_CPPFLAGS=-DFEMAS_UDP -DFEMAS20 -fPIC -Ifemas20 -Ilibevent 
 libfemasmduser_udp_so_LDFLAGS=-shared -fPIC
 
 libgfmduser_so_SOURCES=src/api/trader_mduser_api_gf.cpp
-libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ictp -Ilibevent -Ilibevent/compat/sys
+libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ictp -Isrc/util -Ilibevent -Ilibevent/compat/sys
 libgfmduser_so_LDFLAGS=-shared -fPIC
 
 libsfmduser_so_SOURCES=src/api/trader_mduser_api_sf.cpp

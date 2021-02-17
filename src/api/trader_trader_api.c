@@ -122,7 +122,7 @@ void trader_trader_api_on_front_disconnected(trader_trader_api* self, int nReaso
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
 
-void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, char* err_msg)
+void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPERROR;
@@ -137,7 +137,7 @@ void trader_trader_api_on_rsp_error(trader_trader_api* self, int err_cd, char* e
 
 }
 
-void trader_trader_api_on_rsp_user_login(trader_trader_api* self, int err_cd, char* err_msg)
+void trader_trader_api_on_rsp_user_login(trader_trader_api* self, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPUSERLOGIN;
@@ -151,7 +151,7 @@ void trader_trader_api_on_rsp_user_login(trader_trader_api* self, int err_cd, ch
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
 
-void trader_trader_api_on_rsp_user_logout(trader_trader_api* self, int err_cd, char* err_msg)
+void trader_trader_api_on_rsp_user_logout(trader_trader_api* self, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPUSERLOGOUT;
@@ -165,7 +165,7 @@ void trader_trader_api_on_rsp_user_logout(trader_trader_api* self, int err_cd, c
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
 
-void trader_trader_api_on_rsp_order_insert(trader_trader_api* self, int err_cd, char* err_msg)
+void trader_trader_api_on_rsp_order_insert(trader_trader_api* self, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPORDERINSERT;
@@ -179,7 +179,7 @@ void trader_trader_api_on_rsp_order_insert(trader_trader_api* self, int err_cd, 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
 
-void trader_trader_api_on_rsp_order_action(trader_trader_api* self, int err_cd, char* err_msg)
+void trader_trader_api_on_rsp_order_action(trader_trader_api* self, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPORDERACTION;
@@ -214,7 +214,7 @@ void trader_trader_api_on_rtn_order(trader_trader_api* self, trader_order* order
 
 }
 
-void trader_trader_api_on_err_rtn_order_insert(trader_trader_api* self, int err_cd, char* err_msg)
+void trader_trader_api_on_err_rtn_order_insert(trader_trader_api* self, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONERRRTNORDERINSERT;
@@ -227,7 +227,7 @@ void trader_trader_api_on_err_rtn_order_insert(trader_trader_api* self, int err_
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
 }
 
-void trader_trader_api_on_err_rtn_order_action(trader_trader_api* self, int err_cd, char* err_msg)
+void trader_trader_api_on_err_rtn_order_action(trader_trader_api* self, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONERRRTNORDERACTION;
@@ -242,7 +242,7 @@ void trader_trader_api_on_err_rtn_order_action(trader_trader_api* self, int err_
 }
 
 
-void trader_trader_api_on_rsp_qry_user_investor(trader_trader_api* self, char* investor_id, int err_cd, char* err_msg)
+void trader_trader_api_on_rsp_qry_user_investor(trader_trader_api* self, char* investor_id, int err_cd, const char* err_msg)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPQRYINVESTOR;
@@ -259,7 +259,7 @@ void trader_trader_api_on_rsp_qry_user_investor(trader_trader_api* self, char* i
 
 }
 
-void trader_trader_api_on_rsp_qry_instrument(trader_trader_api* self, trader_instrument *pRspInstrument, int err_cd, char* err_msg, int is_last)
+void trader_trader_api_on_rsp_qry_instrument(trader_trader_api* self, trader_instrument *pRspInstrument, int err_cd, const char* err_msg, int is_last)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPQRYINSTRUMENT;
@@ -275,7 +275,7 @@ void trader_trader_api_on_rsp_qry_instrument(trader_trader_api* self, trader_ins
 
 }
 
-void trader_trader_api_on_rsp_qry_investor_position(trader_trader_api* self, trader_position *pInvestorPosition, int err_cd, char* err_msg, int is_last)
+void trader_trader_api_on_rsp_qry_investor_position(trader_trader_api* self, trader_position *pInvestorPosition, int err_cd, const char* err_msg, int is_last)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPQRYINVESTORPOSITION;
@@ -291,7 +291,7 @@ void trader_trader_api_on_rsp_qry_investor_position(trader_trader_api* self, tra
 
 }
 
-void trader_trader_api_on_rsp_qry_trading_account(trader_trader_api* self, trader_account *pTradingAcount, int err_cd, char* err_msg, int is_last)
+void trader_trader_api_on_rsp_qry_trading_account(trader_trader_api* self, trader_account *pTradingAcount, int err_cd, const char* err_msg, int is_last)
 {
   trader_trader_evt oEvent;
   oEvent.Type = TRADERONRSPQRYTRADINGACCOUNT;

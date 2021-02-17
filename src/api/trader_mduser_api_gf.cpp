@@ -25,6 +25,7 @@ extern "C" {
 
 #include "trader_data.h"
 #include "trader_mduser_api.h"
+#include "dict.h"
 
 extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
 
@@ -62,14 +63,14 @@ struct trader_mduser_api_gf_def{
 
 static unsigned int tickHash(const void *key) {
     return dictGenHashFunction((const unsigned char *)key,
-                               sdslen((const sds)key));
+                               strlen((const char*)key));
 }
 
 static void *tickKeyDup(void *privdata, const void *src) {
     ((void) privdata);
     int l1 = strlen((const char*)src)+1;
-    char* dup = malloc(l1 * sizeof(char));
-    strncpy(dup, src, l1);
+    char* dup = (char*)malloc(l1 * sizeof(char));
+    strncpy(dup, (const char*)src, l1);
     return dup;
 }
 
@@ -104,7 +105,7 @@ static void trader_mduser_api_gf_tick_dict_init(trader_mduser_api_gf* self)
 {
   dictType* tickDictType = tickDictTypeGet();
   self->tick_dick = dictCreate(tickDictType,NULL);
-  pthread_mutexattr_init(&self->mutex);
+  pthread_mutex_init(&self->mutex, NULL);
   return;
 }
 
