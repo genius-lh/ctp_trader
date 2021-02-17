@@ -55,7 +55,83 @@ struct trader_mduser_api_gf_def{
 	char local_ip[16];				///< ±¾µØIP
 	pthread_t thread_id;
   int loop_flag;
+  pthread_mutex_t mutex;
+  dict* tick_dick;
 };
+
+
+static unsigned int tickHash(const void *key) {
+    return dictGenHashFunction((const unsigned char *)key,
+                               sdslen((const sds)key));
+}
+
+static void *tickKeyDup(void *privdata, const void *src) {
+    ((void) privdata);
+    int l1 = strlen((const char*)src)+1;
+    char* dup = malloc(l1 * sizeof(char));
+    strncpy(dup, src, l1);
+    return dup;
+}
+
+static int tickKeyCompare(void *privdata, const void *key1, const void *key2) {
+    int l1, l2;
+    ((void) privdata);
+
+    l1 = strlen((const char*)key1);
+    l2 = strlen((const char*)key2);
+    if (l1 != l2) return 0;
+    return memcmp(key1,key2,l1) == 0;
+}
+
+static void tickKeyDestructor(void *privdata, void *key) {
+    ((void) privdata);
+    free((char*)key);
+}
+
+static dictType* tickDictTypeGet() {
+  static dictType tickDict = {
+    tickHash,
+    tickKeyDup,
+    NULL,
+    tickKeyCompare,
+    tickKeyDestructor,
+    NULL
+  };
+  return &tickDict;
+}
+
+static void trader_mduser_api_gf_tick_dict_init(trader_mduser_api_gf* self)
+{
+  dictType* tickDictType = tickDictTypeGet();
+  self->tick_dick = dictCreate(tickDictType,NULL);
+  pthread_mutexattr_init(&self->mutex);
+  return;
+}
+
+static int trader_mduser_api_gf_tick_dict_add(trader_mduser_api_gf* self, const char* instrument)
+{
+  int ret;
+  pthread_mutex_lock(&self->mutex);
+  ret = dictAdd(self->tick_dick, (void*)instrument, (void*)NULL);
+  pthread_mutex_unlock(&self->mutex);
+  return ret;
+}
+
+static int trader_mduser_api_gf_tick_dict_find(trader_mduser_api_gf* self, const char* instrument)
+{
+  int ret;
+  pthread_mutex_lock(&self->mutex);
+  ret = (NULL != dictFind(self->tick_dick, (void*)instrument));
+  pthread_mutex_unlock(&self->mutex);
+  return ret;
+}
+
+static void trader_mduser_api_gf_tick_dict_destory(trader_mduser_api_gf* self)
+{
+  dictRelease(self->tick_dick);
+  return;
+}
+
 
 
 trader_mduser_api_method* trader_mduser_api_gf_method_get()
@@ -86,6 +162,8 @@ void trader_mduser_api_gf_start(trader_mduser_api* self)
 
   pImp->remote_port = (unsigned short)port;
 
+  trader_mduser_api_gf_tick_dict_init(pImp);
+
 	ret = pthread_create(&pImp->thread_id, NULL, trader_mduser_api_gf_thread, (void*)self);
 
   return ;
@@ -100,6 +178,9 @@ void trader_mduser_api_gf_stop(trader_mduser_api* self)
   if(pImp->thread_id){
     pthread_join(pImp->thread_id, &ret);
   }
+
+  trader_mduser_api_gf_tick_dict_destory(pImp);
+  
   free(pImp);
   self->pUserApi = (void*)NULL;
   
@@ -118,6 +199,9 @@ void trader_mduser_api_gf_logout(trader_mduser_api* self)
 
 void trader_mduser_api_gf_subscribe(trader_mduser_api* self, char* instrument)
 {
+  trader_mduser_api_gf* pImp = (trader_mduser_api_gf*)self->pUserApi;
+  trader_mduser_api_gf_tick_dict_add(pImp, instrument);
+  
   return ;
 }
 
@@ -125,6 +209,13 @@ void gf_mduser_on_rtn_depth_market_data(void* arg, CUstpFtdcDepthMarketDataField
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
   trader_tick oTick;
+  trader_mduser_api_gf* pImp = (trader_mduser_api_gf*)self->pUserApi;
+  int found = trader_mduser_api_gf_tick_dict_find(pImp, pMarketData->InstrumentID);
+
+  if(!found){
+    return;
+  }
+  
   memset(&oTick, 0, sizeof(trader_tick));
 
   strcpy(oTick.InstrumentID, pMarketData->InstrumentID);
@@ -170,6 +261,13 @@ void gf_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMa
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
   trader_tick oTick;
+  trader_mduser_api_gf* pImp = (trader_mduser_api_gf*)self->pUserApi;
+  int found = trader_mduser_api_gf_tick_dict_find(pImp, pMarketData->instrument_id);
+
+  if(!found){
+    return;
+  }
+
   memset(&oTick, 0, sizeof(trader_tick));
 
   strcpy(oTick.InstrumentID, pMarketData->instrument_id);
@@ -180,8 +278,8 @@ void gf_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMa
   oTick.BidVolume1 = pMarketData->depth[0].bid_volume;
   oTick.AskPrice1 = pMarketData->depth[0].ask_price;
   oTick.AskVolume1 = pMarketData->depth[0].ask_volume;
-  oTick.UpperLimitPrice = pMarketData->upper_limit + 1;
-  oTick.LowerLimitPrice = pMarketData->lower_limit - 1;
+  oTick.UpperLimitPrice = pMarketData->upper_limit;
+  oTick.LowerLimitPrice = pMarketData->lower_limit;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
