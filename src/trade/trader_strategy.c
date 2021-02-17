@@ -724,12 +724,14 @@ int trader_strategy_order_update(trader_strategy* self, trader_order* order_data
   strcpy(pOrder->OrderSysID, order_data->OrderSysID);
   
   // 判断是否需要更新订单时间
-  if((!pOrder->UpdateTime.tv_sec)
-  && (!pOrder->UpdateTime.tv_usec)){
-    pOrder->HedgeFlag = order_data->HedgeFlag;
-    strcpy(pOrder->InsertTime, order_data->InsertTime);
-    gettimeofday(&pOrder->UpdateTime, NULL);
-    trader_strategy_print_order_time(self, pOrder);
+  if(TRADER_ORDER_OS_UNKNOW != pOrder->OrderStatus){
+    if((!pOrder->UpdateTime.tv_sec)
+    && (!pOrder->UpdateTime.tv_usec)){
+      pOrder->HedgeFlag = order_data->HedgeFlag;
+      strcpy(pOrder->InsertTime, order_data->InsertTime);
+      gettimeofday(&pOrder->UpdateTime, NULL);
+      trader_strategy_print_order_time(self, pOrder);
+    }
   }
 
   // 判断是否需要撤单
