@@ -47,7 +47,8 @@ static void gf_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataFie
 #endif
 
 ///最大的接收缓冲区最
-#define	RCV_BUF_SIZE						65535
+#define	RCV_BUF_SIZE (8 * 1024 * 1024)
+#define MSG_BUF_SIZE (64 * 1024)
 
 typedef struct trader_mduser_api_gf_def trader_mduser_api_gf;
 struct trader_mduser_api_gf_def{
@@ -164,6 +165,10 @@ void trader_mduser_api_gf_start(trader_mduser_api* self)
   pImp->remote_port = (unsigned short)port;
 
   trader_mduser_api_gf_tick_dict_init(pImp);
+  
+  trader_mduser_api_on_rsp_user_login(self, 0, "OK");
+
+  sleep(1);
 
 	ret = pthread_create(&pImp->thread_id, NULL, trader_mduser_api_gf_thread, (void*)self);
 
@@ -293,7 +298,7 @@ void* trader_mduser_api_gf_thread(void* arg)
   trader_mduser_api_gf* pImp = (trader_mduser_api_gf*)self->pUserApi;
   int m_sock;
 
-	char line[RCV_BUF_SIZE] = "";
+	char line[MSG_BUF_SIZE] = "";
 
 	int n_rcved = -1;
 
@@ -376,7 +381,7 @@ void* trader_mduser_api_gf_thread(void* arg)
       }
       
     	socklen_t len = sizeof(sockaddr_in);
-    	n_rcved = recvfrom(m_sock, line, RCV_BUF_SIZE, 0, (struct sockaddr*)&muticast_addr, &len);
+    	n_rcved = recvfrom(m_sock, line, MSG_BUF_SIZE, 0, (struct sockaddr*)&muticast_addr, &len);
     	if ( n_rcved < 0) 
     	{
     		continue;
@@ -393,6 +398,9 @@ void* trader_mduser_api_gf_thread(void* arg)
           GFXELE_LOG("gf_ctp_mduser_on_rtn_depth_market_data\n");
         }
         //gf_ctp_mduser_on_rtn_depth_market_data(self, (CThostFtdcDepthMarketDataField*)line);
+        if(n_rcved > DATA_WITH_HEAD){
+          GFXELE_LOG("n_rcved[%d] > DATA_WITH_HEAD\n", n_rcved);
+        }
         gf_x10_mduser_on_rtn_depth_market_data(self, (struct ShfeDataField*)line);
     	}
     }
