@@ -33,7 +33,11 @@ CRemTraderHandler::CRemTraderHandler(EESTraderApi* pApi, void* pArg)
   , m_TradingDate(0)
   , m_MaxToken(0)
 {
-
+  mapExchange.insert(map<EES_ExchangeID, const char*>::value_type(EES_ExchangeID_cffex, "CFFEX"));
+  mapExchange.insert(map<EES_ExchangeID, const char*>::value_type(EES_ExchangeID_shfe, "SHFE"));
+  mapExchange.insert(map<EES_ExchangeID, const char*>::value_type(EES_ExchangeID_dce, "DCE"));
+  mapExchange.insert(map<EES_ExchangeID, const char*>::value_type(EES_ExchangeID_zcze, "ZCZE"));
+  mapExchange.insert(map<EES_ExchangeID, const char*>::value_type(EES_ExchangeID_ine, "INE"));
 }
 
 CRemTraderHandler::~CRemTraderHandler()
@@ -89,6 +93,10 @@ void CRemTraderHandler::OnUserLogon(EES_LogonResponse* pLogon)
   }else{
     //交易日期
     m_TradingDate = pLogon->m_TradingDate;
+
+    // 最大报单号
+    m_MaxToken = pLogon->m_MaxToken;
+    
     // 查询QueryUserAccount
     RESULT ret = m_TraderApi->QueryUserAccount();
     if(ret){
@@ -112,7 +120,7 @@ void CRemTraderHandler::OnQueryUserAccount(EES_AccountInfo * pAccoutnInfo, bool 
 
   if('\0' != pAccoutnInfo->m_Account[0]){
     strncpy(m_Account, pAccoutnInfo->m_Account, sizeof(m_Account));
-    CMN_DEBUG(
+    CMN_INFO(
       "pAccoutnInfo->m_Account=[%s]\n"
       "pAccoutnInfo->m_Previlege=[%d]\n"
       "pAccoutnInfo->m_InitialBp=[%lf]\n"
@@ -143,7 +151,7 @@ void CRemTraderHandler::OnQueryAccountPosition(const char* pAccount, EES_Account
 
   CMN_DEBUG("pAccoutnPosition->pAccount=[%s]\n", pAccount);
 
-  CMN_DEBUG(
+  CMN_INFO(
     "pAccoutnPosition->m_actId=[%s]\n"
     "pAccoutnPosition->m_Symbol=[%s]\n"
     "pAccoutnPosition->m_PosiDirection=[%d]\n"
@@ -175,15 +183,19 @@ void CRemTraderHandler::OnQueryAccountPosition(const char* pAccount, EES_Account
   trader_position traderPosition;
   memset(&traderPosition, 0, sizeof(traderPosition));
   strcpy(traderPosition.InstrumentID, pAccoutnPosition->m_Symbol);
-  traderPosition.PositionDate = '1'; //
+  traderPosition.PositionDate = '3'; //
   traderPosition.PosiDirection = TRADER_POSITION_LONG;
   if(EES_PosiDirection_short == pAccoutnPosition->m_PosiDirection){
     traderPosition.PosiDirection = TRADER_POSITION_SHORT;
   }
-  traderPosition.YdPosition = pAccoutnPosition->m_InitOvnQty;
+  // 当前昨仓
+  traderPosition.YdPosition = pAccoutnPosition->m_OvnQty;
+  // 当前今仓
   traderPosition.TodayPosition = pAccoutnPosition->m_TodayQty;
-  traderPosition.Position = traderPosition.YdPosition + traderPosition.TodayPosition;
-  traderPosition.LongFrozen = pAccoutnPosition->m_FrozenOvnQty + pAccoutnPosition->m_FrozenTodayQty;
+  // 冻结的今仓数量
+  traderPosition.Position = pAccoutnPosition->m_FrozenTodayQty;
+  // 冻结的昨仓数量
+  traderPosition.LongFrozen = pAccoutnPosition->m_FrozenOvnQty;
 
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, 0, NULL, bFinish);
   return;
@@ -196,7 +208,7 @@ void CRemTraderHandler::OnQueryAccountBP(const char* pAccount, EES_AccountBP* pA
     "pAccoutnPosition->pAccount=[%s]\n"
     , pAccount);
   
-  CMN_DEBUG(
+  CMN_INFO(
     "pAccoutnPosition->m_account=[%s]\n"
     "pAccoutnPosition->m_InitialBp=[%lf]\n"
     "pAccoutnPosition->m_AvailableBp=[%lf]\n"
@@ -279,14 +291,16 @@ void CRemTraderHandler::OnQuerySymbol(EES_SymbolField* pSymbol, bool bFinish)
     , pSymbol->m_CallPut
     , pSymbol->m_UnderlyingSymbol
   );
+
+  string symbol = pSymbol->m_symbol;
+  mapSymbol.insert(map<string, EES_ExchangeID>::value_type(symbol, pSymbol->m_ExchangeID));
   
   trader_trader_api* self = (trader_trader_api*)m_Arg;
   trader_instrument traderInstrument;
   memset(&traderInstrument, 0, sizeof(traderInstrument));
   
-  strcpy(traderInstrument.InstrumentID, pSymbol->m_symbol);
-  //TODO
-  strcpy(traderInstrument.ExchangeID, "CFFEX");
+  strncpy(traderInstrument.InstrumentID, pSymbol->m_symbol, sizeof(traderInstrument.InstrumentID));
+  strncpy(traderInstrument.ExchangeID, GetExchangeID(pSymbol->m_ExchangeID), sizeof(traderInstrument.ExchangeID));
   traderInstrument.VolumeMultiple = pSymbol->m_VolumeMultiple;
   traderInstrument.PriceTick = pSymbol->m_PriceTick;
   
@@ -732,11 +746,13 @@ EES_ClientToken CRemTraderHandler::GetMaxToken()
 
 void CRemTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
 {
+  EES_ExchangeID exchangeId = GetExchangeIdCd(inst);
+
   // 初始化订单
   trader_order* traderOrder = (trader_order*)malloc(sizeof(trader_order));
   memset(traderOrder, 0, sizeof(trader_order));
 	///交易所代码
-  strncpy(traderOrder->ExchangeID, "CFFEX", sizeof(traderOrder->ExchangeID));
+  strncpy(traderOrder->ExchangeID, GetExchangeID(exchangeId), sizeof(traderOrder->ExchangeID));
 	///系统报单编号
 	
   // 合约代码
@@ -763,17 +779,23 @@ void CRemTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, c
   mapOrder.insert(map<EES_ClientToken, void*>::value_type(clientToken, (void*)traderOrder));
 
   EES_SideType SideType;
-  if('0' == open_close){
-    if('0' == buy_sell){
+  if(TRADER_POSITION_OPEN == open_close){
+    if(TRADER_POSITION_BUY == buy_sell){
       SideType = EES_SideType_open_long;
     }else{
       SideType = EES_SideType_open_short;
     }
-  }else{
-    if('0' == buy_sell){
+  }else if(TRADER_POSITION_CLOSE == open_close){
+    if(TRADER_POSITION_BUY == buy_sell){
       SideType = EES_SideType_close_short;
     }else{
       SideType = EES_SideType_close_long;
+    }
+  }else{
+    if(TRADER_POSITION_BUY == buy_sell){
+      SideType = EES_SideType_close_today_short;
+    }else{
+      SideType = EES_SideType_close_today_long;
     }
   }
 
@@ -784,8 +806,7 @@ void CRemTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, c
   strncpy(temp.m_Account, GetAccountId(), sizeof(temp.m_Account));
   strncpy(temp.m_Symbol, inst, sizeof(temp.m_Symbol));
   temp.m_Side = SideType;
-  // DEFAULT CFFEX
-  temp.m_Exchange = (unsigned char)102;
+  temp.m_Exchange = exchangeId;
   temp.m_SecType = EES_SecType_fut;
   temp.m_Price = price;
   temp.m_Qty = vol;
@@ -799,7 +820,7 @@ void CRemTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, c
 
 }
 
-void CRemTraderHandler::CancelOrder(char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
+void CRemTraderHandler::CancelOrder(char* inst, char* exchange_id, char* local_id, char* org_local_id, char* order_sys_id)
 {
 	EES_CancelOrder  temp;
 	memset(&temp, 0, sizeof(EES_CancelOrder));
@@ -815,4 +836,33 @@ void CRemTraderHandler::CancelOrder(char* inst, char* local_id, char* org_local_
 	}
 
 }
+
+const char* CRemTraderHandler::GetExchangeID(EES_ExchangeID exchange_id)
+{
+
+  map<EES_ExchangeID, const char*>::iterator iter = mapExchange.find(exchange_id);
+
+  if(iter == mapExchange.end()){
+    CMN_ERROR("find exchange failed(%d)\n", exchange_id);
+    return "";
+  }
+
+  return iter->second;
+
+}
+
+EES_ExchangeID CRemTraderHandler::GetExchangeIdCd(const char* instrument)
+{
+  string symbol = instrument;
+  map<string, EES_ExchangeID>::iterator iter = mapSymbol.find(symbol);
+
+  if(iter == mapSymbol.end()){
+    CMN_ERROR("find symbol failed(%s)\n", instrument);
+    return EES_ExchangeID_cffex;
+  }
+
+  return iter->second;
+
+}
+
 

@@ -78,14 +78,19 @@ void trader_strategy_limit_on_init(trader_strategy_limit* self, investor_positio
     if(TRADER_POSITION_DATE_TODAY == pInvestorPosition->PositionDate){
       pLimitPosition->Position = pInvestorPosition->Position;
       pLimitPosition->Fronze = pInvestorPosition->LongFrozen;
-    }else{
+    }else if(TRADER_POSITION_DATE_HISTORY == pInvestorPosition->PositionDate){
       pLimitPosition->YdPosition = pInvestorPosition->Position;
+      pLimitPosition->YdFronze = pInvestorPosition->LongFrozen;
+    }else{
+      pLimitPosition->Position = pInvestorPosition->YdPosition + pInvestorPosition->TodayPosition;
+      pLimitPosition->Fronze = pInvestorPosition->LongFrozen + pInvestorPosition->Position;
+      pLimitPosition->YdPosition = pInvestorPosition->YdPosition;
       pLimitPosition->YdFronze = pInvestorPosition->LongFrozen;
     }
   }
   
 
-  CMN_DEBUG("\n"
+  CMN_INFO("\n"
     "pLimitPosition->InstrumentID=[%s]\n"
     "pLimitPosition->PosiDirection=[%c]\n"
     "pLimitPosition->IsSHFE=[%d]\n"

@@ -14,6 +14,10 @@ typedef struct trader_strategy_limit_method_def trader_strategy_limit_method;
 #define TRADER_POSITION_DATE_TODAY '1'
 ///历史持仓
 #define TRADER_POSITION_DATE_HISTORY '2'
+///合并持仓
+#define TRADER_POSITION_DATE_BOTH '3'
+
+
 
 struct trader_strategy_limit_position_def {
   TAILQ_ENTRY(trader_strategy_limit_position_def) next;

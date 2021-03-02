@@ -225,7 +225,7 @@ int trader_trader_api_rem_order_action(trader_trader_api* self, char* inst, char
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
   CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
-  pTraderHandler->CancelOrder(inst, local_id, org_local_id, exchange_id, order_sys_id);
+  pTraderHandler->CancelOrder(inst, exchange_id, local_id, org_local_id, order_sys_id);
 
   return 0;
 }
