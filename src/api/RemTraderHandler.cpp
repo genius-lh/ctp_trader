@@ -786,10 +786,19 @@ void CRemTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, c
       SideType = EES_SideType_open_short;
     }
   }else if(TRADER_POSITION_CLOSE == open_close){
-    if(TRADER_POSITION_BUY == buy_sell){
-      SideType = EES_SideType_close_short;
+    if((EES_ExchangeID_shfe == exchangeId)
+    ||(EES_ExchangeID_ine == exchangeId)) {
+      if(TRADER_POSITION_BUY == buy_sell){
+        SideType = EES_SideType_close_ovn_short;
+      }else{
+        SideType = EES_SideType_close_ovn_long;
+      }
     }else{
-      SideType = EES_SideType_close_long;
+      if(TRADER_POSITION_BUY == buy_sell){
+        SideType = EES_SideType_close_short;
+      }else{
+        SideType = EES_SideType_close_long;
+      }
     }
   }else{
     if(TRADER_POSITION_BUY == buy_sell){

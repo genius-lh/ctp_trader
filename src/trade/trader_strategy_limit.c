@@ -82,8 +82,8 @@ void trader_strategy_limit_on_init(trader_strategy_limit* self, investor_positio
       pLimitPosition->YdPosition = pInvestorPosition->Position;
       pLimitPosition->YdFronze = pInvestorPosition->LongFrozen;
     }else{
-      pLimitPosition->Position = pInvestorPosition->YdPosition + pInvestorPosition->TodayPosition;
-      pLimitPosition->Fronze = pInvestorPosition->LongFrozen + pInvestorPosition->Position;
+      pLimitPosition->Position = pInvestorPosition->TodayPosition;
+      pLimitPosition->Fronze = pInvestorPosition->Position;
       pLimitPosition->YdPosition = pInvestorPosition->YdPosition;
       pLimitPosition->YdFronze = pInvestorPosition->LongFrozen;
     }
