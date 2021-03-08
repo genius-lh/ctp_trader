@@ -178,6 +178,20 @@ void CFemas20TestHandler::OnRspUserLogout(CUstpFtdcRspUserLogoutField *pRspUserL
   return ;
 }
 
+///用户密码修改应答
+void CFemas20TestHandler::OnRspUserPasswordUpdate(CUstpFtdcUserPasswordUpdateField *pUserPasswordUpdate, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
+{
+  FEMAS20_TEST_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    FEMAS20_TEST_LOG("pRspInfo->ErrorID=[%d]"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+  return ;
+}
+
+
 ///报单录入应答
 void CFemas20TestHandler::OnRspOrderInsert(CUstpFtdcInputOrderField *pInputOrder, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
@@ -417,6 +431,9 @@ void CFemas20TestHandler::Loop()
     case 11:
       QryInvestorPosition();
       break;
+    case 12:
+      PasswordUpdate();
+      break;
     default:
       break;
     }
@@ -438,6 +455,7 @@ int CFemas20TestHandler::ShowMenu()
         "9-QryInstrument\n"
         "10-QryExchange\n"
         "11-QryInvestorPosition\n"
+        "12-PasswordUpdate\n"
         "**********************\n"
         "请选择："
   );
@@ -737,4 +755,30 @@ void CFemas20TestHandler::PrintTrade(void* data)
     , pTrade->UsedMargin
     );
 }
+
+void CFemas20TestHandler::PasswordUpdate()
+{
+  CUstpFtdcTraderApi* pTraderApi = (CUstpFtdcTraderApi*)m_Arg;
+  char Temp[64];
+  printf("input Password:\n");
+  scanf("%s", Temp);
+
+  CUstpFtdcUserPasswordUpdateField reqUserPasswordUpdateField;
+  memset(&reqUserPasswordUpdateField, 0, sizeof(reqUserPasswordUpdateField));
+	///经纪公司编号
+  strncpy(reqUserPasswordUpdateField.BrokerID, m_BrokerID, sizeof(reqUserPasswordUpdateField.BrokerID));
+	///用户代码
+  strncpy(reqUserPasswordUpdateField.UserID, m_UserId, sizeof(reqUserPasswordUpdateField.UserID));
+	///旧密码
+  strncpy(reqUserPasswordUpdateField.OldPassword, m_Passwd, sizeof(reqUserPasswordUpdateField.OldPassword));
+	///新密码
+  strncpy(reqUserPasswordUpdateField.NewPassword, Temp, sizeof(reqUserPasswordUpdateField.NewPassword));
+  
+  FEMAS20_TEST_LOG("PasswordUpdate(%s, %s)\n", m_Passwd, Temp);
+
+  pTraderApi->ReqUserPasswordUpdate(&reqUserPasswordUpdateField, m_RequestId++);
+
+  return;
+}
+
 

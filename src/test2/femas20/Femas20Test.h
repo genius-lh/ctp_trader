@@ -25,6 +25,9 @@ public:
   ///用户退出应答
   void OnRspUserLogout(CUstpFtdcRspUserLogoutField *pRspUserLogout, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
+	///用户密码修改应答
+	void OnRspUserPasswordUpdate(CUstpFtdcUserPasswordUpdateField *pUserPasswordUpdate, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+
   ///报单录入应答
   void OnRspOrderInsert(CUstpFtdcInputOrderField *pInputOrder, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
@@ -99,6 +102,7 @@ public:
   void QryInvestorPosition();
   void PrintOrder(void* data);
   void PrintTrade(void* data);
+  void PasswordUpdate();
 };
 
 #endif //_FEMAS20_TEST_H_
