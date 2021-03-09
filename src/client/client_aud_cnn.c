@@ -25,6 +25,9 @@ static int client_aud_cnn_on_client_recv(client_aud_cnn* self);
 static int client_aud_cnn_on_client_send(client_aud_cnn* self);
 static int client_aud_cnn_on_close(client_aud_cnn* self);
 
+static int client_aud_cnn_atoi(const char* src);
+static double client_aud_cnn_atof(const char* src);
+
 
 static client_aud_cnn_method* client_aud_cnn_method_get();
 
@@ -281,7 +284,7 @@ int client_aud_cnn_client_msg_proc(client_aud_cnn* self, unsigned char* buff, in
             pReset->Direction = TRADER_POSITION_SELL;
           }
         }else if(!strcmp(pChild->string, "Volume")){
-           pReset->Volume = atoi(pChild->valuestring);
+           pReset->Volume = client_aud_cnn_atoi(pChild->valuestring);
         }else{
           //EMPTY
         }
@@ -438,31 +441,31 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
         strcpy(update->stage[num].T2, T2);
       }
     }else if(!strcmp(pChild->string, "limit")){
-      update->stage[num].MP = atoi(pChild->valuestring);
+      update->stage[num].MP = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "lockNum")){
-      update->stage[num].Hold = atoi(pChild->valuestring);
+      update->stage[num].Hold = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "vol")){
-      update->stage[num].Mult = atoi(pChild->valuestring);
+      update->stage[num].Mult = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "kkjc")){
-      update->stage[num].KTOpen = atof(pChild->valuestring);
+      update->stage[num].KTOpen = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "kp")){
-      update->stage[num].KTClose = atof(pChild->valuestring);
+      update->stage[num].KTClose = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "dkjc")){
-      update->stage[num].DTOpen = atof(pChild->valuestring);
+      update->stage[num].DTOpen = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "dp")){
-      update->stage[num].DTClose = atof(pChild->valuestring);
+      update->stage[num].DTClose = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t1cj")){
-      update->stage[num].T1Over = atoi(pChild->valuestring);
+      update->stage[num].T1Over = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t1dd")){
-      update->stage[num].T1Wait = atoi(pChild->valuestring);
+      update->stage[num].T1Wait = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t2cj")){
-      update->stage[num].T2Over = atoi(pChild->valuestring);
+      update->stage[num].T2Over = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t2dd")){
-      update->stage[num].T2Wait = atoi(pChild->valuestring);
+      update->stage[num].T2Wait = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t2vol")){
-      update->stage[num].PermitVol = atoi(pChild->valuestring);
+      update->stage[num].PermitVol = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "cl")){
-      update->stage[num].STG = atoi(pChild->valuestring);
+      update->stage[num].STG = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "autoCall")){
       update->stage[num].AutoType = 0;
       if(!strcmp(pChild->valuestring, "Time1")){
@@ -471,23 +474,23 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
         update->stage[num].AutoType = 2;
       }
     }else if(!strcmp(pChild->string, "jjkk")){
-      update->stage[num].AutoKTOpen = atof(pChild->valuestring);
+      update->stage[num].AutoKTOpen = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "jjkp")){
-      update->stage[num].AutoKTClose = atof(pChild->valuestring);
+      update->stage[num].AutoKTClose = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "jjdk")){
-      update->stage[num].AutoDTOpen = atof(pChild->valuestring);
+      update->stage[num].AutoDTOpen = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "jjdp")){
-      update->stage[num].AutoDTClose = atof(pChild->valuestring);
+      update->stage[num].AutoDTClose = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t1Weight")){
-      update->stage[num].T1Weight = atof(pChild->valuestring);
+      update->stage[num].T1Weight = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t2Weight")){
-      update->stage[num].T2Weight = atof(pChild->valuestring);
+      update->stage[num].T2Weight = client_aud_cnn_atof(pChild->valuestring);
     }else if(!strcmp(pChild->string, "t2Ratio")){
-      update->stage[num].T2Ratio = atoi(pChild->valuestring);
+      update->stage[num].T2Ratio = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "nightClosingTime")){
-        update->stage[num].NightClosingTime = atoi(pChild->valuestring);
+        update->stage[num].NightClosingTime = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "triggerType")){
-        update->stage[num].TriggerType = atoi(pChild->valuestring);
+        update->stage[num].TriggerType = client_aud_cnn_atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "IsActivate")){
       if(pChild->type == cJSON_False){
         update->stage[num].Used = 0;
@@ -583,6 +586,26 @@ void client_aud_cnn_free(client_aud_cnn* self)
   }
 
 }
+
+int client_aud_cnn_atoi(const char* src)
+{
+  if(!src){
+    return 0;
+  }
+
+  return atoi(src);
+}
+
+double client_aud_cnn_atof(const char* src)
+{
+  if(!src){
+    return 0.0f;
+  }
+
+  return atof(src);
+
+}
+
 
 
 

@@ -21,7 +21,7 @@ int client_aud_pool_add_trader(client_aud_pool* self, struct bufferevent* buff_t
   pTrader->BufTrader = buff_trader;
 
 
-  TAILQ_INSERT_TAIL(&self->hCnnTraderList, pTrader, next);
+  TAILQ_INSERT_HEAD(&self->hCnnTraderList, pTrader, next);
 
   return 0;
 }
