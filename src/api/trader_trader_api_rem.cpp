@@ -165,6 +165,11 @@ void trader_trader_api_rem_start(trader_trader_api* self)
 void trader_trader_api_rem_stop(trader_trader_api* self)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
+  if(!pImp){
+    CMN_ERROR("pImp is null\n");
+    return;
+  }
+
   EESTraderApi* pTraderApi = (EESTraderApi*)pImp->pTraderApi;
   CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
@@ -213,6 +218,10 @@ void trader_trader_api_rem_logout(trader_trader_api* self)
 int trader_trader_api_rem_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
+  if(!pImp){
+    CMN_ERROR("pImp is null\n");
+    return -1;
+  }
   CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
   pTraderHandler->InsertOrder(inst, local_id, buy_sell, open_close, price, vol);
@@ -223,6 +232,11 @@ int trader_trader_api_rem_order_insert(trader_trader_api* self, char* inst, char
 int trader_trader_api_rem_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
+  if(!pImp){
+    CMN_ERROR("pImp is null\n");
+    return -1;
+  }
+  
   CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
 
   pTraderHandler->CancelOrder(inst, exchange_id, local_id, org_local_id, order_sys_id);

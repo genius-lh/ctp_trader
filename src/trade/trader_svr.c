@@ -792,14 +792,14 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     // 查询交易日期
     char sTradingDay[9];
     self->pCtpTraderApi->pMethod->xGetTradingDay(self->pCtpTraderApi, sTradingDay);
-    CMN_DEBUG("sTradingDay[%s]\n", sTradingDay);
+    CMN_INFO("sTradingDay[%s]\n", sTradingDay);
     self->pStrategyEngine->pMethod->xTradingDaySet(self->pStrategyEngine, sTradingDay);
 
     
     // 设置MaxUserOrderLocalID
     long sMaxOrderLocalID = 0;
     self->pCtpTraderApi->pMethod->xGetMaxOrderLocalID(self->pCtpTraderApi, &sMaxOrderLocalID);
-    CMN_DEBUG("sMaxOrderLocalID[%ld]\n", sMaxOrderLocalID);
+    CMN_INFO("sMaxOrderLocalID[%ld]\n", sMaxOrderLocalID);
     self->pStrategyEngine->pMethod->xLocalUserIdSet(self->pStrategyEngine, sMaxOrderLocalID);
 
     if(0 != strcmp(sTradingDay, self->TradingDay)){

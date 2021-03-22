@@ -134,6 +134,10 @@ void trader_trader_api_ctp_start(trader_trader_api* self)
 void trader_trader_api_ctp_stop(trader_trader_api* self)
 {
   trader_trader_api_ctp* pImp = (trader_trader_api_ctp*)self->pUserApi;
+  if(!pImp){
+    CMN_ERROR("pImp is null\n");
+    return;
+  }
   CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)pImp->pTraderApi;
   CCtpTraderHandler* pTraderHandler = (CCtpTraderHandler*)pImp->pTraderHandler;
   
@@ -164,6 +168,10 @@ void trader_trader_api_ctp_login(trader_trader_api* self)
 void trader_trader_api_ctp_logout(trader_trader_api* self)
 {
   trader_trader_api_ctp* pImp = (trader_trader_api_ctp*)self->pUserApi;
+  if(!pImp){
+    CMN_ERROR("pImp is null\n");
+    return;
+  }
   CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)pImp->pTraderApi;
 
   CThostFtdcUserLogoutField userLogoutField;
@@ -180,6 +188,10 @@ void trader_trader_api_ctp_logout(trader_trader_api* self)
 int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char* local_id, char buy_sell, char open_close, double price, int vol)
 {
   trader_trader_api_ctp* pImp = (trader_trader_api_ctp*)self->pUserApi;
+  if(!pImp){
+    CMN_ERROR("pImp is null\n");
+    return -1;
+  }
   CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)pImp->pTraderApi;
 
   CThostFtdcInputOrderField inputOrderField;
@@ -224,12 +236,16 @@ int trader_trader_api_ctp_order_insert(trader_trader_api* self, char* inst, char
 
   pTraderApi->ReqOrderInsert(&inputOrderField, pImp->nTraderRequestID++);
 
-  
+  return 0;
 }
 
 int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char* local_id, char* org_local_id, char* exchange_id, char* order_sys_id)
 {
   trader_trader_api_ctp* pImp = (trader_trader_api_ctp*)self->pUserApi;
+  if(!pImp){
+    CMN_ERROR("pImp is null\n");
+    return -1;
+  }
   CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)pImp->pTraderApi;
 
   CThostFtdcInputOrderActionField inputOrderActionField;
@@ -263,6 +279,7 @@ int trader_trader_api_ctp_order_action(trader_trader_api* self, char* inst, char
   
   pTraderApi->ReqOrderAction(&inputOrderActionField, pImp->nTraderRequestID++);
 
+  return 0;
 }
 
  
@@ -282,6 +299,7 @@ int trader_trader_api_ctp_qry_instrument(trader_trader_api* self)
 
   pTraderApi->ReqQryInstrument(&qryInstrumentField, pImp->nTraderRequestID++);
 
+  return 0;
 }
 
 int trader_trader_api_ctp_qry_user_investor(trader_trader_api* self)
@@ -299,6 +317,7 @@ int trader_trader_api_ctp_qry_user_investor(trader_trader_api* self)
   
   pTraderApi->ReqQryInvestor(&qryInvestorField, pImp->nTraderRequestID++);
 
+  return 0;
 }
 
 int trader_trader_api_ctp_qry_investor_position(trader_trader_api* self)
@@ -318,6 +337,7 @@ int trader_trader_api_ctp_qry_investor_position(trader_trader_api* self)
 
   pTraderApi->ReqQryInvestorPosition(&qryInvestorPositionField, pImp->nTraderRequestID++);
 
+  return 0;
 }
 
 int trader_trader_api_ctp_qry_trading_account(trader_trader_api* self)
@@ -335,6 +355,7 @@ int trader_trader_api_ctp_qry_trading_account(trader_trader_api* self)
 
   pTraderApi->ReqQryTradingAccount(&qryTradingAccountField, pImp->nTraderRequestID++);
 
+  return 0;
 }
 
 void ctp_trader_on_front_connected(void* arg)

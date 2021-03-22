@@ -1907,10 +1907,12 @@ int trader_strategy_print_order_time(trader_strategy* self, trader_order* order_
     usec += 1000000;
   }
   
-  CMN_INFO("UserOrderLocalID[%s]OrderSysID[%s]\n"
-    "ConsumingTime[%ld.%06ld]\n"   
+  CMN_INFO("InstrumentID[%s]UserOrderLocalID[%s]OrderSysID[%s]\n"
+    "ExchangeID[%s]ConsumingTime[%ld.%06ld]\n"   
+    , order_data->InstrumentID
     , order_data->UserOrderLocalID
     , order_data->OrderSysID
+    , order_data->ExchangeID
     , sec
     , usec
     );
