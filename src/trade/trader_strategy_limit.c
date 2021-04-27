@@ -72,8 +72,13 @@ void trader_strategy_limit_on_init(trader_strategy_limit* self, investor_positio
     TAILQ_INSERT_TAIL(&self->hPositionHead, pLimitPosition, next);
   }
   if(!pInvestorPosition->IsSHFE) {
-    pLimitPosition->YdPosition = pInvestorPosition->Position;
-    pLimitPosition->YdFronze = pInvestorPosition->LongFrozen;
+    if(TRADER_POSITION_DATE_BOTH == pInvestorPosition->PositionDate){
+      pLimitPosition->YdPosition = pInvestorPosition->TodayPosition + pInvestorPosition->YdPosition;
+      pLimitPosition->YdFronze = pInvestorPosition->LongFrozen + pInvestorPosition->Position;
+    }else{
+      pLimitPosition->YdPosition = pInvestorPosition->Position;
+      pLimitPosition->YdFronze = pInvestorPosition->LongFrozen;
+    }
   }else{
     if(TRADER_POSITION_DATE_TODAY == pInvestorPosition->PositionDate){
       pLimitPosition->Position = pInvestorPosition->Position;
