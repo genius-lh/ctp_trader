@@ -494,6 +494,12 @@ void ctp_trader_on_rsp_order_insert(void* arg, CThostFtdcInputOrderField *pInput
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+    if(errNo){
+      CMN_ERROR("pRspInfo->ErrorID=[%d]"
+        "pRspInfo->ErrorMsg=[%s]\n"
+        , pRspInfo->ErrorID
+        , pRspInfo->ErrorMsg);
+    }
   }
   
   trader_trader_api_on_rsp_order_insert(self, errNo, errMsg);
@@ -508,6 +514,12 @@ void ctp_trader_on_rsp_order_action(void* arg, CThostFtdcInputOrderActionField *
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+    if(errNo){
+      CMN_ERROR("pRspInfo->ErrorID=[%d]"
+        "pRspInfo->ErrorMsg=[%s]\n"
+        , pRspInfo->ErrorID
+        , pRspInfo->ErrorMsg);
+    }
   }
   
   trader_trader_api_on_rsp_order_action(self, errNo, errMsg);
@@ -742,10 +754,12 @@ void ctp_query_on_rsp_qry_investor_position(void* arg, CThostFtdcInvestorPositio
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+  }else{
+    CMN_INFO("pRspInfo==NULL\n");
   }
 
   if(pInvestorPosition) {
-    CMN_DEBUG(
+    CMN_INFO(
       "pInvestorPosition->InstrumentID[%s]\n"
       "pInvestorPosition->BrokerID[%s]\n"
       "pInvestorPosition->InvestorID[%s]\n"
@@ -842,9 +856,19 @@ void ctp_query_on_rsp_qry_investor_position(void* arg, CThostFtdcInvestorPositio
     traderPosition.Position = pInvestorPosition->Position;
     traderPosition.LongFrozen = pInvestorPosition->LongFrozen + pInvestorPosition->ShortFrozen;
 
+    trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);
+  }else{
+    CMN_INFO("pInvestorPosition==NULL\n");
+    
+    if(pRspInfo) {
+      CMN_INFO("pRspInfo->ErrorID=[%d]"
+        "pRspInfo->ErrorMsg=[%s]"
+        "bIsLast=[%d]\n"
+        , pRspInfo->ErrorID
+        , pRspInfo->ErrorMsg
+        , bIsLast);
+    }
   }
-
-  trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);
 }
 
 void ctp_trader_on_rtn_instrument_status(void* arg, CThostFtdcInstrumentStatusField *pInstrumentStatus)

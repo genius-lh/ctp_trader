@@ -148,7 +148,6 @@ void CRemTraderHandler::OnQueryUserAccount(EES_AccountInfo * pAccoutnInfo, bool 
 void CRemTraderHandler::OnQueryAccountPosition(const char* pAccount, EES_AccountPosition* pAccoutnPosition, int nReqId, bool bFinish)
 {
   CMN_DEBUG("Enter\n");
-
   CMN_DEBUG("pAccoutnPosition->pAccount=[%s]\n", pAccount);
 
   CMN_INFO(
@@ -177,8 +176,11 @@ void CRemTraderHandler::OnQueryAccountPosition(const char* pAccount, EES_Account
     ,pAccoutnPosition->m_PositionCost
     ,pAccoutnPosition->m_HedgeFlag
   );
-
   
+  if('\0' == *pAccount){
+    return;
+  }
+
   trader_trader_api* self = (trader_trader_api*)m_Arg;
   trader_position traderPosition;
   memset(&traderPosition, 0, sizeof(traderPosition));
@@ -402,7 +404,7 @@ void CRemTraderHandler::OnOrderReject(EES_OrderRejectField* pReject )
 {
   CMN_DEBUG("Enter\n");
 
-  CMN_DEBUG(
+  CMN_INFO(
     "pReject->m_Userid=[%d]\n"
     "pReject->m_Timestamp=[%lld]\n"
     "pReject->m_ClientOrderToken=[%d]\n"
@@ -446,7 +448,7 @@ void CRemTraderHandler::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
 {
   CMN_DEBUG("Enter\n");
 
-  CMN_DEBUG(
+  CMN_INFO(
     "pReject->m_Account=[%s]\n"
     "pReject->m_MarketOrderToken=[%lld]\n"
     "pReject->m_MarketTimestamp=[%lld]\n"
@@ -599,7 +601,7 @@ void CRemTraderHandler::OnCxlOrderReject(EES_CxlOrderRej* pReject )
   CMN_DEBUG("Enter\n");
   
   
-  CMN_DEBUG(
+  CMN_INFO(
     "pReject->m_account=[%s]\n"
     "pReject->m_MarketOrderToken=[%lld]\n"
     "pReject->m_ReasonCode=[%d]\n"
