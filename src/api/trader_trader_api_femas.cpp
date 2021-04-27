@@ -366,6 +366,12 @@ void femas_trader_on_rsp_user_login(void* arg, CUstpFtdcRspUserLoginField *pRspU
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
   }
+
+  if(errNo){
+    trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+    return;
+  }
+
   if(pRspUserLogin){  
     CMN_DEBUG("pRspUserLogin->TradingDay[%s]\n"
       "pRspUserLogin->BrokerID[%s]\n"
@@ -389,9 +395,19 @@ void femas_trader_on_rsp_user_login(void* arg, CUstpFtdcRspUserLoginField *pRspU
 
     // 获取最大报单号
     trader_trader_api_get_max_order_local_id(self, pRspUserLogin->MaxOrderLocalID);
+    
+    CUstpFtdcQryUserInvestorField qryInvestorField;
+    
+    memset(&qryInvestorField, 0, sizeof(qryInvestorField));
+    ///经纪公司代码
+    strcpy(qryInvestorField.BrokerID, self->pBrokerID);
+    ///用户代码
+    strcpy(qryInvestorField.UserID, self->pUser);  
+    
+    pTraderApi->ReqQryUserInvestor(&qryInvestorField, pImp->nTraderRequestID++);
   }
-  
-  trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+
+  return;
 }
 
 void femas_trader_on_rsp_user_logout(void* arg, CUstpFtdcRspUserLogoutField *pRspUserLogout, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, int bIsLast)
@@ -641,18 +657,20 @@ void femas_query_on_rsp_qry_investor(void* arg, CUstpFtdcRspUserInvestorField *p
   trader_trader_api_femas* pImp = (trader_trader_api_femas*)self->pUserApi;
   int errNo = 0;
   char* errMsg = NULL;
-  char* investor = NULL;
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
   }
 
   if(pInvestor) {
-    investor = pInvestor->InvestorID;
+    CMN_INFO("pInvestor->UserID[%s]pInvestor->InvestorID[%s]\n"
+      ,pInvestor->UserID
+      ,pInvestor->InvestorID);
     strncpy(pImp->sInvestorID, pInvestor->InvestorID, sizeof(pImp->sInvestorID));
   }
   
-  trader_trader_api_on_rsp_qry_user_investor(self, investor, errNo, errMsg);
+  trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+  return ;
 }
 
 void femas_query_on_rsp_qry_instrument(void* arg, CUstpFtdcRspInstrumentField *pInstrument, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, int bIsLast)
@@ -824,10 +842,12 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+  }else{
+
   }
 
   if(pInvestorPosition) {
-    CMN_DEBUG(
+    CMN_INFO(
       "pInvestorPosition->InvestorID[%s]\n"
       "pInvestorPosition->BrokerID[%s]\n"
       "pInvestorPosition->ExchangeID[%s]\n"
@@ -878,8 +898,18 @@ void femas_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestorPos
     traderPosition.TodayPosition = pInvestorPosition->Position - pInvestorPosition->YdPosition;
     traderPosition.Position = pInvestorPosition->Position;
     traderPosition.LongFrozen = pInvestorPosition->FrozenPosition;
+  }else{
+    CMN_INFO("pInvestorPosition==NULL\n");
+    
+    if(pRspInfo) {
+      CMN_INFO("pRspInfo->ErrorID=[%d]"
+        "pRspInfo->ErrorMsg=[%s]"
+        "bIsLast=[%d]\n"
+        , pRspInfo->ErrorID
+        , pRspInfo->ErrorMsg
+        , bIsLast);
+    }
   }
-
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);
   return ;
 }
@@ -888,6 +918,11 @@ void femas_trader_on_rtn_instrument_status(void* arg, CUstpFtdcInstrumentStatusF
 {
   trader_trader_api* self = (trader_trader_api*)arg;
   if(pInstrumentStatus){
+    // 过滤期权合约
+    if(0 == memcmp(pInstrumentStatus->InstrumentID, "IO", 2)){
+      return ;
+    }
+    
     CMN_DEBUG(
       "pInstrumentStatus->ExchangeID[%s]\n"
       "pInstrumentStatus->InstrumentID[%s]\n"
