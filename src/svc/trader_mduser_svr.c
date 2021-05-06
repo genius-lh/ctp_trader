@@ -351,7 +351,9 @@ int  trader_mduser_svr_proc(trader_mduser_svr* self, trader_mduser_evt* evt)
 
   tick = &evt->Tick;
   if(0 != strcmp(current->UpdateTime, tick->UpdateTime)
-  || (current->UpdateMillisec != tick->UpdateMillisec)){
+  || (current->UpdateMillisec != tick->UpdateMillisec)
+  || (current->AskPrice1 != tick->AskPrice1)
+  || (current->BidPrice1 != tick->BidPrice1)){
     memcpy(current, tick, sizeof(trader_tick));
     self->pBoardcast->method->xBoardcase(self->pBoardcast, (char*)evt, sizeof(trader_mduser_evt));
   }
