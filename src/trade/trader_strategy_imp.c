@@ -40,7 +40,7 @@ int trader_strategy_judge_t1_wait(trader_strategy* self,  trader_order* order_da
   int t1wait = 0;
   int diffPrice;
 
-  if(IS_STG_GUZHI(self->STG)){
+  if(trader_strategy_is_guzhi(self)){
     CMN_DEBUG("股指策略直接撤单\n");
     return 1;
   }
@@ -597,4 +597,21 @@ double trader_strategy_t2_sell_price(trader_strategy* self)
 
   return t2set;
 }
+
+int trader_strategy_is_guzhi(trader_strategy* self)
+{
+  char* currentTick = self->oT2Tick.UpdateTime;
+  
+  if(!IS_STG_GUZHI(self->STG)){
+    return 0;
+  }
+
+  if((strncmp(self->oT2Tick.UpdateTime, "09:30:00", sizeof(self->oT2Tick.UpdateTime)) < 0)||
+    (strncmp(self->oT2Tick.UpdateTime, "09:30:05", sizeof(self->oT2Tick.UpdateTime)) > 0)){
+    return 0;
+  }
+
+  return 1;
+}
+
 

@@ -57,6 +57,7 @@ struct trader_strategy_trade_def{
   double T2Price;
   int T1TradeVolume;
   int T2TradeVolume;
+  int T2CancelNumber;
 };
 
 
@@ -217,6 +218,8 @@ extern int trader_strategy_check_t2_price(trader_strategy* self, double price);
 
 extern int trader_strategy_auto_sell(trader_strategy* self);
 extern int trader_strategy_auto_buy(trader_strategy* self);
+
+extern int trader_strategy_is_guzhi(trader_strategy* self);
 
 
 

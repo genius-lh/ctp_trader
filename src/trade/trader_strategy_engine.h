@@ -58,6 +58,9 @@ struct trader_strategy_engine_def {
   int statusFlag;
   int pendingMicroSec;
 
+  // 腿二追单限制
+  int t2CancelLimit;
+
   // 外部接口
   trader_strategy_engine_method* pMethod;
 };

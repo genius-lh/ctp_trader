@@ -246,6 +246,7 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pStrategyEngine->pCtpTraderApi = self->pCtpTraderApi;
   self->pStrategyEngine->pTraderDb = self->pTraderDB;
   self->pStrategyEngine->pendingMicroSec = self->pendingMicroSec;
+  self->pStrategyEngine->t2CancelLimit = 10; // TODO
 
 #ifdef XELE
   self->pStrategyEngine->pMethod->xInit(self->pStrategyEngine);
