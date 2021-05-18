@@ -494,12 +494,40 @@ void ctp_trader_on_rsp_order_insert(void* arg, CThostFtdcInputOrderField *pInput
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
-    if(errNo){
-      CMN_ERROR("pRspInfo->ErrorID=[%d]"
-        "pRspInfo->ErrorMsg=[%s]\n"
-        , pRspInfo->ErrorID
-        , pRspInfo->ErrorMsg);
+    CMN_ERROR("pRspInfo->ErrorID=[%d]"
+      "pRspInfo->ErrorMsg=[%s]\n"
+      , pRspInfo->ErrorID
+      , pRspInfo->ErrorMsg);
+    /*
+    if(pRspInfo->ErrorID){
+
+      trader_order traderOrder;
+      memset(&traderOrder, 0, sizeof(traderOrder));
+      
+      strcpy(traderOrder.ExchangeID, pInputOrder->ExchangeID);
+      //strcpy(traderOrder.OrderSysID, pInputOrder->OrderSysID);
+      // 合约代码
+      strcpy(traderOrder.InstrumentID, pInputOrder->InstrumentID);
+      // 本地报单编号
+      strcpy(traderOrder.UserOrderLocalID, pInputOrder->OrderRef);
+      // 买卖
+      traderOrder.Direction = pInputOrder->Direction;
+      // 开平
+      traderOrder.OffsetFlag = pInputOrder->CombOffsetFlag[0];
+      ///投机套保标志
+      traderOrder.HedgeFlag = pInputOrder->CombHedgeFlag[0];
+      // 报单价格
+      traderOrder.LimitPrice = pInputOrder->LimitPrice;
+      // 报单手数
+      traderOrder.VolumeOriginal = pInputOrder->VolumeTotalOriginal;
+      // 成交手数
+      traderOrder.VolumeTraded = 0;
+      // 订单状态
+      traderOrder.OrderStatus = TRADER_ORDER_OS_CANCELED;
+      
+      trader_trader_api_on_rtn_order(self, &traderOrder);
     }
+    */
   }
   
   trader_trader_api_on_rsp_order_insert(self, errNo, errMsg);
@@ -514,12 +542,10 @@ void ctp_trader_on_rsp_order_action(void* arg, CThostFtdcInputOrderActionField *
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
-    if(errNo){
-      CMN_ERROR("pRspInfo->ErrorID=[%d]"
-        "pRspInfo->ErrorMsg=[%s]\n"
-        , pRspInfo->ErrorID
-        , pRspInfo->ErrorMsg);
-    }
+    CMN_ERROR("pRspInfo->ErrorID=[%d]"
+      "pRspInfo->ErrorMsg=[%s]\n"
+      , pRspInfo->ErrorID
+      , pRspInfo->ErrorMsg);
   }
   
   trader_trader_api_on_rsp_order_action(self, errNo, errMsg);
@@ -595,6 +621,10 @@ void ctp_trader_on_err_rtn_order_insert(void* arg, CThostFtdcInputOrderField *pI
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+    CMN_ERROR("pRspInfo->ErrorID=[%d]"
+      "pRspInfo->ErrorMsg=[%s]\n"
+      , pRspInfo->ErrorID
+      , pRspInfo->ErrorMsg);
   }
   
   trader_trader_api_on_err_rtn_order_insert(self, errNo, errMsg);
@@ -608,6 +638,10 @@ void ctp_trader_on_err_rtn_order_action(void* arg, CThostFtdcOrderActionField *p
   if(pRspInfo) {
     errNo = pRspInfo->ErrorID;
     errMsg = pRspInfo->ErrorMsg;
+    CMN_ERROR("pRspInfo->ErrorID=[%d]"
+      "pRspInfo->ErrorMsg=[%s]\n"
+      , pRspInfo->ErrorID
+      , pRspInfo->ErrorMsg);
   }
   
   trader_trader_api_on_err_rtn_order_action(self, errNo, errMsg);
