@@ -18,3 +18,7 @@ add_subdirectory(rem)
 
 add_subdirectory(femas)
 
+add_subdirectory(femas304)
+
+add_subdirectory(femas302)
+

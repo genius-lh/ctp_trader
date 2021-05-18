@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <dlfcn.h>
 
 #include <unistd.h>
 #include <signal.h>
@@ -43,6 +45,10 @@ static int trader_mduser_svr_instrument_sort(trader_mduser_svr* self);
 
 static void* trader_mduser_svr_instrument_bsearch(trader_mduser_svr* self, char* inst);
 
+static void* trader_mduser_svr_main_load_func(trader_mduser_svr* self);
+
+static void* trader_mduser_svr_backup_load_func(trader_mduser_svr* self);
+
 trader_mduser_svr_method* trader_mduser_svr_method_get()
 {
   static trader_mduser_svr_method st_trader_mduser_svr_method = {
@@ -76,6 +82,13 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
   api_imp = trader_mduser_api_femas_method_get();
 #endif
 
+#ifdef FEMAS302
+  //FEMAS
+#include "trader_mduser_api_femas_af.h"
+  api_imp = trader_mduser_api_femas_af_method_get();
+#endif
+
+
 #ifdef XSPEED_STOCK
 #include "trader_mduser_api_xspeed.h"
   api_imp = trader_mduser_api_xspeed_stock_method_get();
@@ -106,6 +119,10 @@ extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
       api_imp = trader_mduser_api_sf_method_get();
 #endif
 
+#ifdef DLL_MODE
+  api_imp = (trader_mduser_api_method*)trader_mduser_svr_main_load_func(self);
+#endif
+
   self->pCnnMain->pMethod->xInit(self->pCnnMain, self->pBase,
     self->mainBrokerId, self->mainUser, self->mainPasswd, self->mainAddr, self->mainWorkspace,
     trader_mduser_svr_tick_cb, self,
@@ -121,6 +138,16 @@ extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
     api_imp = trader_mduser_api_ctp_method_get();
 #endif
   
+#ifdef FEMAS302
+    //FEMAS
+extern trader_mduser_api_method* trader_mduser_api_sw_method_get();
+    api_imp = trader_mduser_api_sw_method_get();
+#endif
+
+#ifdef DLL_MODE
+    api_imp = (trader_mduser_api_method*)trader_mduser_svr_backup_load_func(self);
+#endif
+
   self->pCnnBackup->pMethod->xInit(self->pCnnBackup, self->pBase,
     self->backupBrokerId, self->backupUser, self->backupPasswd, self->backupAddr, self->backupWorkspace,
     trader_mduser_svr_tick_cb, self,
@@ -247,12 +274,16 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_PASSWD", argv[1], self->mainPasswd);
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_ADDR", argv[1], self->mainAddr);
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_WORKSPACE", argv[1], self->mainWorkspace);
+  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_DLLFILE", argv[1], self->mainDllFile);
+  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_FUNCNAME", argv[1], self->mainFuncName);
   
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_BROKER_ID", argv[1], self->backupBrokerId);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_USER", argv[1], self->backupUser);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_PASSWD", argv[1], self->backupPasswd);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_ADDR", argv[1], self->backupAddr);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_WORKSPACE", argv[1], self->backupWorkspace);
+  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_DLLFILE", argv[1], self->backupDllFile);
+  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_FUNCNAME", argv[1], self->backupFuncName);
 
   // 各种初始化
   CMN_DEBUG("self->pBase\n");
@@ -421,10 +452,65 @@ void trader_mduser_svr_free(trader_mduser_svr* self)
       event_base_free(self->pBase);
     }    
     
+    if(self->mainDllHandle){
+      dlclose(self->mainDllHandle);
+      self->mainDllHandle = NULL;
+    }
+
+    if(self->backupDllHandle){
+      dlclose(self->backupDllHandle);
+      self->backupDllHandle = NULL;
+    }
+     
     free(self);
   }
 
 }
+
+void* trader_mduser_svr_main_load_func(trader_mduser_svr* self)
+{
+  void* handle = dlopen(self->mainDllFile, RTLD_LAZY);
+  if(!handle){
+    printf("dlopen errno=%s\n", dlerror());
+    CMN_ERROR("dlopen errno=[%d]strerror=[%s]\n", errno, strerror(errno));
+    return NULL;
+  }
+
+  self->mainDllHandle = handle;
+  
+  void* method = dlsym(handle, self->mainFuncName);
+  if(!method){
+    printf("dlopen errno=%s\n", dlerror());
+    CMN_ERROR("dlsym errno=[%d]strerror=[%s]\n", errno, strerror(errno));
+    return NULL;
+  }
+
+  return method;
+}
+
+void* trader_mduser_svr_backup_load_func(trader_mduser_svr* self)
+{
+  void* handle;
+
+  if(0 == strncmp(self->mainDllFile, self->backupDllFile, sizeof(self->mainDllFile))){
+    handle = self->mainDllHandle;
+  }else{
+    handle = dlopen(self->mainDllFile, RTLD_LAZY);
+  }
+  if(!handle){
+    CMN_ERROR("dlopen errno=[%d]strerror=[%s]\n", errno, strerror(errno));
+    return NULL;
+  }
+  
+  void* method = dlsym(handle, self->backupFuncName);
+  if(!method){
+    CMN_ERROR("dlsym errno=[%d]strerror=[%s]\n", errno, strerror(errno));
+    return NULL;
+  }
+
+  return method;
+}
+
 
 int main(int argc, char* argv[])
 {

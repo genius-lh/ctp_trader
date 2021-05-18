@@ -431,6 +431,16 @@ void femas_af_trader_on_rsp_user_login(void* arg, CUstpFtdcRspUserLoginField *pR
 
   if(errNo){
     trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
+  }else{
+    CUstpFtdcQryUserInvestorField qryInvestorField;
+    
+    memset(&qryInvestorField, 0, sizeof(qryInvestorField));
+    ///经纪公司代码
+    strcpy(qryInvestorField.BrokerID, self->pBrokerID);
+    ///用户代码
+    strcpy(qryInvestorField.UserID, self->pUser);  
+    
+    pTraderApi->ReqQryUserInvestor(&qryInvestorField, pImp->nTraderRequestID++);
   }
 }
 
@@ -471,15 +481,7 @@ void femas_af_trader_on_rsp_query_user_login(void* arg, CUstpFtdcRspUserLoginFie
       );
   }
   if(!pRspInfo->ErrorID){    
-    CUstpFtdcQryUserInvestorField qryInvestorField;
-    
-    memset(&qryInvestorField, 0, sizeof(qryInvestorField));
-    ///经纪公司代码
-    strcpy(qryInvestorField.BrokerID, self->pBrokerID);
-    ///用户代码
-    strcpy(qryInvestorField.UserID, self->pUser);  
-    
-    pTraderApi->ReqQryUserInvestor(&qryInvestorField, pImp->nTraderRequestID++);
+
   }
 
   return ;
