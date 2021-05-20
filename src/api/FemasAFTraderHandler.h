@@ -5,6 +5,9 @@
 #include "USTPFtdcUserApiStruct.h"
 #include "USTPFtdcTraderApi.h"
 
+#include <string>
+#include <map>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -203,9 +206,14 @@ public:
     ///查询前置系统用户登录应答
     void OnRspQueryUserLogin(CUstpFtdcRspUserLoginField *pRspUserLogin, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
+public:
+  const char* GetExchangeID(const char* instrument_id);
+
 private:
   femas_af_trader_api_cb* m_TraderCb;
   void* m_Arg;
+
+  std::map<std::string, std::string> mapSymbol;
 
 };
 

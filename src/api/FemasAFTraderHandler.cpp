@@ -3,11 +3,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <string>
+#include <map>
+using namespace std;
+
 #include "USTPFtdcUserApiDataType.h"
 #include "USTPFtdcUserApiStruct.h"
 #include "USTPFtdcTraderApi.h"
 
 #include "FemasAFTraderHandler.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "cmn_log.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 CFemasAFTraderHandler::CFemasAFTraderHandler(femas_af_trader_api_cb* cb, void* arg)
 :m_TraderCb(cb), m_Arg(arg)
@@ -109,6 +123,12 @@ void CFemasAFTraderHandler::OnRspQryUserInvestor(CUstpFtdcRspUserInvestorField *
 ///合约查询应答
 void CFemasAFTraderHandler::OnRspQryInstrument(CUstpFtdcRspInstrumentField *pRspInstrument, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+  if(pRspInstrument){
+    string symbol = pRspInstrument->InstrumentID;
+    string exchangeID = pRspInstrument->ExchangeID;
+    mapSymbol.insert(map<string, string>::value_type(symbol, exchangeID));
+  }
+
   m_TraderCb->xOnRspQryInstrument(m_Arg, pRspInstrument, pRspInfo, nRequestID, bIsLast);
 }
 
@@ -135,6 +155,19 @@ void CFemasAFTraderHandler::OnRspQryInvestorPosition(CUstpFtdcRspInvestorPositio
 void CFemasAFTraderHandler::OnRspDSUserCertification(CUstpFtdcDSUserCertRspDataField *pDSUserCertRspData, CUstpFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
   m_TraderCb->xOnRspDSUserCertification(m_Arg, pDSUserCertRspData, pRspInfo, nRequestID, bIsLast);
+}
+
+const char* CFemasAFTraderHandler::GetExchangeID(const char* instrument_id)
+{
+  string symbol = instrument_id;
+  map<string, string>::iterator iter = mapSymbol.find(symbol);
+
+  if(iter == mapSymbol.end()){
+    CMN_ERROR("find symbol failed(%s)\n", instrument_id);
+    return "SHFE";
+  }
+
+  return iter->second.c_str();
 }
 
 
