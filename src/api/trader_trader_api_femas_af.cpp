@@ -927,7 +927,7 @@ void femas_af_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestor
   }
 
   if(pInvestorPosition) {
-    CMN_DEBUG(
+    CMN_INFO(
       "pInvestorPosition->InvestorID[%s]\n"
       "pInvestorPosition->BrokerID[%s]\n"
       "pInvestorPosition->ExchangeID[%s]\n"
@@ -969,15 +969,19 @@ void femas_af_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestor
     );
     
     strcpy(traderPosition.InstrumentID, pInvestorPosition->InstrumentID);
-    traderPosition.PositionDate = '1'; //
+    traderPosition.PositionDate = '3'; //
     traderPosition.PosiDirection = TRADER_POSITION_LONG;
     if(USTP_FTDC_D_Sell == pInvestorPosition->Direction){
       traderPosition.PosiDirection = TRADER_POSITION_SHORT;
     }
+    // 当前昨仓
     traderPosition.YdPosition = pInvestorPosition->YdPosition;
-    traderPosition.TodayPosition = pInvestorPosition->Position - pInvestorPosition->YdPosition;
-    traderPosition.Position = pInvestorPosition->Position;
-    traderPosition.LongFrozen = pInvestorPosition->FrozenPosition;
+    // 当前今仓
+    traderPosition.TodayPosition = pInvestorPosition->Position;
+    // 冻结的今仓数量
+    traderPosition.Position = pInvestorPosition->FrozenPosition;
+    // 冻结的昨仓数量
+    traderPosition.LongFrozen = pInvestorPosition->FrozenClosing;
   }
 
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, errNo, errMsg, bIsLast);
