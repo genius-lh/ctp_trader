@@ -977,7 +977,7 @@ void femas_af_query_on_rsp_qry_investor_position(void* arg, CUstpFtdcRspInvestor
     // 当前昨仓
     traderPosition.YdPosition = pInvestorPosition->YdPosition;
     // 当前今仓
-    traderPosition.TodayPosition = pInvestorPosition->Position;
+    traderPosition.TodayPosition = pInvestorPosition->Position - pInvestorPosition->YdPosition;
     // 冻结的今仓数量
     traderPosition.Position = pInvestorPosition->FrozenPosition;
     // 冻结的昨仓数量
