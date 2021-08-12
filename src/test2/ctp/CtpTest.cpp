@@ -935,16 +935,21 @@ void CCtpSopTraderHandler::CallBuyOpen()
   char instrument[31];
   char exchangeid[9];
   double price;
+  int times;
+  int i;
   printf("请输入合约:");
   scanf("%s", instrument);
   printf("请输入交易所代码:");
   scanf("%s", exchangeid);
   printf("请输入价格:");
   scanf("%lf", &price);
-  
-  InsertOrder(instrument, exchangeid, THOST_FTDC_D_Buy, THOST_FTDC_OFEN_Open, price, 1, THOST_FTDC_HF_Speculation);
-}
+  printf("请输入次数:");
+  scanf("%ld", &times);
 
+  for(i = 0; i < times; i++){
+    InsertOrder(instrument, exchangeid, THOST_FTDC_D_Buy, THOST_FTDC_OFEN_Open, price, 1, THOST_FTDC_HF_Speculation);
+  }
+}
 void CCtpSopTraderHandler::CallSellClose()
 {
   CTP_LOG("5-认购卖出平仓\n");
