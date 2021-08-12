@@ -629,6 +629,7 @@ void CCtpSopTraderHandler::Loop()
       break;
     case 0:
       LogOut();
+      m_Loop = 0;
       sleep(1);
       break;
     default:
@@ -944,7 +945,7 @@ void CCtpSopTraderHandler::CallBuyOpen()
   printf("请输入价格:");
   scanf("%lf", &price);
   printf("请输入次数:");
-  scanf("%ld", &times);
+  scanf("%d", &times);
 
   for(i = 0; i < times; i++){
     InsertOrder(instrument, exchangeid, THOST_FTDC_D_Buy, THOST_FTDC_OFEN_Open, price, 1, THOST_FTDC_HF_Speculation);

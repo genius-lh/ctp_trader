@@ -859,6 +859,7 @@ void CCtpSopTraderHandler::Loop()
       break;
     case 0:
       LogOut();
+      m_Loop = 0;
       sleep(1);
       break;
     default:

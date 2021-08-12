@@ -143,6 +143,11 @@ public:
   void QryTradingAccount();
   void QryCombAction();
 
+  int GetInstrumentKey(char* data, int size, const char* exchange_id, const char* delivery_month, const char* strike_price, const char* options_type);
+
+private:
+  std::map<std::string, std::string> mapSymbol;
+
 };
 
 
