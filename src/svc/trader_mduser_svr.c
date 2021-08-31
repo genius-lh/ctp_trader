@@ -119,6 +119,12 @@ extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
       api_imp = trader_mduser_api_sf_method_get();
 #endif
 
+#ifdef XHSP_EFH32_CTPMINI
+    extern trader_mduser_api_method* trader_mduser_api_efh32_method_get();
+      api_imp = trader_mduser_api_efh32_method_get();
+#endif
+
+
 #ifdef DLL_MODE
   api_imp = (trader_mduser_api_method*)trader_mduser_svr_main_load_func(self);
 #endif
@@ -142,6 +148,12 @@ extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
     //FEMAS
 extern trader_mduser_api_method* trader_mduser_api_sw_method_get();
     api_imp = trader_mduser_api_sw_method_get();
+#endif
+
+#ifdef XHSP_EFH32_CTPMINI
+    //CTP
+extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
+    api_imp = trader_mduser_api_ctp_method_get();
 #endif
 
 #ifdef DLL_MODE
