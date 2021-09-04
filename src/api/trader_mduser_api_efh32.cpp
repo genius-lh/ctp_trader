@@ -145,7 +145,7 @@ struct efh3_2_opt_lev2
 #pragma pack(pop)
 
 
-#define GFXELE_LOG(...) printf(__VA_ARGS__)
+#define XHEFH32_LOG(...) printf(__VA_ARGS__)
 
 #include "trader_data.h"
 #include "trader_mduser_api.h"
@@ -161,7 +161,7 @@ static void trader_mduser_api_efh32_subscribe(trader_mduser_api* self, char* ins
 
 static void* trader_mduser_api_efh32_thread(void* arg);
 
-static int trader_mduser_api_efh32_prase_url(const char* url, char* local_host, char* remote_host, int* port);
+static int trader_mduser_api_efh32_prase_url(const char* url, char* local_host, char* remote_host, int* port, char* remote_host2, int* port2);
 
 static void on_receive_message(void* arg, const char* buff, unsigned int len);
 
@@ -180,10 +180,12 @@ static void on_receive_opt_lev2(void* arg, efh3_2_opt_lev2* data);
 
 typedef struct trader_mduser_api_efh32_def trader_mduser_api_efh32;
 struct trader_mduser_api_efh32_def{
-	char remote_ip[16];			///< 组播IP
-	unsigned short remote_port;			///< 组播端口
-	char local_ip[16];				///< 本地IP
-	pthread_t thread_id;
+  char remote_ip[16];			///< 组播IP
+  unsigned short remote_port;			///< 组播端口
+  char remote_ip2[16];			///< 组播IP
+  unsigned short remote_port2;			///< 组播端口
+  char local_ip[16];				///< 本地IP
+  pthread_t thread_id;
   int loop_flag;
   pthread_mutex_t mutex;
   dict* tick_dick;
@@ -228,6 +230,67 @@ static dictType* tickDictTypeGet() {
     NULL
   };
   return &tickDict;
+}
+
+static int udp_sock_init(int* pfd, const char* remote_ip, int remote_port, const char* local_ip);
+
+int udp_sock_init(int* pfd, const char* remote_ip, int remote_port, const char* local_ip)
+{
+  int m_sock;
+
+	m_sock = socket(PF_INET, SOCK_DGRAM, 0);
+	if(-1 == m_sock) 
+	{
+		return -1;
+	}
+	
+	//socket可以重新使用一个本地地址
+	int flag=1;
+	if(setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&flag, sizeof(flag)) != 0)
+	{
+		return -2;
+	}
+
+	int options = fcntl(m_sock, F_GETFL);
+	if(options < 0)
+	{
+		return -3;
+	}
+  
+	options = options | O_NONBLOCK;
+	int i_ret = fcntl(m_sock, F_SETFL, options);
+	if(i_ret < 0)
+	{
+		return -4;
+	}
+
+	struct sockaddr_in local_addr;
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr.sin_family = AF_INET;
+	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);	
+	local_addr.sin_port = htons(remote_port);	//multicast port
+	if (bind(m_sock, (struct sockaddr*)&local_addr, sizeof(local_addr)) < 0)
+	{
+		return -5;
+	}
+
+	struct ip_mreq mreq;
+	mreq.imr_multiaddr.s_addr = inet_addr(remote_ip);	//multicast group ip
+	mreq.imr_interface.s_addr = inet_addr(local_ip);
+
+	if (setsockopt(m_sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+	{
+		return -6;
+	}
+
+	int receive_buf_size  = RCV_BUF_SIZE;	
+	if (setsockopt(m_sock, SOL_SOCKET, SO_RCVBUF, (const char*)&receive_buf_size, sizeof(receive_buf_size)) != 0)
+	{
+		return -7;
+	}
+
+  *pfd = m_sock;
+  return 0;
 }
 
 static void trader_mduser_api_efh32_tick_dict_init(trader_mduser_api_efh32* self)
@@ -285,12 +348,27 @@ void trader_mduser_api_efh32_start(trader_mduser_api* self)
   trader_mduser_api_efh32* pImp = (trader_mduser_api_efh32*)malloc(sizeof(trader_mduser_api_efh32));
   self->pUserApi = (void*)pImp;
   int port;
-  int ret = trader_mduser_api_efh32_prase_url(self->pAddress, pImp->local_ip, pImp->remote_ip, &port);
+  int port2;
+  int ret = trader_mduser_api_efh32_prase_url(self->pAddress, pImp->local_ip,
+    pImp->remote_ip, &port, pImp->remote_ip2, &port2);
   if(ret < 0){
     return;
   }
 
+  XHEFH32_LOG("local_ip[%s]\n"
+    "remote_ip[%s]\n"
+    "remote_port[%d]\n"
+    "remote_ip2[%s]\n"
+    "remote_port2[%d]\n"
+    , pImp->local_ip
+    , pImp->remote_ip
+    , port
+    , pImp->remote_ip2
+    , port2
+  );
+
   pImp->remote_port = (unsigned short)port;
+  pImp->remote_port2 = (unsigned short)port2;
 
   trader_mduser_api_efh32_tick_dict_init(pImp);
   
@@ -537,7 +615,10 @@ void* trader_mduser_api_efh32_thread(void* arg)
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
   trader_mduser_api_efh32* pImp = (trader_mduser_api_efh32*)self->pUserApi;
-  int m_sock;
+  int m_sock[2];
+  int max_sock;
+  int ret;
+  int i;
 
 	char line[MSG_BUF_SIZE] = "";
 
@@ -551,144 +632,122 @@ void* trader_mduser_api_efh32_thread(void* arg)
 	struct timeval tval;
 
   do{
-		m_sock = socket(PF_INET, SOCK_DGRAM, 0);
-		if(-1 == m_sock) 
-		{
-			break;
-		}
-		
-		//socket可以重新使用一个本地地址
-		int flag=1;
-		if(setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&flag, sizeof(flag)) != 0)
-		{
-			break;
-		}
+    i = 0;
+    ret = udp_sock_init(&m_sock[i], pImp->remote_ip, pImp->remote_port, pImp->local_ip);
+    if(ret < 0){
+      break;
+    }
+    i++;
 
-		int options = fcntl(m_sock, F_GETFL);
-		if(options < 0)
-		{
-			break;
-		}
-		options = options | O_NONBLOCK;
-		int i_ret = fcntl(m_sock, F_SETFL, options);
-		if(i_ret < 0)
-		{
-			break;
-		}
+    ret = udp_sock_init(&m_sock[i], pImp->remote_ip2, pImp->remote_port2, pImp->local_ip);
+    if(ret < 0){
+      break;
+    }
 
-		struct sockaddr_in local_addr;
-		memset(&local_addr, 0, sizeof(local_addr));
-		local_addr.sin_family = AF_INET;
-		local_addr.sin_addr.s_addr = htonl(INADDR_ANY);	
-		local_addr.sin_port = htons(pImp->remote_port);	//multicast port
-		if (bind(m_sock, (struct sockaddr*)&local_addr, sizeof(local_addr)) < 0)
-		{
-			break;
-		}
-
-		struct ip_mreq mreq;
-		mreq.imr_multiaddr.s_addr = inet_addr(pImp->remote_ip);	//multicast group ip
-		mreq.imr_interface.s_addr = inet_addr(pImp->local_ip);
-
-		if (setsockopt(m_sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
-		{
-			break;
-		}
-
-		int receive_buf_size  = RCV_BUF_SIZE;	
-		if (setsockopt(m_sock, SOL_SOCKET, SO_RCVBUF, (const char*)&receive_buf_size, sizeof(receive_buf_size)) != 0)
-		{
-			break;
-		}
+    if(m_sock[0] > m_sock[1]){
+      max_sock = m_sock[0] + 1;
+    }else{
+      max_sock = m_sock[1] + 1;
+    }
 
     pImp->loop_flag = 1;
-    flag = 0;
     while (pImp->loop_flag)
     {
     	FD_ZERO( &readSet);
     	FD_ZERO( &writeSet);
     	FD_ZERO( &errorSet);
-      
-    	FD_SET(m_sock, &readSet);
-    	FD_SET(m_sock, &errorSet);
-      
+
+      for(i = 0; i < sizeof(m_sock) / sizeof(int); i++){
+      	FD_SET(m_sock[i], &readSet);
+      	FD_SET(m_sock[i], &errorSet);
+      }
       tval.tv_usec = 100 * 1000; //100 ms
       tval.tv_sec = 0;
 
-      n_rcved = select(m_sock + 1, &readSet, &writeSet, &errorSet, &tval);
+      n_rcved = select(max_sock, &readSet, &writeSet, &errorSet, &tval);
       
     	if(n_rcved < 1) { // timeout
         continue;
       }
       
     	socklen_t len = sizeof(sockaddr_in);
-    	n_rcved = recvfrom(m_sock, line, MSG_BUF_SIZE, 0, (struct sockaddr*)&muticast_addr, &len);
-    	if ( n_rcved < 0) 
-    	{
-    		continue;
-    	} 
-    	else if (0 == n_rcved)
-    	{
-    		continue;
-    	}					
-    	else
-    	{
-        //sw_mduser_on_rtn_depth_market_data(self, (CUstpFtdcDepthMarketDataField*)line);
-        if(!flag){
-          flag = 1;
-          GFXELE_LOG("sw_ctp_mduser_on_rtn_depth_market_data\n");
+      for(i = 0; i < sizeof(m_sock) / sizeof(int); i++){
+        if(!FD_ISSET(m_sock[i], &readSet){
+          continue;
         }
+        n_rcved = recvfrom(m_sock[i], line, MSG_BUF_SIZE, 0, (struct sockaddr*)&muticast_addr, &len);
+        if ( n_rcved < 0) 
+        {
+          continue;
+        } 
+        else if (0 == n_rcved)
+        {
+          continue;
+        }         
+        else
+        {
+          on_receive_message(self, line, n_rcved);
+        }
+      }
 
-        on_receive_message(self, line, n_rcved);
-
-    	}
     }
   }while(0);
-  if(m_sock > 0){
-    close(m_sock);
+  
+  for(i = 0; i < sizeof(m_sock) / sizeof(int); i++){
+    if(m_sock[i] > 0){
+      close(m_sock[i]);
+    }
   }
-
   return (void*)NULL;
 }
 
-int trader_mduser_api_efh32_prase_url(const char* url, char* local_host, char* remote_host, int* port)
+int trader_mduser_api_efh32_prase_url(const char* url, char* local_host, char* remote_host, int* port, char* remote_host2, int* port2)
 {
   char* p;
   char* q;
+  char tmp[6];
+
   // 定位://
-  p = (char*)strstr(url, "://");
-  if(NULL == p){
+  p = url;
+  q = (char*)strstr(p, "|");
+  if(NULL == q){
     return -1;
   }
-  // 移动3个字符
-  p += 3;
-  
-  // 定位:
-  q = (char*)strstr(p, "@");
-  if(NULL == q){
-    return -2;
-  }
-
-  // 获取host
   memcpy(local_host, p, q - p);
   local_host[q-p] = '\0';
   q++;
-  p = q;
+
   
-  // 定位:
+  p = q;
   q = (char*)strstr(p, ":");
+  if(NULL == q){
+    return -2;
+  }
+  memcpy(remote_host, p, q - p);
+  remote_host[q-p] = '\0';
+  q++;
+
+  p = q;
+  q = (char*)strstr(p, "|");
   if(NULL == q){
     return -3;
   }
-  // 获取host
-  memcpy(remote_host, p, q - p);
-  remote_host[q-p] = '\0';
-
-  //移动1个字符
+  memcpy(tmp, p, q - p);
+  *port = atoi(tmp);
   q++;
 
-  // 获取port
-  *port = atoi(q);
+  p = q;
+  q = (char*)strstr(p, ":");
+  if(NULL == q){
+    return -4;
+  }
+  memcpy(remote_host2, p, q - p);
+  remote_host2[q-p] = '\0';
+  q++;
+
+  p = q;
+  *port2 = atoi(p);
+  
   return 0;
 }
 
