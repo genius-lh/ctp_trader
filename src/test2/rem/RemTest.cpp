@@ -700,11 +700,12 @@ void CRemTestHandler::OrderInsert()
   char Temp[64];
   char InstrumentID[64];
   int ExchangeID;
-  char UserOrderLocalID[64];
   char Direction;
   char OffsetFlag;
   double LimitPrice;
   int Volume;
+  int Times;
+  int i;
 
   
   printf("input InstrumentID:\n");
@@ -712,8 +713,6 @@ void CRemTestHandler::OrderInsert()
   printf("input ExchangeID(CFFEX=102):\n");
   scanf("%s", Temp);
   ExchangeID = atoi(Temp);
-  printf("input UserOrderLocalID:\n");
-  scanf("%s", UserOrderLocalID);
   printf("input Direction[0|1]:\n");
   scanf("%s", Temp);
   Direction = Temp[0];
@@ -724,6 +723,8 @@ void CRemTestHandler::OrderInsert()
   scanf("%lf", &LimitPrice);
   printf("input Volume:\n");
   scanf("%d", &Volume);
+  printf("input Times:\n");
+  scanf("%d", &Times);
 
   EES_SideType SideType;
   if('0' == OffsetFlag){
@@ -744,29 +745,31 @@ void CRemTestHandler::OrderInsert()
   REM_TEST_LOG("%s\n", __FUNCTION__);
   EESTraderApi* pTraderApi = (EESTraderApi*)m_Arg;
 	EES_ClientToken order_token = 0;
-	pTraderApi->GetMaxToken(&order_token);
 
 	EES_EnterOrderField temp;
-  memset(&temp, 0, sizeof(EES_EnterOrderField));
-  temp.m_Tif = EES_OrderTif_Day;
-  temp.m_HedgeFlag = EES_HedgeFlag_Speculation;
-  strcpy(temp.m_Account, m_InvestorID);
-  strcpy(temp.m_Symbol, InstrumentID);
-  temp.m_Side = SideType;
-  //temp.m_Side = EES_SideType_open_short;
-  temp.m_Exchange = (unsigned char)ExchangeID;
-  temp.m_SecType = EES_SecType_fut;
-  temp.m_Price = LimitPrice;
-  temp.m_Qty = Volume;
-	temp.m_ClientOrderToken = order_token + 1;
 
-	RESULT ret = pTraderApi->EnterOrder(&temp);
-	if (ret != NO_ERROR)
-	{
-		REM_TEST_LOG("send order failed(%d)\n", ret);
-		return;
-	}
+  for(i = 0; i < Times; i++){
+  	pTraderApi->GetMaxToken(&order_token);
+    memset(&temp, 0, sizeof(EES_EnterOrderField));
+    temp.m_Tif = EES_OrderTif_Day;
+    temp.m_HedgeFlag = EES_HedgeFlag_Speculation;
+    strcpy(temp.m_Account, m_InvestorID);
+    strcpy(temp.m_Symbol, InstrumentID);
+    temp.m_Side = SideType;
+    //temp.m_Side = EES_SideType_open_short;
+    temp.m_Exchange = (unsigned char)ExchangeID;
+    temp.m_SecType = EES_SecType_fut;
+    temp.m_Price = LimitPrice;
+    temp.m_Qty = Volume;
+  	temp.m_ClientOrderToken = order_token + 1;
 
+  	RESULT ret = pTraderApi->EnterOrder(&temp);
+  	if (ret != NO_ERROR)
+  	{
+  		REM_TEST_LOG("send order failed(%d)\n", ret);
+  		return;
+  	}
+  }
 }
 
 void CRemTestHandler::OrderAction()

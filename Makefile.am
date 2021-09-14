@@ -7,7 +7,7 @@ noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so\
 				libgfmduser.so libsfmduser.so libswmduser.so libefh32mduser.so\
 				libfemasmduser.so libfemastrader.so \
 				libfemasmduser_af.so libfemastrader_af.so \
-				libremtrader.so
+				libremmduser.so libremtrader.so libcffexl2mduser.so
 
 bin_PROGRAMS=\
 			traderMduserCtp traderStrategyCtp traderMduserCtp66\
@@ -19,6 +19,7 @@ bin_PROGRAMS=\
 			traderMduserGfShfe \
 			traderMduserXhsp \
 			traderMduserSvr \
+			traderMduserXhSf \
 			testMduserShm testMduserClient
 
 # static library
@@ -106,6 +107,17 @@ libswmduser_so_LDFLAGS=-shared -fPIC
 libefh32mduser_so_SOURCES=src/api/trader_mduser_api_efh32.cpp
 libefh32mduser_so_CPPFLAGS=-fPIC -Isrc/util -Ilibevent -Ilibevent/compat/sys
 libefh32mduser_so_LDFLAGS=-shared -fPIC
+
+#libcffexl2mduser.so
+libcffexl2mduser_so_SOURCES=src/api/trader_mduser_api_cffex_l2.cpp
+libcffexl2mduser_so_CPPFLAGS=-fPIC -Isolarflare -Ilibevent -Ilibevent/compat/sys
+libcffexl2mduser_so_LDFLAGS=-shared -fPIC
+
+#libremmduser.so
+libremmduser_so_SOURCES=src/api/trader_mduser_api_rem.cpp\
+	src/api/RemMduserHandler.cpp
+libremmduser_so_CPPFLAGS=-fPIC -Irem -Ilibevent -Ilibevent/compat/sys
+libremmduser_so_LDFLAGS=-shared -fPIC
 
 #libremtrader.so
 libremtrader_so_SOURCES=src/api/trader_trader_api_rem.cpp\
@@ -360,6 +372,20 @@ traderMduserSvr_CFLAGS=-DDLL_MODE\
 
 traderMduserSvr_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
         -L. -ltradercmn -lmduserapi
+		
+#traderMduserXhSf
+traderMduserXhSf_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserXhSf_CFLAGS=-DXH_SOLARFLARE \
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserXhSf_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lcffexl2mduser -ltradercmn -lmduserapi \
+	-Lsolarflare -lefvi-common -lciul1 \
+	-Lrem -lremmduser -lEESQuoteApi
 
 # testMduserShm testMduserClient
 testMduserClient_SOURCES=\

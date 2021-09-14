@@ -119,6 +119,11 @@ extern trader_mduser_api_method* trader_mduser_api_gf_method_get();
       api_imp = trader_mduser_api_sf_method_get();
 #endif
 
+#ifdef XH_SOLARFLARE
+    extern trader_mduser_api_method* trader_mduser_api_cffex_l2_method_get();
+      api_imp = trader_mduser_api_cffex_l2_method_get();
+#endif
+
 #ifdef XHSP_EFH32_CTPMINI
     extern trader_mduser_api_method* trader_mduser_api_efh32_method_get();
       api_imp = trader_mduser_api_efh32_method_get();
@@ -154,6 +159,11 @@ extern trader_mduser_api_method* trader_mduser_api_sw_method_get();
     //CTP
 extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
     api_imp = trader_mduser_api_ctp_method_get();
+#endif
+
+#ifdef XH_SOLARFLARE
+    extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
+      api_imp = trader_mduser_api_rem_method_get();
 #endif
 
 #ifdef DLL_MODE

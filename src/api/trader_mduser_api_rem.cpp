@@ -17,7 +17,6 @@ typedef struct trader_mduser_api_rem_def  trader_mduser_api_rem;
 struct trader_mduser_api_rem_def {
   void* pMdApi;
   void* pHandler;
-  int nRequestID;
 };
 
 extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
@@ -27,6 +26,9 @@ static void trader_mduser_api_rem_stop(trader_mduser_api* self);
 static void trader_mduser_api_rem_login(trader_mduser_api* self);
 static void trader_mduser_api_rem_logout(trader_mduser_api* self);
 static void trader_mduser_api_rem_subscribe(trader_mduser_api* self, char* instrument);
+
+static int trader_mduser_api_rem_prase_url(const char* url, char* remote_host, int* port);
+
 
 #ifdef __cplusplus
 }
@@ -50,22 +52,28 @@ trader_mduser_api_method* trader_mduser_api_rem_method_get()
 
 void trader_mduser_api_rem_start(trader_mduser_api* self)
 {
-    EESQuoteApi* pQuoteApi = CreateEESQuoteApi();
-    CRemMduserHandler* pTraderHandler = new CRemMduserHandler(pQuoteApi, self);
+  char remoteTradeIp[128];
+  int remoteTradeTCPPort;
 
-    trader_mduser_api_rem* pImp = (trader_mduser_api_rem*)malloc(sizeof(trader_mduser_api_rem));
-    pImp->pMdApi = (void*)pQuoteApi;
-    pImp->pHandler = (void*)pTraderHandler;
+  EESQuoteApi* pQuoteApi = CreateEESQuoteApi();
+  CRemMduserHandler* pTraderHandler = new CRemMduserHandler(pQuoteApi, self);
 
-    // 初始化变量
-    EqsTcpInfo svrInfo;
-    strncpy(svrInfo.m_eqsIp, remoteTradeIp, sizeof(svrInfo.m_eqsIp));
-    svrInfo.m_eqsPort = atoi(remoteTradeTCPPort);
+  trader_mduser_api_rem* pImp = (trader_mduser_api_rem*)malloc(sizeof(trader_mduser_api_rem));
+  pImp->pMdApi = (void*)pQuoteApi;
+  pImp->pHandler = (void*)pTraderHandler;
 
-    // 连接交易服务器
-    pQuoteApi->ConnServer(svrInfo, pTraderHandler);
 
-    return ;
+  int ret = trader_mduser_api_rem_prase_url(self->pAddress, remoteTradeIp, &remoteTradeTCPPort);
+
+  // 初始化变量
+  EqsTcpInfo svrInfo;
+  strncpy(svrInfo.m_eqsIp, remoteTradeIp, sizeof(svrInfo.m_eqsIp));
+  svrInfo.m_eqsPort = remoteTradeTCPPort;
+
+  // 连接交易服务器
+  pQuoteApi->ConnServer(svrInfo, pTraderHandler);
+
+  return ;
 }
 
 void trader_mduser_api_rem_stop(trader_mduser_api* self)
@@ -74,7 +82,7 @@ void trader_mduser_api_rem_stop(trader_mduser_api* self)
   EESQuoteApi* pUserApi = (EESQuoteApi*)pImp->pMdApi;
   CRemMduserHandler* pHandler = (CRemMduserHandler*)pImp->pHandler;
 
-  pTraderApi->DisConnServer();
+  pUserApi->DisConnServer();
 
   DestroyEESQuoteApi(pUserApi);
   delete pHandler;
@@ -111,3 +119,27 @@ void trader_mduser_api_rem_subscribe(trader_mduser_api* self, char* instrument)
   return ;
 
 }
+
+int trader_mduser_api_rem_prase_url(const char* url, char* remote_host, int* port)
+{
+  char buff[512];
+  char* p;
+  char* q;
+  char tmp[6];
+
+  strncpy(buff, url, sizeof(buff));
+  p = buff;
+  q = (char*)strstr(p, ":");
+  if(NULL == q){
+    return -1;
+  }
+  memcpy(remote_host, p, q - p);
+  remote_host[q-p] = '\0';
+  q++;
+
+  p = q;
+  *port = atoi(p);
+
+  return 0;
+}
+

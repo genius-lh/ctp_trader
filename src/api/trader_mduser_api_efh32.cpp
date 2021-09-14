@@ -494,7 +494,7 @@ void on_receive_fut_lev1(void* arg, efh3_2_fut_lev1* pMarketData)
 
   strcpy(oTick.InstrumentID, pMarketData->m_symbol);
   strcpy(oTick.TradingDay, "20210101");
-  snprintf(oTick.UpdateTime, sizeof(oTick.UpdateTime), "%02d%02d%02d",
+  snprintf(oTick.UpdateTime, sizeof(oTick.UpdateTime), "%02d:%02d:%02d",
     (int)pMarketData->m_update_time_h,
     (int)pMarketData->m_update_time_m,
     (int)pMarketData->m_update_time_s
@@ -672,7 +672,7 @@ void* trader_mduser_api_efh32_thread(void* arg)
       
     	socklen_t len = sizeof(sockaddr_in);
       for(i = 0; i < sizeof(m_sock) / sizeof(int); i++){
-        if(!FD_ISSET(m_sock[i], &readSet){
+        if(!FD_ISSET(m_sock[i], &readSet)){
           continue;
         }
         n_rcved = recvfrom(m_sock[i], line, MSG_BUF_SIZE, 0, (struct sockaddr*)&muticast_addr, &len);
@@ -703,12 +703,14 @@ void* trader_mduser_api_efh32_thread(void* arg)
 
 int trader_mduser_api_efh32_prase_url(const char* url, char* local_host, char* remote_host, int* port, char* remote_host2, int* port2)
 {
+  char buff[512];
   char* p;
   char* q;
   char tmp[6];
 
   // ¶¨Î»://
-  p = url;
+  strncpy(buff, url, sizeof(buff));
+  p = buff;
   q = (char*)strstr(p, "|");
   if(NULL == q){
     return -1;

@@ -13,6 +13,7 @@ extern "C" {
 #endif
 #include "trader_data.h"
 #include "trader_mduser_api.h"
+
 #ifdef __cplusplus
 }
 #endif
@@ -32,7 +33,6 @@ CRemMduserHandler::~CRemMduserHandler()
 /// \brief 当服务器连接成功，登录前调用, 如果是组播模式不会发生, 只需判断InitMulticast返回值即可
 void CRemMduserHandler::OnEqsConnected()
 {
-    CMN_DEBUG("Enter\n");
     trader_mduser_api* self = (trader_mduser_api*)m_Arg;
     trader_mduser_api_on_front_connected(self);
     return;
@@ -41,7 +41,6 @@ void CRemMduserHandler::OnEqsConnected()
 /// \brief 当服务器曾经连接成功，被断开时调用，组播模式不会发生该事件
 void CRemMduserHandler::OnEqsDisconnected()
 {
-    CMN_DEBUG("Enter\n");
     trader_mduser_api* self = (trader_mduser_api*)m_Arg;
     trader_mduser_api_on_front_disconnected(self, -1, "DISCONNECTED");
     return;
@@ -56,9 +55,8 @@ void CRemMduserHandler::OnLoginResponse(bool bSuccess, const char* pReason)
 
     int errNo = 0;
     char* errMsg = NULL;
-    if(bSuccess) {
-    errNo = pRspInfo->ErrorID;
-    errMsg = pRspInfo->ErrorMsg;
+    if(1 != bSuccess) {
+      errNo = bSuccess;
     }
 
     trader_mduser_api_on_rsp_user_login(self, errNo, errMsg);
@@ -100,9 +98,8 @@ void CRemMduserHandler::OnSymbolRegisterResponse(EesEqsIntrumentType chInstrumen
   
   int errNo = 0;
   char* errMsg = NULL;
-  if(pRspInfo) {
-    errNo = pRspInfo->ErrorID;
-    errMsg = pRspInfo->ErrorMsg;
+  if(1 != bSuccess) {
+    errNo = bSuccess;
   }
   
   trader_mduser_api_on_rsp_sub_market_data(self, errNo, errMsg);
@@ -119,9 +116,8 @@ void CRemMduserHandler::OnSymbolUnregisterResponse(EesEqsIntrumentType chInstrum
 
     int errNo = 0;
     char* errMsg = NULL;
-    if(pRspInfo) {
-    errNo = pRspInfo->ErrorID;
-    errMsg = pRspInfo->ErrorMsg;
+    if(1 != bSuccess) {
+      errNo = bSuccess;
     }
 
     trader_mduser_api_on_rsp_un_sub_market_data(self, errNo, errMsg);
