@@ -77,6 +77,8 @@ static void* trader_mduser_api_cffex_l2_thread(void* arg);
 
 static void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t* pMarketData);
 
+static int trader_mduser_api_cffex_l2_dump(void* arg);
+
 static int conv_int(const char* value);
 static double conv_double(const char* value);
 static int unmask(char* value, int len);
@@ -94,6 +96,9 @@ struct trader_mduser_api_cffex_l2_def{
 	char filter[64];				///< 本地IP
 	pthread_t thread_id;
   int loop_flag;
+  char store_file[64];
+  int store_cnt;
+  cffex_l2_t store[1024];
 };
 
 
@@ -177,12 +182,20 @@ void trader_mduser_api_cffex_l2_subscribe(trader_mduser_api* self, char* instrum
 void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData)
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
+  trader_mduser_api_cffex_l2* pImp = (trader_mduser_api_cffex_l2*)self->pUserApi;
 
   if(0 == memcmp(pMarketData->InstrumentID, "IO", 2)){
     return ;
   }
+  
+  // 记录数据
+  memcpy(&pImp->store[pImp->store_cnt++], pMarketData, sizeof(cffex_l2_t));
+  if(pImp->store_cnt == (sizeof(pImp->store)/sizeof(cffex_l2_t))){
+    GFXELE_LOG("store buffer is full\n");
+    trader_mduser_api_cffex_l2_dump(arg);
+  }
 
-  unmask(pMarketData->Val2434, 0x18);
+  //unmask(pMarketData->Val2434, 0x18);
   cffex_l2_data_t* price = (cffex_l2_data_t*)pMarketData->Val2434;
   
   trader_tick oTick;
@@ -215,6 +228,7 @@ void* trader_mduser_api_cffex_l2_thread(void* arg)
   recv_buf_t msg_buf;
   cffex_l2_t *md;
   int i = 0;
+  struct timeval tm;
 
   do{
     GFXELE_LOG("interface[%s]filter[%s]\n",pImp->interface, pImp->filter);
@@ -225,11 +239,19 @@ void* trader_mduser_api_cffex_l2_thread(void* arg)
       break;
     }
 
+    do{
+      gettimeofday(&tm, NULL);
+      snprintf(pImp->store_file, sizeof(pImp->store_file), "dump%ld", tm.tv_sec / (24 * 60 * 60));
+      pImp->store_cnt = 0;
+      GFXELE_LOG("dump file[%s]\n", pImp->store_file);
+    }while(0);
+
 
     while(pImp->loop_flag)
     {
       receive_frame(&msg_buf);
       if(!msg_buf.count){
+        trader_mduser_api_cffex_l2_dump(arg);
         usleep(1000);
         continue;
       }
@@ -247,6 +269,29 @@ void* trader_mduser_api_cffex_l2_thread(void* arg)
 
   return (void*)NULL;
 }
+
+int trader_mduser_api_cffex_l2_dump(void* arg)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+  trader_mduser_api_cffex_l2* pImp = (trader_mduser_api_cffex_l2*)self->pUserApi;
+  if(!pImp->store_cnt){
+    return 0;
+  }
+  do{
+    FILE* fp = fopen(pImp->store_file, "a");
+    if(!fp){
+      break;
+    }
+
+    fwrite(pImp->store, sizeof(cffex_l2_t), pImp->store_cnt, fp);
+    
+    fclose(fp);
+
+    pImp->store_cnt = 0;
+  }while(0);
+  return 0;
+}
+
 
 int conv_int(const char* value)
 {
