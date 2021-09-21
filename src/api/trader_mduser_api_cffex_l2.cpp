@@ -82,6 +82,8 @@ static int trader_mduser_api_cffex_l2_dump(void* arg);
 static int conv_int(const char* value);
 static double conv_double(const char* value);
 static int unmask(char* value, int len);
+static int do_xor(char* d1, char* d2, int l2);
+static int gen_mask(char* dest, int size,  char* d1, int l1, char* d2, int l2);
 
 #ifdef __cplusplus
 }
@@ -99,6 +101,8 @@ struct trader_mduser_api_cffex_l2_def{
   char store_file[64];
   int store_cnt;
   cffex_l2_t store[1024];
+  int mask_flag;
+  char mask[0x1c];
 };
 
 
@@ -141,6 +145,8 @@ void trader_mduser_api_cffex_l2_start(trader_mduser_api* self)
     strncpy(pImp->filter, pTcpFrontAddress, sizeof(pImp->filter));
 
     pImp->loop_flag = 1;
+
+    pImp->mask_flag = 0;
 
   }while(0);
 
@@ -187,6 +193,14 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
   if(0 == memcmp(pMarketData->InstrumentID, "IO", 2)){
     return ;
   }
+
+  if(!pImp->mask_flag){
+    pImp->mask_flag = 1;
+    gen_mask(pImp->mask, sizeof(pImp->mask), 
+      pMarketData->OpenPrice, sizeof(pMarketData->OpenPrice), 
+      pMarketData->Val2433, sizeof(pMarketData->Val2433));
+
+  }
   
   // ¼ÇÂ¼Êý¾Ý
   memcpy(&pImp->store[pImp->store_cnt++], pMarketData, sizeof(cffex_l2_t));
@@ -195,7 +209,9 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
     trader_mduser_api_cffex_l2_dump(arg);
   }
 
-  //unmask(pMarketData->Val2434, 0x18);
+  if(pImp->mask_flag){
+    do_xor(pMarketData->Val2434, &pImp->mask[0x1c - 0x18], sizeof(pMarketData->Val2434));
+  }
   cffex_l2_data_t* price = (cffex_l2_data_t*)pMarketData->Val2434;
   
   trader_tick oTick;
@@ -325,6 +341,37 @@ int unmask(char* value, int len)
     mask -= 2;
   }
   return 0;
+}
+
+int do_xor(char* d1, char* d2, int l2)
+{
+  int i = 0;
+
+  while(i < l2){
+    d1[i] ^= d2[i];
+    i++;
+  }
+  return i;
+}
+
+int gen_mask(char* dest, int size,  char* d1, int l1, char* d2, int l2)
+{
+  int v[2];
+  int i;
+
+  v[0] = (d1[0] ^ d2[0]) - (d1[2] ^ d2[2]);
+  v[1] = (d1[1] ^ d2[1]) - (d1[3] ^ d2[3]);
+
+  i = 0;
+  dest[i++] = (d1[0] ^ d2[0]);
+  dest[i++] = (d1[1] ^ d2[1]);
+  while(i < size){
+    dest[i] = (dest[i-2] - v[0]) & 0xFF;
+    dest[i+1] = (dest[i-1] - v[1]) & 0xFF;
+    i += 2;
+  }
+
+  return i;
 }
 
 
