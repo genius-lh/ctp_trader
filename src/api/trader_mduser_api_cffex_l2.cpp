@@ -81,7 +81,10 @@ static int trader_mduser_api_cffex_l2_dump(void* arg);
 
 static int conv_int(const char* value);
 static double conv_double(const char* value);
-static int unmask(char* value, int len);
+static int unmask(char* d1, char* mask, int len);
+static int unmask1(char* d1, int len);
+static int unmask2(char* d1, int len);
+static int unmask3(char* d1, int len);
 static int do_xor(char* d1, char* d2, int l2);
 static int gen_mask(char* dest, int size,  char* d1, int l1, char* d2, int l2);
 
@@ -210,7 +213,7 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
   }
 
   if(pImp->mask_flag){
-    do_xor(pMarketData->Val2434, &pImp->mask[0x1c - 0x18], sizeof(pMarketData->Val2434));
+    unmask(pMarketData->Val2434, &pImp->mask[0x1c - 0x18], sizeof(pMarketData->Val2434));
   }
   cffex_l2_data_t* price = (cffex_l2_data_t*)pMarketData->Val2434;
   
@@ -281,6 +284,8 @@ void* trader_mduser_api_cffex_l2_thread(void* arg)
         }
       }
     }
+
+    trader_mduser_api_cffex_l2_dump(arg);
   }while(0);
 
   return (void*)NULL;
@@ -331,16 +336,70 @@ double conv_double(const char* value)
   return data;
 }
 
-int unmask(char* value, int len)
+int unmask(char* d1, char* mask, int len)
+{
+  if(0x00 == *mask){
+    return unmask1(d1, len);
+  }
+
+  if(0xff == *mask){
+    return unmask2(d1, len);
+  }
+
+  return unmask3(d1, len);
+}
+
+int unmask1(char* d1, int len)
+{
+  d1[3] ^= d1[2];
+  d1[7] ^= d1[6];
+  d1[11] ^= d1[10];
+  d1[15] ^= d1[14];
+  d1[19] ^= d1[18];
+  d1[23] ^= d1[22];
+  return len;
+}
+
+int unmask2(char* d1, int len)
 {
   int i = 0;
-  int mask = len + 7;
-  while(i < len){
-    value[i] ^= (mask && 0xFF);
-    i += 2;
-    mask -= 2;
-  }
-  return 0;
+  d1[0] ^= 0xFF;
+  d1[1] ^= 0xFF;
+  d1[2] ^= 0xFF;
+  d1[3] ^= 0xFF;
+  d1[4] ^= 0xFF;
+  d1[5] ^= 0xFF;
+  d1[6] ^= 0xFF;
+  d1[7] ^= 0xFF;
+  d1[8] ^= 0xFF;
+  d1[9] ^= 0xFF;
+  d1[10] ^= 0xFF;
+  d1[11] ^= 0xFF;
+  d1[12] ^= 0xFF;
+  d1[13] ^= 0xFF;
+  d1[14] ^= 0xFF;
+  d1[15] ^= 0xFF;
+  d1[16] ^= 0xFF;
+  d1[17] ^= 0xFF;
+  d1[18] ^= 0xFF;
+  d1[19] ^= 0xFF;
+}
+
+int unmask3(char* d1, int len)
+{
+  d1[0] ^= 0x1F;
+  d1[2] ^= 0x1D;
+  d1[4] ^= 0x1B;
+  d1[6] ^= 0x19;
+  d1[8] ^= 0x17;
+  d1[10] ^= 0x15;
+  d1[12] ^= 0x13;
+  d1[14] ^= 0x11;
+  d1[16] ^= 0x0F;
+  d1[18] ^= 0x0D;
+  d1[20] ^= 0x0B;
+  d1[22] ^= 0x09;
+  return len;
 }
 
 int do_xor(char* d1, char* d2, int l2)
