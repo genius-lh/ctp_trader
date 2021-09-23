@@ -213,7 +213,7 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
   }
 
   if(pImp->mask_flag){
-    unmask(pMarketData->Val2434, &pImp->mask[0x1c - 0x18], sizeof(pMarketData->Val2434));
+    unmask(pMarketData->Val2434, &pImp->mask[0], sizeof(pMarketData->Val2434));
   }
   cffex_l2_data_t* price = (cffex_l2_data_t*)pMarketData->Val2434;
   
@@ -338,11 +338,11 @@ double conv_double(const char* value)
 
 int unmask(char* d1, char* mask, int len)
 {
-  if(0x00 == *mask){
+  if(0x00 == (*mask & 0xff)){
     return unmask1(d1, len);
   }
 
-  if(0xff == *mask){
+  if(0xff == (*mask & 0xff)){
     return unmask2(d1, len);
   }
 
@@ -415,19 +415,10 @@ int do_xor(char* d1, char* d2, int l2)
 
 int gen_mask(char* dest, int size,  char* d1, int l1, char* d2, int l2)
 {
-  int v[2];
-  int i;
-
-  v[0] = (d1[0] ^ d2[0]) - (d1[2] ^ d2[2]);
-  v[1] = (d1[1] ^ d2[1]) - (d1[3] ^ d2[3]);
-
-  i = 0;
-  dest[i++] = (d1[0] ^ d2[0]);
-  dest[i++] = (d1[1] ^ d2[1]);
-  while(i < size){
-    dest[i] = (dest[i-2] - v[0]) & 0xFF;
-    dest[i+1] = (dest[i-1] - v[1]) & 0xFF;
-    i += 2;
+  int i = 0;
+  while((i < size) && (i < l1) && (i < l2)){
+    dest[i] =d1[i] ^ d2[i];
+    i++;
   }
 
   return i;
