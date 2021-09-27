@@ -279,7 +279,7 @@ public:
 	/// \param	pMarketMBLData: 参见EES_MarketMBLData深度行情结构体定义
 	/// \param	bFinish: 当为true时，表示查询所有结果返回。此时pMarketMBLData内容中,仅m_RequestId有效
 	/// \return void 
-	virtual void OnQueryMarketMBLData(EES_MarketMBLData* pMarketMBLData, bool bFinish) {}
+	//virtual void OnQueryMarketMBLData(EES_MarketMBLData* pMarketMBLData, bool bFinish) {}
 
 };
 
@@ -307,11 +307,11 @@ public:
 		/// \brief	这里输入的不是帐户名，是用户名
 		/// \param  const char* userId			用户名
 		/// \param  const char* userPwd		    用户登录密码
-		/// \param  const char* app_id		    AppId
-		/// \param  const char* auth_code		授权码
+	    /// \param  const char* app_id		    AppId
+	    /// \param  const char* auth_code		授权码
 		/// \return RESULT			返回值，参考 EesTraderErr.h文件
 	
-	virtual RESULT UserLogon(const char* user_id, const char* user_pwd, const char* app_id, const char* auth_code) = 0 ;
+	virtual RESULT UserLogon(const char* user_id, const char* user_pwd, const char* app_id, const char* auth_code ) = 0 ;
 
 	/// 用户密码修改
 
@@ -438,9 +438,9 @@ public:
 	/// \return 没有返回值
 	virtual void SetAsyncReceiveMode() = 0;
 
-	/// 批量下单，最多一次下4个报单
+	/// 批量下单，最多一次下8个报单，只能在TCP模式下使用
 	/// 注意每个报单的的OrderToken必须保证在外部就设置好不重复，
-	/// pArrOrders: EES_EnterOrderField结构体数组，最多4个，nCount必须 >=1，且 <=4
+	/// pArrOrders: EES_EnterOrderField结构体数组，最多8个，nCount必须 >=1，且 <=8
 	/// \return: 成功返回0，任意一个报单有错，则返回非0值，且所有报单都不会被发送
 	virtual RESULT EnterMultiOrders(EES_EnterOrderField* pArrOrders, int nCount) = 0;
 
@@ -449,14 +449,14 @@ public:
 	/// exchangeID: 需要填入EES_ExchangeID_shfe等实际交易所代码	
 	/// nSide: 0-双边； 1-买方向Bid； 2-卖方向Ask
 	/// \return: 成功返回0，数据在OnQueryMarketMBLData中返回
-	virtual RESULT QueryMarketMBLData(int nRequestId, EES_ExchangeID exchangeID, int nSide) = 0;
+	//virtual RESULT QueryMarketMBLData(int nRequestId, EES_ExchangeID exchangeID, int nSide) = 0;
 
 	/// 指定合约范围的深度行情查询请求，注意：后台系统必须配置支持深度行情，该功能才会工作	
 	/// nRequestId: 客户自行编号，对应的返回事件OnQueryMarketMBLData中，会返回这个RequestId，客户可用于匹配自己的查询请求	
 	/// startSymbol , endSymbol: 起始查询合约和终止查询合约，必须填入合法的合约
 	/// nSide: 0-双边； 1-买方向Bid； 2-卖方向Ask
 	/// \return: 成功返回0，数据在OnQueryMarketMBLData中返回
-	virtual RESULT QueryMarketMBLData(int nRequestId, const char* startSymbol, const char* endSymbol, int nSide) = 0;
+	//virtual RESULT QueryMarketMBLData(int nRequestId, const char* startSymbol, const char* endSymbol, int nSide) = 0;
 
 	/// 调整客户端流控参数
 	/// 登录成功后，可从登录返回消息结构EES_LogonResponse中，获取到当前登录的流控参数（单位是每多少毫秒，多少次下单/撤单）

@@ -14,13 +14,12 @@ bin_PROGRAMS=\
 			traderMduserCtpMini traderStrategyCtpMini \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
-			traderStrategyRem \
+			traderMduserRem traderStrategyRem\
 			traderMduserSolarFlare \
 			traderMduserGfShfe \
 			traderMduserXhsp \
-			traderMduserSvr \
 			traderMduserXhSf \
-			testMduserShm testMduserClient
+			testMduserClient
 
 # static library
 libtradercmn_a_SOURCES=src/util/cmn_util.c \
@@ -295,7 +294,19 @@ traderStrategyFemasAF_LDADD=\
 	-L. -ltradercmn -ltraderapi\
 	-Lfemas302 -lfemastrader_af -lUSTPtraderapiAF
 	
-#traderStrategyRem
+#traderMduserRem traderStrategyRem 
+traderMduserRem_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserRem_CFLAGS=-DREM62\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserRem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lremmduser -ltradercmn -lmduserapi\
+	-Lrem -lremmduser -lEESQuoteApi
+
 traderStrategyRem_SOURCES=\
 	src/log/cmn_log_catalog.c\
 	src/log/cmn_log_appender.c\
@@ -361,18 +372,6 @@ traderMduserXhsp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 	-L. -lefh32mduser -ltradercmn -lmduserapi \
 	-Lctpmini -lctpminimduser -lthostmduserapi
 
-#traderMduserSvr
-traderMduserSvr_SOURCES=src/svc/trader_mduser_boardcast.c \
-        src/svc/trader_mduser_cnn.c \
-        src/svc/trader_mduser_svr.c
-
-traderMduserSvr_CFLAGS=-DDLL_MODE\
-        -Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
-        -Ihiredis -Ilibevent -Ilibevent/compat/sys 
-
-traderMduserSvr_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-        -L. -ltradercmn -lmduserapi
-		
 #traderMduserXhSf
 traderMduserXhSf_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
@@ -400,14 +399,5 @@ testMduserClient_LDADD=\
         -Llibevent -levent_core -Lsqlite3 -lsqlite3\
         -lc -lstdc++ -lm -lpthread -lresolv -ldl\
         -L. -ltradercmn
-
-testMduserShm_SOURCES=\
-        src/test/trader_mduser_shm_test.c \
-        src/svc/trader_mduser_shm.c
-
-testMduserShm_CFLAGS=-Isrc/api -Isrc/svc
-
-testMduserShm_LDADD=\
-        -lc -lstdc++ -lm -lpthread -lresolv -ldl
 
 

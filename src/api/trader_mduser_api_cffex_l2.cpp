@@ -85,8 +85,11 @@ static int unmask(char* d1, char* mask, int len);
 static int unmask1(char* d1, int len);
 static int unmask2(char* d1, int len);
 static int unmask3(char* d1, int len);
+static int unmask4(char* d1, int len);
+static int unmask5(char mask, char* d1, int len);
 static int do_xor(char* d1, char* d2, int l2);
 static int gen_mask(char* dest, int size,  char* d1, int l1, char* d2, int l2);
+static int check_mask(char* mask, cffex_l2_t* md);
 
 #ifdef __cplusplus
 }
@@ -202,7 +205,7 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
     gen_mask(pImp->mask, sizeof(pImp->mask), 
       pMarketData->OpenPrice, sizeof(pMarketData->OpenPrice), 
       pMarketData->Val2433, sizeof(pMarketData->Val2433));
-
+    check_mask(pImp->mask, pMarketData);
   }
   
   // ¼ÇÂ¼Êý¾Ý
@@ -338,6 +341,10 @@ double conv_double(const char* value)
 
 int unmask(char* d1, char* mask, int len)
 {
+  if(0 == *(int*)mask){
+    return len;
+  }
+
   if(0x00 == (*mask & 0xff)){
     return unmask1(d1, len);
   }
@@ -345,8 +352,8 @@ int unmask(char* d1, char* mask, int len)
   if(0xff == (*mask & 0xff)){
     return unmask2(d1, len);
   }
-
-  return unmask3(d1, len);
+  
+  return unmask5(*mask, d1, len);
 }
 
 int unmask1(char* d1, int len)
@@ -402,6 +409,35 @@ int unmask3(char* d1, int len)
   return len;
 }
 
+int unmask4(char* d1, int len)
+{
+  d1[0] ^= 0x1c;
+  d1[2] ^= 0x1a;
+  d1[4] ^= 0x18;
+  d1[6] ^= 0x16;
+  d1[8] ^= 0x14;
+  d1[10] ^= 0x12;
+  d1[12] ^= 0x10;
+  d1[14] ^= 0x0e;
+  d1[16] ^= 0x0c;
+  d1[18] ^= 0x0a;
+  d1[20] ^= 0x08;
+  d1[22] ^= 0x06;
+  return len;
+}
+
+int unmask5(char mask, char* d1, int len)
+{
+  int m = (int)((mask-4)&0xff); 
+  int i = 0;
+  for(i = 0; i < len; i += 2){
+    d1[i] ^= m;
+    m-=2;
+  }
+  return len;
+}
+
+
 int do_xor(char* d1, char* d2, int l2)
 {
   int i = 0;
@@ -422,6 +458,29 @@ int gen_mask(char* dest, int size,  char* d1, int l1, char* d2, int l2)
   }
 
   return i;
+}
+
+int check_mask(char* mask, cffex_l2_t* md)
+{
+  cffex_l2_data_t l2data;
+
+  memcpy(&l2data, md->Val2434, sizeof(l2data));
+  
+  unmask((char*)&l2data, mask, sizeof(l2data));
+
+  double BidPrice1 = conv_double(l2data.BidPrice1);
+  double AskPrice1 = conv_double(l2data.AskPrice1);
+  double UpperLimitPrice = conv_double(md->UpperLimitPrice);
+  double LowerLimitPrice = conv_double(md->LowerLimitPrice);
+  
+  if((BidPrice1 < LowerLimitPrice)
+  ||(BidPrice1 > UpperLimitPrice)
+  ||(AskPrice1 < LowerLimitPrice)
+  ||(AskPrice1 > UpperLimitPrice)){
+    GFXELE_LOG("mask[0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n"
+      ,mask[0] ,mask[1] ,mask[2] ,mask[3] ,mask[4] ,mask[5] ,mask[6] ,mask[7]);
+  }
+  return 0;
 }
 
 

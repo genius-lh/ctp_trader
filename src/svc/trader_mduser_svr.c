@@ -88,6 +88,10 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
   api_imp = trader_mduser_api_femas_af_method_get();
 #endif
 
+#ifdef REM62
+    extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
+      api_imp = trader_mduser_api_rem_method_get();
+#endif
 
 #ifdef XSPEED_STOCK
 #include "trader_mduser_api_xspeed.h"

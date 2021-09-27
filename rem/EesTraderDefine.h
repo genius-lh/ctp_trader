@@ -14,7 +14,7 @@
 #include <string.h>
 
 
-#define SL_EES_API_VERSION    "4.0.3.60"				///<  api版本号
+#define SL_EES_API_VERSION    "3.1.3.62"				///<  api版本号
 
 typedef int RESULT;										///< 定义返回值 
 typedef int ERR_NO;										///< 定义错误值 
@@ -184,7 +184,7 @@ struct EES_LogonResponse
 	unsigned int		m_OrderFCCount;						///< 下单流控参数，单位时间内下单次数限制的次数
 	unsigned int		m_OrderFCInterval;					///< 下单流控参数，单位时间内下单次数限制单位时间，微秒值
 	unsigned int		m_CancelFCCount;					///< 撤单流控参数，单位时间内撤单次数限制的次数
-	unsigned int		m_CancelFCInterval;					///< 撤单流控参数，单位时间内撤单次数限制单位时间，微秒值(目前此字段无效，值默认为0)
+	unsigned int		m_CancelFCInterval;					///< 撤单流控参数，单位时间内撤单次数限制单位时间，微秒值
 };
 
 
@@ -198,7 +198,7 @@ struct EES_EnterOrderField
 	EES_SecType         m_SecType;						///< 交易品种
 	double              m_Price;						///< 价格
 	unsigned int        m_Qty;							///< 数量
-	EES_OptExecFlag		m_OptExecFlag;					///< 期权行权标志位(系统暂不支持行权，填0即可)
+	EES_OptExecFlag		m_OptExecFlag;					///< 期权行权标志位
 	EES_ClientToken		m_ClientOrderToken;				///< 整型，必须保证，这次比上次的值大，并不一定需要保证连续
 	EES_OrderTif		m_Tif;							///< 当需要下FAK/FOK报单时，需要设置为EES_OrderTif_IOC
 	unsigned int		m_MinQty;						///< 当需要下FAK/FOK报单时，该值=0：映射交易所的FAK-任意数量；
@@ -211,7 +211,7 @@ struct EES_EnterOrderField
 	EES_HedgeFlag		m_HedgeFlag;					///< 投机套利标志
 	unsigned char		m_ForceMarketSessionId;			///< 如果为true，当客户指定席位代码，但是该席位不可用或者非法时，指示服务器不要自行决定送单席位，而是拒绝下单
 	unsigned char		m_DoNotAdjustCoverSide;			///< 默认情况下，如果是中金/大连交易所的“平今/平昨”订单，API会自动将之转换为“平仓”订单，该值如果为true，则不进行此转换，一般用于测试场景
-	EES_OrderType	    m_OrderType;					///< 目前支持：1=限价; 3=限价止盈; 4=限价止损; 这3种，且仅对大连订单真正有效。
+	EES_OrderType		m_OrderType;					///< 目前支持：1=限价; 3=限价止盈; 4=限价止损; 这3种，且仅对大连订单真正有效。
 	double				m_StopPrice;					///< 当m_OrderType为 3/4/5/6 时必填，其它情况填0
 	EES_EnterOrderField()
 	{
@@ -224,6 +224,7 @@ struct EES_EnterOrderField
 		m_ForceMarketSessionId = 0;
 		m_DoNotAdjustCoverSide = 0;
 		m_OrderType = EES_Order_Type_Limt;
+		m_StopPrice = 0.0;
 	}
 
 };
@@ -233,7 +234,7 @@ struct EES_OrderAcceptField
 { 
 	EES_ClientToken     m_ClientOrderToken;				///< 下单的时候，返回给你的token
 	EES_MarketToken     m_MarketOrderToken;				///< 市场里面挂单的token
-	EES_OrderState      m_OrderState;					///< 单子状态，绝大多时候是1，但是也有可能是2.    1=order live（单子活着）    2=order dead（单子死了）
+	EES_OrderState      m_OrderState;					///< 订单状态
 	EES_UserID          m_UserID;						///< 订单的 user id 
 	EES_Nanosecond      m_AcceptTime;					///< 从1970年1月1日0时0分0秒开始的纳秒时间，请使用ConvertFromTimestamp接口转换为可读的时间
 	EES_Account         m_Account;						///< 用户代码
@@ -243,7 +244,7 @@ struct EES_OrderAcceptField
 	EES_SecType         m_SecType;						///< 交易品种
 	double              m_Price;						///< 价格
 	unsigned int        m_Qty;							///< 数量
-	EES_OptExecFlag		m_OptExecFlag;					///< 期权行权标志位(系统暂不支持行权)
+	EES_OptExecFlag		m_OptExecFlag;					///< 期权行权标志位
 	EES_OrderTif		m_Tif;							///< 用户下单时指定的值
 	unsigned int		m_MinQty;						///< 用户下单时指定的值
 	EES_CustomFieldType m_CustomField;					///< 用户下单时指定的值
@@ -254,12 +255,12 @@ struct EES_OrderAcceptField
 /// 下单被市场接受消息
 struct EES_OrderMarketAcceptField
 {
-	EES_Account       m_Account;          ///< 用户代码
-	EES_MarketToken   m_MarketOrderToken; ///< 盛立系统产生的单子号，和盛立交流时可用该号。
-	EES_MarketOrderId m_MarketOrderId;    ///< 市场订单号
-	EES_Nanosecond    m_MarketTime;       ///< 市场时间信息
-	EES_UserID        m_UserID;			  ///< 订单的 user id 
-	EES_ClientToken   m_ClientOrderToken; ///< 订单的ClientToken
+	EES_Account				m_Account;          ///< 用户代码
+	EES_MarketToken			m_MarketOrderToken; ///< 盛立系统产生的单子号，和盛立交流时可用该号。
+	EES_MarketOrderId		m_MarketOrderId;    ///< 市场订单号
+	EES_Nanosecond			m_MarketTime;       ///< 市场时间信息
+	EES_UserID				m_UserID;			///< 订单的 user id 
+	EES_ClientToken			m_ClientOrderToken; ///< 订单的ClientToken
 	EES_OrderExchangeStatus	m_ExchangeStatus;	///< 参考EES_OrderExchangeStatus定义，0=普通接受; 1=止盈止损单触发; 2=订单挂起; 3=订单激活 
 };
 
@@ -283,7 +284,7 @@ struct EES_OrderMarketRejectField
 	EES_Account     m_Account;           ///< 用户代码
 	EES_MarketToken m_MarketOrderToken;	 ///< 盛立系统产生的单子号，和盛立交流时可用该号。
 	EES_Nanosecond  m_MarketTimestamp;   ///< 市场时间信息, 从1970年1月1日0时0分0秒开始的纳秒时间，请使用ConvertFromTimestamp接口转换为可读的时间
-	EES_ReasonText2  m_ReasonText;		 ///< 交易所返回的错误字符串，GB2312编码
+	EES_ReasonText2	m_ReasonText;		 ///< 交易所返回的错误字符串，GB2312编码
 	EES_ExchangeID  m_ExchangeId;		 ///< 产生错误码的交易所
 	int				m_ExchangeErrorId;	 ///< 交易所api给出的错误码
 	EES_UserID      m_UserID;			 ///< 订单的 user id 
@@ -312,7 +313,6 @@ struct EES_CancelOrder
 	EES_MarketSessionId m_MarketSessionId;				///< 交易所席位代码，从OnResponseQueryMarketSessionId获取合法值，如果填入0或者其他非法值，REM系统将自行决定送单的席位	，除非m_ForceMarketSessionId为true	
 	unsigned char	m_ForceMarketSessionId;				///< 如果为1，当客户指定席位代码，但是该席位不可用或者非法时，指示服务器不要自行决定送单席位，而是拒绝下单
 	unsigned char   m_ActionFlag;                       ///< 0=撤单, 1=挂起, 2=激活，注意仅上期和能源中心支持激活挂起。
-
 	EES_CancelOrder()
 	{
 		memset(this, 0, sizeof(*this));
@@ -336,14 +336,14 @@ struct EES_QueryAccountOrder
 	EES_UserID			m_Userid;						///< 原来单子的用户，对应着LoginID。
 	EES_Nanosecond		m_Timestamp;					///< 订单创建时间，从1970年1月1日0时0分0秒开始的纳秒时间，请使用ConvertFromTimestamp接口转换为可读的时间
 	EES_ClientToken		m_ClientOrderToken;				///< 原来单子的token 
-	EES_SideType		m_SideType;						///< 1 = 买单（开今） 2 = 卖单（平今）  3= 买单（平今） 4 = 卖单（开今）  5= 买单（平昨） 6= 卖单（平昨） 21买平（非平今平昨模式） 22卖平（非平今平昨模式） 
+	EES_SideType		m_SideType;						///< 1 = 买单（开今） 2 = 卖单（平今）  3= 买单（平今） 4 = 卖单（开今）  5= 买单（平昨） 6= 卖单（平昨） 7=买单（强平昨）  8=卖单（强平昨）  9=买单（强平今）  10=买单（强平今）
 	unsigned int		m_Quantity;						///< 数量（股票为股数，期货为手数）
 	EES_SecType			m_InstrumentType;				///< 1＝Equity 股票 2＝Options 期权 3＝Futures 期货
 	EES_Symbol			m_symbol;						///< 股票代码，期货代码或者期权代码，以中国交易所标准 (目前6位就可以)
 	double				m_Price;						///< 价格
 	EES_Account			m_account;						///< 61 16  Alpha 客户帐号.  这个是传到交易所的客户帐号。验证后，必须是容许的值，也可能是这个连接的缺省值。
 	EES_ExchangeID		m_ExchengeID;					///< 100＝上交所  101=深交所  102=中金所  103=上期所  104=大商所  105=郑商所  255= done-away  See appendix 
-	EES_OptExecFlag		m_OptExecFlag;					///< 期权行权标志位(系统暂不支持行权)
+	EES_OptExecFlag		m_OptExecFlag;					///< 期权行权标志位
 	EES_MarketToken		m_MarketOrderToken;				///< 盛立系统产生的单子号，和盛立交流时可用该号。 
 	EES_OrderStatus		m_OrderStatus;					///< 请参考EES_OrderStatus的定义
 	EES_Nanosecond		m_CloseTime;					///< 订单关闭事件，从1970年1月1日0时0分0秒开始的纳秒时间，请使用ConvertFromTimestamp接口转换为可读的时间
@@ -405,7 +405,7 @@ struct EES_AccountPosition
 
 struct EES_AccountOptionPosition
 {
-	EES_Account			m_actId;						///< Value  Notes 用户代码
+	EES_Account			m_actId;						///< Value  Notes
 	EES_Symbol			m_Symbol;						///< 合约名称/股票代码
 	EES_PosiDirection	m_PosiDirection;				///< 多空方向 1：多头 5：空头
 	EES_Symbol			m_UnderlyingSymbol;				///< 期权标的物期货合约
@@ -413,16 +413,14 @@ struct EES_AccountOptionPosition
 	double				m_StrikePrice;                  ///< 期权合约的执行价
 	unsigned int		m_ExpireDate;                   ///< 到期日
 	unsigned int		m_InitOvnQty;					///< 隔夜仓初始数量，这个值不会变化，除非通过HelpDesk手工修改		
-	unsigned int		m_CurOvnQty;                    /// 当前昨仓量
-	unsigned int		m_CurTodayQty;                  /// 今仓剩余量
-	unsigned int		m_CoverOvnLockedQty;            /// 昨仓锁定数量（仅在平今平昨模式下产生，除上期所外其他交易所显示的是总量）
-	unsigned int		m_CoverTodayLockedQty;          /// 今仓锁定数量（仅在平今平昨模式下产生，除上期所外其他交易所显示的是总量）
+	unsigned int		m_CurTotalQty;                  ///< 所有已成交的数量
+	unsigned int		m_CoverLockedQty;               ///< 平仓单挂单锁定的数量
 	unsigned int		m_ExecPendingQty;               ///< 行权单，刚发出去还没有成交回报时候的数量，该值大于0，不允许任何行权撤销动作
 	unsigned int		m_ExecAppliedQty;               ///< 行权单，已经收到回报的数量
-	unsigned int		m_CxlExecPendingQty;            ///  撤销行权在途量
-	double				m_LiquidPl;                      ///<平仓盈亏
-	double				m_AvgPrice;	                     ///<均价
-	double				m_TotalCommissionFee;            ///<总手续费
+	unsigned int		m_CxlExecPendingQty;
+	double				m_LiquidPl;                     ///<平仓盈亏
+	double				m_AvgPrice;	                    ///<均价
+	double				m_TotalCommissionFee;           ///<总手续费
 	EES_HedgeFlag		m_HedgeFlag;					///< 仓位对应的投机套利标志
 };
 
@@ -472,7 +470,7 @@ struct EES_SymbolField
 /// 查询帐户的保证金率
 struct EES_AccountMargin
 {
-	EES_SecType			m_SecType;						/// 交易类型 1 套利 2 投机 2 套保
+	EES_SecType			m_SecType;						///< 3=Future，目前仅支持期货
 	EES_Symbol			m_symbol;						///< 合约名称/股票代码
 	EES_ExchangeID		m_ExchangeID;					///< 102=中金所   103=上期所    104=大商所    105=郑商所
 	EES_ProductID		m_ProdID;						///< 4  Alpha 产品代码
@@ -483,7 +481,7 @@ struct EES_AccountMargin
 /// 帐户合约费率查询
 struct EES_AccountFee
 {
-	EES_SecType			m_SecType;						/// 交易类型 1 套利 2 投机 2 套保
+	EES_SecType			m_SecType;						///<  3=Future，目前仅支持期货
 	EES_Symbol			m_symbol;						///<  合约名称/股票代码
 	EES_ExchangeID		m_ExchangeID;					///<  102=中金所    103=上期所    104=大商所    105=郑商所
 	EES_ProductID		m_ProdID;						///<  产品代码
@@ -501,8 +499,8 @@ struct EES_CxlOrderRej
 {
 	EES_Account			m_account;						///< 客户帐号. 
 	EES_MarketToken		m_MarketOrderToken;				///< 盛立内部用的orderID
-	unsigned int		m_ReasonCode;					///< 错误码，每个字符映射一种检查错误原因，见文件末尾的附录，这是用二进制位表示的一个原因组合
-	EES_ReasonText		m_ReasonText;					///< 错误字符串，未使用
+	unsigned int		m_ReasonCode;					///< 错误码，需要配合m_ExchangeID，获取真实原因。参见本文件最后一段
+	EES_ReasonText		m_ReasonText;					///< 错误字符串，由API填写
 	EES_UserID			m_UserID;						///< 要撤订单的 user id，如果是因为找不到原订单，则为0
 	EES_ClientToken		m_ClientOrderToken;				///< 要撤订单的ClientToken，如果是因为找不到原订单，则为0
 	EES_ExchangeID		m_ExchangeID;					///< 撤单拒绝的源，0=柜台直接拒绝。102/103/104等值，表示交易所的撤单拒绝错误码
@@ -516,15 +514,15 @@ struct EES_PostOrder
 	EES_Nanosecond		m_Timestamp;					///< 订单创建时间，从1970年1月1日0时0分0秒开始的纳秒时间，请使用ConvertFromTimestamp接口转换为可读的时间
 	EES_MarketToken		m_MarketOrderToken;				///< 盛立系统产生的单子号，和盛立交流时可用该号。
 	EES_ClientToken		m_ClientOrderToken;				///< 不起作用，设为０
-	EES_SideType		m_SideType;						///< Buy/Sell Indicator 27  1 Int1  1 = 买单（开今）    2 = 卖单（平今）    3= 买单（平今）   4= 卖单（开今）   5= 买单（平昨）   6= 卖单（平昨）  21买平（非平今平昨模式） 22卖平（非平今平昨模式）
+	EES_SideType		m_SideType;						///< Buy/Sell Indicator 27  1 Int1  1 = 买单（开今）    2 = 卖单（平今）    3= 买单（平今）   4= 卖单（开今）   5= 买单（平昨）   6= 卖单（平昨）   7= 买单 （强平昨）    8= 卖单 （强平昨）    9= 买单 （强平今）    10=买单 （强平今）
 	unsigned int		m_Quantity;						///< 数量（股票为股数，期货为手数）
 	EES_SecType			m_SecType;						///< 1＝Equity 股票   2＝Options 期权   3＝Futures 期货
 	EES_Symbol			m_Symbol;						///< 股票代码，期货代码或者期权代码，以中国交易所标准 (目前6位就可以)
 	double				m_price;						///< 价格 
 	EES_Account			m_account;						///< 客户帐号.  这个是传到交易所的客户帐号。验证后，必须是容许的值，也可能是这个连接的缺省值。
 	EES_ExchangeID		m_ExchangeID;					///< 255=Done-away
-	EES_OptExecFlag		m_OptExecFlag;					///< 期权行权标志位（系统暂不支持行权）
-	EES_OrderState		m_OrderState;					///< 单子状态，绝大多时候是1，但是也有可能是2.    1=order live（单子活着）    2=order dead（单子死了）
+	EES_OptExecFlag		m_OptExecFlag;					///< 期权行权标志位
+	EES_OrderState		m_OrderState;					///< 单子状态，0=order accept（普通接受）；1=order triggered（止盈止损单触发）；2=单子挂起; 3=单子激活;
 	EES_MarketOrderId	m_ExchangeOrderID;				///< 交易所单号，如果是人工被动单，该值为空白
 	EES_HedgeFlag		m_HedgeFlag;					///< 投机套利标志
 };
@@ -605,7 +603,7 @@ struct EES_TradeSvrInfo
 //	9	交易品种不合法，目前只支持“3-期货”
 //	10	委托数量不合法，必须>0
 //	11	不使用
-//	12	买卖方向不合法，目前只支持1-6 21 22
+//	12	买卖方向不合法，目前只支持1-6
 //	13	不使用
 //	14	对没有权限的账户进行操作
 //	15	委托编号重复
@@ -619,17 +617,81 @@ struct EES_TradeSvrInfo
 //  23	当前账户没有期权交易权限
 //	24	登录用户与连接session不符
 	
-// 50- 116由风控拒绝造成（整合版中风控拒绝码删减，仅仅保留原来的几项 2020/8/12）
+// 50- 116由风控拒绝造成，
 // 
+//	50	订单手数限制
 //	51	订单占经纪商保证金额限制
+//	52	订单报价增额超限：与盘口价相比
+//	53	订单报价增额超限: 与最近成交价相比
+//	54	订单报价百分比超限:与盘口价相比
+//	55	订单报价百分比超限:与最近成交价相比
+//	56	订单报价增额超限：与昨结算价相比
+//	57	订单报价百分比超限：与昨结算价相比
+//	58	限价委托订单手数限制
+//	59	市价委托订单手数限制
+//	60	累计下订单发出次数限制
+//	61	累计下订单发出手数限制
+//	62	累计下订单发出金额限制
+//	63	在指定时间1内收到订单次数上限
+//	64	在指定时间2内收到订单次数上限
 //	65	禁止交易
+//	66	累计开仓订单发出次数限制
+//	67	累计平仓订单发出次数限制
+//	68	风控校验不通过次数限制
+//	69	客户权益核查
 //	70	总挂单金额校验
+//	71	最大撤单次数限制
+//	72	某合约最大撤单发出次数限制
+//	73	在指定时间1内撤单次数上限
+//	74	在指定时间2内撤单次数上限
+//	75	大额订单撤单次数限制
+//	76	累计持仓手数限制
+//	77	累计持仓占用保证金额总和限制
+//	78	累计成交手数限制
+//	79	成交金额总和限制
+//	80	下订单被市场拒绝次数的限制
+//	81	下单被柜台系统拒绝次数限制
+//	82	撤单被市场拒绝次数限制
+//	83	在指定时间1内下订单被市场拒绝次数上限
+//	84	在指定时间2内下订单被市场拒绝次数上限
+//	85	在指定时间1内撤单被市场拒绝次数上限
+//	86	在指定时间2内撤单被市场拒绝次数上限
+//	87	净盈亏限制
+//	88	浮动盈亏限制
+//	89	总盈亏限制
+//	90	持多仓手数限制
+//	91	持空仓手数限制
+//	92	持多仓占用保证金额限制
+//	93	持空仓占用保证金额限制
+//	94	某合约持多仓手数限制
+//	95	某合约持空仓手数限制
+//	96	某合约持多仓占用保证金额限制
+//	97	某合约持空仓占用保证金额限制
+//	98	某合约持仓总手数限制
+//	99	某合约持仓占保证金额总额限制
+//	100	某合约净收益限制
+//	101	某合约浮动盈亏限制
+//	102	某合约总收益限制
+//	103	累计开仓成交手数限制
+//	104	累计开仓成交金额总和限制
+//	105	累计开多仓成交手数限制
+//	106	累计开空仓成交手数限制
+//	107	累计开多仓成交金额总和限制
+//	108	累计开空仓成交金额总和限制
+//	109	经纪商风险度限制
+//	110	交易所风险度限制
+//	111	在指定时间1内下单被柜台系统拒绝次数上限
+//	112	在指定时间2内下单被柜台系统拒绝次数上限
+//	113	不使用
 //	114	可用资金不足
 //	115	可平仓位不足
+//	116	委托价格超过涨跌停范围
 
-//	撤销指令的拒绝原因对照表,这是用二进制位表示的一个原因组合,一个位为1，表示该位对应的原因为真
-//  REM直接拒绝的错误码：
-//  当m_ExchangeID = 0 
+
+
+//	撤销拒绝原因对照表，对于交易所的撤单拒绝，不同的交易所给出的ReasonCode有各自的含义，需要独立处理
+//  以下下整理的是目前已知的错误码
+//  REM直接拒绝的错误码： m_ExchangeID = 0
 //	5			-  找不到报单
 //	33			-  报单已撤单或已成交
 //	3			-  报单尚未被市场接受
