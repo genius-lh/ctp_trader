@@ -163,6 +163,8 @@ static void* trader_mduser_api_efh32_thread(void* arg);
 
 static int trader_mduser_api_efh32_prase_url(const char* url, char* local_host, char* remote_host, int* port, char* remote_host2, int* port2);
 
+static void trader_mduser_api_efh32_sock_recv(void* arg, int fd);
+
 static void on_receive_message(void* arg, const char* buff, unsigned int len);
 
 static void on_receive_fut_lev1(void* arg, efh3_2_fut_lev1* data);
@@ -448,6 +450,35 @@ void trader_mduser_api_efh32_subscribe(trader_mduser_api* self, char* instrument
   return ;
 }
 
+void trader_mduser_api_efh32_sock_recv(void* arg, int fd)
+{
+  int n_rcved = 0;
+  char line[MSG_BUF_SIZE];
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+  int loop = 1;
+  
+	struct sockaddr_in muticast_addr;
+  socklen_t len = sizeof(sockaddr_in);
+	memset(&muticast_addr, 0, sizeof(muticast_addr));
+
+  do{
+    n_rcved = recvfrom(fd, line, MSG_BUF_SIZE, 0, (struct sockaddr*)&muticast_addr, &len);
+    if ( n_rcved < 0) 
+    {
+      break;
+    } 
+    else if (0 == n_rcved)
+    {
+      break;
+    }         
+    else
+    {
+      on_receive_message(self, line, n_rcved);
+    }
+  }while(loop);
+}
+
+
 void on_receive_message(void* arg, const char* buff, unsigned int len)
 {
 	if ( 0 == (len % sizeof(efh3_2_fut_lev1)))
@@ -652,7 +683,7 @@ void* trader_mduser_api_efh32_thread(void* arg)
   int i;
 
 	int n_rcved = -1;
-  
+
 	fd_set readSet, writeSet, errorSet;
 	struct timeval tval;
 
@@ -678,20 +709,20 @@ void* trader_mduser_api_efh32_thread(void* arg)
     pImp->loop_flag = 1;
     while (pImp->loop_flag)
     {
-    	FD_ZERO( &readSet);
-    	FD_ZERO( &writeSet);
-    	FD_ZERO( &errorSet);
+      FD_ZERO( &readSet);
+      FD_ZERO( &writeSet);
+      FD_ZERO( &errorSet);
 
       for(i = 0; i < sizeof(m_sock) / sizeof(int); i++){
-      	FD_SET(m_sock[i], &readSet);
-      	FD_SET(m_sock[i], &errorSet);
+        FD_SET(m_sock[i], &readSet);
+        FD_SET(m_sock[i], &errorSet);
       }
       tval.tv_usec = 100 * 1000; //100 ms
       tval.tv_sec = 0;
 
       n_rcved = select(max_sock, &readSet, &writeSet, &errorSet, &tval);
-      
-    	if(n_rcved < 1) { // timeout
+
+      if(n_rcved < 1) { // timeout
         continue;
       }
       
@@ -701,8 +732,8 @@ void* trader_mduser_api_efh32_thread(void* arg)
         }
 
         udp_sock_recv(m_sock[i], self);
-      }
 
+      }
     }
   }while(0);
   
