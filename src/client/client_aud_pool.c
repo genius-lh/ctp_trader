@@ -21,7 +21,7 @@ int client_aud_pool_add_trader(client_aud_pool* self, struct bufferevent* buff_t
   pTrader->BufTrader = buff_trader;
 
 
-  TAILQ_INSERT_HEAD(&self->hCnnTraderList, pTrader, next);
+  TAILQ_INSERT_TAIL(&self->hCnnTraderList, pTrader, next);
 
   return 0;
 }
@@ -47,34 +47,36 @@ int client_aud_pool_get_trader(client_aud_pool* self, struct bufferevent** buff_
 
   TAILQ_FOREACH(pIter, &self->hCnnTraderList, next) {
     if(CLIENT_AUD_TRADER_STATUS_EMPTY == pIter->nStatus){
-      pEmpty = pIter;
+      if(!pEmpty){
+        pEmpty = pIter;
+      }
     }else {
       if(!strcmp(user_id, pIter->UserId)){
         pUsed = pIter;
+        break;
       }
     }
   }
 
-  if(!pUsed){
-    if(!pEmpty){
-      // 没找到空闲的tradersvr
-      return -1; 
-    }else{
-      *buff_trader = pEmpty->BufTrader;
-      pEmpty->nStatus = CLIENT_AUD_TRADER_STATUS_LOGINED;
-      strncpy(pEmpty->UserId, user_id, sizeof(pEmpty->UserId));
-      strncpy(pEmpty->Passwd, passwd, sizeof(pEmpty->Passwd));
-      return 0;
-    }
-  }else{
+  if(pUsed){
     *buff_trader = pUsed->BufTrader;
     pUsed->nStatus = CLIENT_AUD_TRADER_STATUS_LOGINED;
     strncpy(pUsed->UserId, user_id, sizeof(pUsed->UserId));
     strncpy(pUsed->Passwd, passwd, sizeof(pUsed->Passwd));
     return 0;
   }
+  
+  if(!pEmpty){
+    // 没找到空闲的tradersvr
+    return -1; 
+  }
+  
+  *buff_trader = pEmpty->BufTrader;
+  pEmpty->nStatus = CLIENT_AUD_TRADER_STATUS_LOGINED;
+  strncpy(pEmpty->UserId, user_id, sizeof(pEmpty->UserId));
+  strncpy(pEmpty->Passwd, passwd, sizeof(pEmpty->Passwd));
+  return 0;
 
-  return -3;
 }
 
 int client_aud_pool_free_trader(client_aud_pool* self, char* user_id)

@@ -62,15 +62,14 @@ void trader_mduser_api_rem_start(trader_mduser_api* self)
   pImp->pMdApi = (void*)pQuoteApi;
   pImp->pHandler = (void*)pTraderHandler;
 
+  self->pUserApi = (void*)pImp;
 
   int ret = trader_mduser_api_rem_prase_url(self->pAddress, remoteTradeIp, &remoteTradeTCPPort);
 
-  // 初始化变量
   EqsTcpInfo svrInfo;
   strncpy(svrInfo.m_eqsIp, remoteTradeIp, sizeof(svrInfo.m_eqsIp));
   svrInfo.m_eqsPort = remoteTradeTCPPort;
 
-  // 连接交易服务器
   pQuoteApi->ConnServer(svrInfo, pTraderHandler);
 
   return ;

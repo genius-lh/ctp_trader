@@ -234,6 +234,8 @@ static dictType* tickDictTypeGet() {
 
 static int udp_sock_init(int* pfd, const char* remote_ip, int remote_port, const char* local_ip);
 
+static int udp_sock_recv(int fd, void* arg);
+
 int udp_sock_init(int* pfd, const char* remote_ip, int remote_port, const char* local_ip)
 {
   int m_sock;
@@ -290,6 +292,35 @@ int udp_sock_init(int* pfd, const char* remote_ip, int remote_port, const char* 
 	}
 
   *pfd = m_sock;
+  return 0;
+}
+
+int udp_sock_recv(int fd, void* arg)
+{
+	struct sockaddr_in muticast_addr;
+	memset(&muticast_addr, 0, sizeof(muticast_addr));
+	char line[MSG_BUF_SIZE] = "";
+	int n_rcved = -1;
+  socklen_t len = sizeof(sockaddr_in);
+  int loop = 1;
+
+  do{
+    n_rcved = recvfrom(fd, line, MSG_BUF_SIZE, 0, (struct sockaddr*)&muticast_addr, &len);
+    if ( n_rcved < 0) 
+    {
+      break;
+    } 
+    else if (0 == n_rcved)
+    {
+      break;
+    }         
+    else
+    {
+      on_receive_message(arg, line, n_rcved);
+    }
+
+  }while(loop);
+
   return 0;
 }
 
@@ -620,13 +651,7 @@ void* trader_mduser_api_efh32_thread(void* arg)
   int ret;
   int i;
 
-	char line[MSG_BUF_SIZE] = "";
-
 	int n_rcved = -1;
-
-	struct sockaddr_in muticast_addr;
-	memset(&muticast_addr, 0, sizeof(muticast_addr));
-
   
 	fd_set readSet, writeSet, errorSet;
 	struct timeval tval;
@@ -670,24 +695,12 @@ void* trader_mduser_api_efh32_thread(void* arg)
         continue;
       }
       
-    	socklen_t len = sizeof(sockaddr_in);
       for(i = 0; i < sizeof(m_sock) / sizeof(int); i++){
         if(!FD_ISSET(m_sock[i], &readSet)){
           continue;
         }
-        n_rcved = recvfrom(m_sock[i], line, MSG_BUF_SIZE, 0, (struct sockaddr*)&muticast_addr, &len);
-        if ( n_rcved < 0) 
-        {
-          continue;
-        } 
-        else if (0 == n_rcved)
-        {
-          continue;
-        }         
-        else
-        {
-          on_receive_message(self, line, n_rcved);
-        }
+
+        udp_sock_recv(m_sock[i], self);
       }
 
     }
@@ -735,6 +748,7 @@ int trader_mduser_api_efh32_prase_url(const char* url, char* local_host, char* r
     return -3;
   }
   memcpy(tmp, p, q - p);
+  tmp[q-p] = '\0';
   *port = atoi(tmp);
   q++;
 
