@@ -19,6 +19,8 @@ bin_PROGRAMS=\
 			traderMduserGfShfe \
 			traderMduserXhsp \
 			traderMduserXhSf \
+			traderMduserSwEfh32FemasAF \
+			traderMduserSwEfh32Rem \
 			testMduserClient
 
 # static library
@@ -377,13 +379,39 @@ traderMduserXhSf_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserXhSf_CFLAGS=-DXH_SOLARFLARE \
+traderMduserXhSf_CFLAGS=-DXHGZ_SF_REM \
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
 traderMduserXhSf_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 	-L. -lcffexl2mduser -ltradercmn -lmduserapi \
 	-Lsolarflare -lefvi-common -lciul1 \
+	-Lrem -lremmduser -lEESQuoteApi
+
+#traderMduserSwEfh32FemasAF
+#traderMduserSwEfh32Rem
+traderMduserSwEfh32FemasAF_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserSwEfh32FemasAF_CFLAGS=-DSW_EFH32_FEMAS302\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserSwEfh32FemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lswmduser -ltradercmn -lmduserapi\
+	-Lfemas302 -lfemasmduser_af -lUSTPmduserapiAF
+
+traderMduserSwEfh32Rem_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserSwEfh32Rem_CFLAGS=-DSW_EFH32_REM\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserSwEfh32Rem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lswmduser -ltradercmn -lmduserapi\
 	-Lrem -lremmduser -lEESQuoteApi
 
 # testMduserShm testMduserClient
