@@ -232,8 +232,9 @@ void gf_mduser_on_rtn_depth_market_data(void* arg, CUstpFtdcDepthMarketDataField
   oTick.BidVolume1 = pMarketData->BidVolume1;
   oTick.AskPrice1 = pMarketData->AskPrice1;
   oTick.AskVolume1 = pMarketData->AskVolume1;
-  oTick.UpperLimitPrice = pMarketData->UpperLimitPrice + 1;
-  oTick.LowerLimitPrice = pMarketData->LowerLimitPrice - 1;
+  oTick.UpperLimitPrice = pMarketData->UpperLimitPrice;
+  oTick.LowerLimitPrice = pMarketData->LowerLimitPrice;
+  oTick.LastPrice = pMarketData->LastPrice;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
@@ -254,8 +255,9 @@ void gf_ctp_mduser_on_rtn_depth_market_data(void* arg, CThostFtdcDepthMarketData
   oTick.BidVolume1 = pMarketData->BidVolume1;
   oTick.AskPrice1 = pMarketData->AskPrice1;
   oTick.AskVolume1 = pMarketData->AskVolume1;
-  oTick.UpperLimitPrice = pMarketData->UpperLimitPrice + 1;
-  oTick.LowerLimitPrice = pMarketData->LowerLimitPrice - 1;
+  oTick.UpperLimitPrice = pMarketData->UpperLimitPrice;
+  oTick.LowerLimitPrice = pMarketData->LowerLimitPrice;
+  oTick.LastPrice = pMarketData->LastPrice;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
@@ -286,6 +288,7 @@ void gf_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMa
   oTick.AskVolume1 = pMarketData->depth[0].ask_volume;
   oTick.UpperLimitPrice = pMarketData->upper_limit;
   oTick.LowerLimitPrice = pMarketData->lower_limit;
+  oTick.LastPrice = pMarketData->last_price;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 

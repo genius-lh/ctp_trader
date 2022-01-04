@@ -67,6 +67,8 @@ struct trader_tick_def {
 	double	UpperLimitPrice;
 	///跌停板价
 	double	LowerLimitPrice;
+	///最新价
+	double	LastPrice;
   ///保留字段
   long Reserved;
 };

@@ -166,6 +166,7 @@ void gd_mduser_on_rtn_depth_market_data(void* arg, CXeleCffexLevelOneMarketData 
   oTick.BidVolume1= pMarketData->BidVolume;
   oTick.AskPrice1 = pMarketData->AskPrice;
   oTick.AskVolume1= pMarketData->AskVolume;
+  oTick.LastPrice = pMarketData->LastPrice;
 
   int ret;
   CXeleCffexMarketDataStaticField marketDataStaticField;

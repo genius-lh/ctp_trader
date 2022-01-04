@@ -568,6 +568,7 @@ void on_receive_fut_lev1(void* arg, efh3_2_fut_lev1* pMarketData)
   oTick.AskVolume1 = pMarketData->m_ask_share;
   oTick.UpperLimitPrice = pMarketData->m_ask_px * 1.1;
   oTick.LowerLimitPrice = pMarketData->m_bid_px * 0.9;
+  oTick.LastPrice = pMarketData->m_last_px;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
@@ -601,6 +602,7 @@ void on_receive_fut_lev2(void* arg, efh3_2_fut_lev2* pMarketData)
   oTick.AskVolume1 = pMarketData->m_ask1_share;
   oTick.UpperLimitPrice = pMarketData->m_ask1_px * 1.1;
   oTick.LowerLimitPrice = pMarketData->m_bid1_px * 0.9;
+  oTick.LastPrice = pMarketData->m_last_px;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
@@ -634,6 +636,7 @@ void on_receive_opt_lev1(void* arg, efh3_2_opt_lev1* pMarketData)
   oTick.AskVolume1 = pMarketData->m_ask_share;
   oTick.UpperLimitPrice = pMarketData->m_ask_px * 1.1;
   oTick.LowerLimitPrice = pMarketData->m_bid_px * 0.9;
+  oTick.LastPrice = pMarketData->m_last_px;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
@@ -667,6 +670,7 @@ void on_receive_opt_lev2(void* arg, efh3_2_opt_lev2* pMarketData)
   oTick.AskVolume1 = pMarketData->m_ask1_share;
   oTick.UpperLimitPrice = pMarketData->m_ask1_px * 1.1;
   oTick.LowerLimitPrice = pMarketData->m_bid1_px * 0.9;
+  oTick.LastPrice = pMarketData->m_last_px;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 

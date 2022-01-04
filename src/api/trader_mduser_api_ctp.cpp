@@ -236,6 +236,7 @@ void ctp_mduser_on_rtn_depth_market_data(void* arg, CThostFtdcDepthMarketDataFie
   oTick.AskVolume1 = pMarketData->AskVolume1;
   oTick.UpperLimitPrice = pMarketData->UpperLimitPrice;
   oTick.LowerLimitPrice = pMarketData->LowerLimitPrice;
+  oTick.LastPrice = pMarketData->LastPrice;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 

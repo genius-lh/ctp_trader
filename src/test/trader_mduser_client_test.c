@@ -159,17 +159,19 @@ void trader_mduser_client_test_flush(trader_mduser_client_test* self)
     ||(DBL_MAX == tick->AskPrice1)){
       continue;
     }
-    snprintf(line, sizeof(line), "%s,%s,%s,%d,%f,%d,%f,%d,%f,%f\n",
-      tick->InstrumentID,
-      tick->TradingDay,
-      tick->UpdateTime,
-      tick->UpdateMillisec,
-      tick->BidPrice1,
-      tick->BidVolume1,
-      tick->AskPrice1,
-      tick->AskVolume1,
-      tick->UpperLimitPrice,
-      tick->LowerLimitPrice);
+    snprintf(line, sizeof(line), "%s,%s,%s,%d,%f,%f,%d,%f,%d,%f,%f\n"
+      , tick->InstrumentID
+      , tick->TradingDay
+      , tick->UpdateTime
+      , tick->UpdateMillisec
+      , tick->LastPrice
+      , tick->BidPrice1
+      , tick->BidVolume1
+      , tick->AskPrice1
+      , tick->AskVolume1
+      , tick->UpperLimitPrice
+      , tick->LowerLimitPrice
+    );
 
     len = strlen(line);
     memcpy(&buffer[pos], line, len);

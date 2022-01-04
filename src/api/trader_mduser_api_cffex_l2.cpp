@@ -91,6 +91,9 @@ static int do_xor(char* d1, char* d2, int l2);
 static int gen_mask(char* dest, int size,  char* d1, int l1, char* d2, int l2);
 static int check_mask(char* mask, cffex_l2_t* md);
 
+static void check_sum(unsigned int* check_value, const unsigned short* data, int len);
+static unsigned short check_sum_udp(const char* data, int len);
+
 #ifdef __cplusplus
 }
 #endif
@@ -236,6 +239,7 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
   oTick.AskVolume1 = conv_int(price->AskVolume1);
   oTick.UpperLimitPrice = conv_double(pMarketData->UpperLimitPrice);
   oTick.LowerLimitPrice = conv_double(pMarketData->LowerLimitPrice);
+  oTick.LastPrice = conv_double(pMarketData->Val2433);
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
@@ -283,6 +287,11 @@ void* trader_mduser_api_cffex_l2_thread(void* arg)
         if (msg_buf.iov[i].iov_len == sizeof(cffex_l2_t))
         {
           md = (cffex_l2_t *)msg_buf.iov[i].iov_base;
+          
+          if(check_sum_udp((char*)msg_buf.iov[i].iov_base, msg_buf.iov[i].iov_len)){
+            GFXELE_LOG("checksum failed\n");
+          }
+          
           cffex_l2_mduser_on_rtn_depth_market_data(arg, md);
         }
       }
@@ -341,7 +350,7 @@ double conv_double(const char* value)
 
 int unmask(char* d1, char* mask, int len)
 {
-  if(0 == *(int*)mask){
+  if(0 == *(long*)mask){
     return len;
   }
 
@@ -483,6 +492,46 @@ int check_mask(char* mask, cffex_l2_t* md)
   return 0;
 }
 
+void check_sum(unsigned int* check_value, const unsigned short* data, int len)
+{
+  int i = 0;
+  while(i < len){
+    *check_value += data[i];
+    i++;
+  }
 
+  return;
+}
 
+unsigned short check_sum_udp(const char* data, int len)
+{
+  unsigned int checkvalue = 0;
+
+  unsigned short* p;
+
+  int pos = 0;
+
+  p = (unsigned short*)&data[26];
+  check_sum(&checkvalue, p, 4);
+
+  
+  unsigned char udp_headr[2];
+  pos = 0;
+  udp_headr[pos++] = 0;
+  udp_headr[pos++] = 0x11;
+  
+  p = (unsigned short*)&udp_headr[0];
+  check_sum(&checkvalue, p, 1);
+
+  p = (unsigned short*)&data[38];
+  check_sum(&checkvalue, p, 1);
+
+  p = (unsigned short*)&data[34];
+  check_sum(&checkvalue, p, (len-34)/2);
+  
+  checkvalue = (checkvalue &0xffff) + (checkvalue >> 16);
+  checkvalue += (checkvalue >> 16);
+  checkvalue = (~checkvalue);
+  return checkvalue;
+}
 

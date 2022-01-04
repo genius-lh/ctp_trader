@@ -82,6 +82,7 @@ void CRemMduserHandler::OnQuoteUpdated(EesEqsIntrumentType chInstrumentType, EES
     oTick.AskVolume1= pDepthQuoteData->AskVolume1;
     oTick.UpperLimitPrice= pDepthQuoteData->UpperLimitPrice;
     oTick.LowerLimitPrice= pDepthQuoteData->LowerLimitPrice;
+    oTick.LastPrice = pDepthQuoteData->LastPrice;
 
     trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 

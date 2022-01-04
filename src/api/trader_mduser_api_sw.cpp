@@ -252,6 +252,7 @@ void sw_x10_mduser_on_rtn_depth_market_data(void* arg, struct guava_udp_normal *
   oTick.AskVolume1 = pMarketData->m_ask_share;
   oTick.UpperLimitPrice = pMarketData->m_ask_px * 1.1;
   oTick.LowerLimitPrice = pMarketData->m_bid_px * 0.9;
+  oTick.LastPrice = pMarketData->m_last_px;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 

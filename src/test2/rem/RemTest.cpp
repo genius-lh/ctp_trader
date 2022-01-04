@@ -82,6 +82,7 @@ int main(int argc, char* argv[])
 
   RESULT ret_err;
 	EES_TradeSvrInfo svrInfo;
+  memset(&svrInfo, 0, sizeof(svrInfo));
 	strncpy(svrInfo.m_remoteTradeIp, remoteTradeIp, sizeof(svrInfo.m_remoteTradeIp));
 	svrInfo.m_remoteTradeTCPPort = atoi(remoteTradeTCPPort);
 	svrInfo.m_remoteTradeUDPPort = atoi(remoteTradeUDPPort);
