@@ -290,6 +290,7 @@ void* trader_mduser_api_cffex_l2_thread(void* arg)
           
           if(check_sum_udp((char*)msg_buf.iov[i].iov_base, msg_buf.iov[i].iov_len)){
             GFXELE_LOG("checksum failed\n");
+            continue;
           }
           
           cffex_l2_mduser_on_rtn_depth_market_data(arg, md);
