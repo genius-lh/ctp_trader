@@ -204,6 +204,9 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
   }
 
   if(!pImp->mask_flag){
+    if(0x7f == pMarketData->OpenPrice[0]){
+      return ;
+    }
     pImp->mask_flag = 1;
     gen_mask(pImp->mask, sizeof(pImp->mask), 
       pMarketData->OpenPrice, sizeof(pMarketData->OpenPrice), 
