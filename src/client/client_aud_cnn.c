@@ -506,6 +506,15 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
       ||(0 == memcmp(update->stage[num].T1, "IC", 2))){
         update->stage[num].TriggerType = 0;
       }
+
+      if(0 == memcmp(update->stage[num].T1, "m2", 2)){
+        update->stage[num].TriggerType = 1;
+      }
+      
+      if(0 == memcmp(update->stage[num].T2, "m2", 2)){
+        update->stage[num].TriggerType = 2;
+      }
+      
     }
   }
   

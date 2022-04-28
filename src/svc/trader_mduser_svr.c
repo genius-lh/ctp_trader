@@ -139,6 +139,12 @@ extern trader_mduser_api_method* trader_mduser_api_sw_method_get();
   api_imp = trader_mduser_api_sw_method_get();
 #endif
 
+#ifdef SW_EFH32_CTP66
+extern trader_mduser_api_method* trader_mduser_api_sw_method_get();
+  api_imp = trader_mduser_api_sw_method_get();
+#endif
+
+
 #ifdef DLL_MODE
   api_imp = (trader_mduser_api_method*)trader_mduser_svr_main_load_func(self);
 #endif
@@ -182,6 +188,11 @@ extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
 #ifdef SW_EFH32_FEMAS302
 extern trader_mduser_api_method* trader_mduser_api_femas_af_method_get();
   api_imp = trader_mduser_api_femas_af_method_get();
+#endif
+
+#ifdef SW_EFH32_CTP66
+extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
+    api_imp = trader_mduser_api_ctp_method_get();
 #endif
 
 #ifdef DLL_MODE
@@ -422,7 +433,6 @@ int  trader_mduser_svr_proc(trader_mduser_svr* self, trader_mduser_evt* evt)
 
   tick = &evt->Tick;
   if(0 != strcmp(current->UpdateTime, tick->UpdateTime)
-  || (current->UpdateMillisec != tick->UpdateMillisec)
   || (current->AskPrice1 != tick->AskPrice1)
   || (current->BidPrice1 != tick->BidPrice1)){
     memcpy(current, tick, sizeof(trader_tick));

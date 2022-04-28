@@ -9,6 +9,9 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 
+#include <limits.h>
+#include <float.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,8 +53,18 @@ struct trader_mduser_api_sf_def{
 	char filter[64];				///< ±¾µØIP
 	pthread_t thread_id;
   int loop_flag;
+  
+  int commitCount;
+  int linePos;
+  cffex_md_t* tickBuffer;
+  char csvFile[256];
+  char tradingDay[9];
 };
 
+static void trader_mduser_api_sf_record_init(trader_mduser_api_sf* self);
+static void trader_mduser_api_sf_record_on_tick(trader_mduser_api_sf* self, cffex_md_t *pMarketData);
+static void trader_mduser_api_sf_record_flush(trader_mduser_api_sf* self);
+static void trader_mduser_api_sf_record_free(trader_mduser_api_sf* self);
 
 trader_mduser_api_method* trader_mduser_api_sf_method_get()
 {
@@ -92,6 +105,8 @@ void trader_mduser_api_sf_start(trader_mduser_api* self)
     strncpy(pImp->filter, pTcpFrontAddress, sizeof(pImp->filter));
 
     pImp->loop_flag = 1;
+    
+    trader_mduser_api_sf_record_init(pImp);
 
   }while(0);
 
@@ -109,6 +124,9 @@ void trader_mduser_api_sf_stop(trader_mduser_api* self)
   if(pImp->thread_id){
     pthread_join(pImp->thread_id, &ret);
   }
+
+  trader_mduser_api_sf_record_free(pImp);
+
   free(pImp);
   self->pUserApi = (void*)NULL;
   
@@ -133,10 +151,14 @@ void trader_mduser_api_sf_subscribe(trader_mduser_api* self, char* instrument)
 void sf_mduser_on_rtn_depth_market_data(void* arg, cffex_md_t *pMarketData)
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
+  trader_mduser_api_sf* pImp = (trader_mduser_api_sf*)self->pUserApi;
 
   if(0 == memcmp(pMarketData->InstrumentID, "IO", 2)){
     return ;
   }
+
+  
+  trader_mduser_api_sf_record_on_tick(pImp, pMarketData);
   
   trader_tick oTick;
   memset(&oTick, 0, sizeof(trader_tick));
@@ -203,6 +225,119 @@ void* trader_mduser_api_sf_thread(void* arg)
   return (void*)NULL;
 }
 
+void trader_mduser_api_sf_record_init(trader_mduser_api_sf* self)
+{
+  self->commitCount = 2000;
+  self->linePos = 0;
+  self->tickBuffer = (cffex_md_t *)malloc(self->commitCount * sizeof(cffex_md_t));
+  
+  time_t tt = time(NULL);
+  struct tm now;
+
+  tt += 4 * 60 * 60;
+  localtime_r(&tt, &now);
+
+  snprintf(self->csvFile, sizeof(self->csvFile),  "mduser%04d%02d%02d.csv", 
+    now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+  snprintf(self->tradingDay, sizeof(self->tradingDay),  "%04d%02d%02d", 
+    now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+  
+  return;
+}
+
+void trader_mduser_api_sf_record_on_tick(trader_mduser_api_sf* self, cffex_md_t *pMarketData)
+{
+  cffex_md_t* buffer = &self->tickBuffer[self->linePos];
+  memcpy(buffer, pMarketData, sizeof(cffex_md_t));
+  self->linePos++;
+
+  if(self->linePos == self->commitCount){
+    trader_mduser_api_sf_record_flush(self);
+  }
+  return;
+}
+
+void trader_mduser_api_sf_record_flush(trader_mduser_api_sf* self)
+{
+  char line[1000];
+  int len;
+  if(!self->linePos){
+    return ;
+  }
+
+  char* buffer = (char*)malloc(self->commitCount * 1000 * sizeof(char));
+  cffex_md_t* tick;
+  int i = 0;
+  int pos = 0;
+  for(i = 0; i < self->linePos; i++){
+    tick = &self->tickBuffer[i];
+    if((DBL_MAX == tick->BidPrice1)
+    ||(DBL_MAX == tick->AskPrice1)){
+      continue;
+    }
+    snprintf(line, sizeof(line), "%s,%s,%s,%d,%f,%f,%f,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d\n"
+      , tick->InstrumentID
+      , self->tradingDay
+      , tick->UpdateTime
+      , tick->UpdateMillisec
+      , tick->LastPrice
+      , tick->UpperLimitPrice
+      , tick->LowerLimitPrice
+      , tick->BidPrice1
+      , tick->BidVolume1
+      , tick->AskPrice1
+      , tick->AskVolume1
+      , tick->BidPrice2
+      , tick->BidVolume2
+      , tick->AskPrice2
+      , tick->AskVolume2
+      , tick->BidPrice3
+      , tick->BidVolume3
+      , tick->AskPrice3
+      , tick->AskVolume3
+      , tick->BidPrice4
+      , tick->BidVolume4
+      , tick->AskPrice4
+      , tick->AskVolume4
+      , tick->BidPrice5
+      , tick->BidVolume5
+      , tick->AskPrice5
+      , tick->AskVolume5
+    );
+
+    len = strlen(line);
+    memcpy(&buffer[pos], line, len);
+    pos += len;
+  }
+  self->linePos = 0;
+
+  do{
+    FILE* fp = fopen(self->csvFile, "a");
+    if(!fp){
+      break;
+    }
+
+    fwrite(buffer, pos, 1, fp);
+    
+    fclose(fp);
+  }while(0);
+  
+  free(buffer);
+
+  return ;
+
+}
+
+
+void trader_mduser_api_sf_record_free(trader_mduser_api_sf* self)
+{
+  trader_mduser_api_sf_record_flush(self);
+
+  if(self->tickBuffer){
+    free(self->tickBuffer);
+    self->tickBuffer = NULL;
+  }
+}
 
 
 

@@ -9,6 +9,9 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 
+#include <limits.h>
+#include <float.h>
+
 #include "USTPFtdcUserApiDataType.h"
 #include "USTPFtdcUserApiStruct.h"
 
@@ -59,8 +62,18 @@ struct trader_mduser_api_gf_def{
   int loop_flag;
   pthread_mutex_t mutex;
   dict* tick_dick;
+  
+  int commitCount;
+  int linePos;
+  struct ShfeDataField* tickBuffer;
+  char csvFile[256];
+  char tradingDay[9];
 };
 
+static void trader_mduser_api_gf_record_init(trader_mduser_api_gf* self);
+static void trader_mduser_api_gf_record_on_tick(trader_mduser_api_gf* self, struct ShfeDataField *pMarketData);
+static void trader_mduser_api_gf_record_flush(trader_mduser_api_gf* self);
+static void trader_mduser_api_gf_record_free(trader_mduser_api_gf* self);
 
 static unsigned int tickHash(const void *key) {
     return dictGenHashFunction((const unsigned char *)key,
@@ -165,6 +178,8 @@ void trader_mduser_api_gf_start(trader_mduser_api* self)
   pImp->remote_port = (unsigned short)port;
 
   trader_mduser_api_gf_tick_dict_init(pImp);
+
+  trader_mduser_api_gf_record_init(pImp);
   
   trader_mduser_api_on_rsp_user_login(self, 0, "OK");
 
@@ -186,6 +201,8 @@ void trader_mduser_api_gf_stop(trader_mduser_api* self)
   }
 
   trader_mduser_api_gf_tick_dict_destory(pImp);
+
+  trader_mduser_api_gf_record_free(pImp);
   
   free(pImp);
   self->pUserApi = (void*)NULL;
@@ -275,6 +292,8 @@ void gf_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMa
   if(!found){
     return;
   }
+  
+  trader_mduser_api_gf_record_on_tick(pImp, pMarketData);
 
   memset(&oTick, 0, sizeof(trader_tick));
 
@@ -456,5 +475,117 @@ int trader_mduser_api_gf_prase_url(const char* url, char* local_host, char* remo
   return 0;
 }
 
+void trader_mduser_api_gf_record_init(trader_mduser_api_gf* self)
+{
+  self->commitCount = 2000;
+  self->linePos = 0;
+  self->tickBuffer = (struct ShfeDataField *)malloc(self->commitCount * sizeof(struct ShfeDataField));
+  
+  time_t tt = time(NULL);
+  struct tm now;
 
+  tt += 4 * 60 * 60;
+  localtime_r(&tt, &now);
+
+  snprintf(self->csvFile, sizeof(self->csvFile),  "mduser%04d%02d%02d.csv", 
+    now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+  snprintf(self->tradingDay, sizeof(self->tradingDay),  "%04d%02d%02d", 
+    now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+  
+  return;
+}
+
+void trader_mduser_api_gf_record_on_tick(trader_mduser_api_gf* self, struct ShfeDataField *pMarketData)
+{
+  struct ShfeDataField* buffer = &self->tickBuffer[self->linePos];
+  memcpy(buffer, pMarketData, sizeof(struct ShfeDataField));
+  self->linePos++;
+
+  if(self->linePos == self->commitCount){
+    trader_mduser_api_gf_record_flush(self);
+  }
+  return;
+}
+
+void trader_mduser_api_gf_record_flush(trader_mduser_api_gf* self)
+{
+  char line[1000];
+  int len;
+  if(!self->linePos){
+    return ;
+  }
+
+  char* buffer = (char*)malloc(self->commitCount * 1000 * sizeof(char));
+  struct ShfeDataField* tick;
+  int i = 0;
+  int pos = 0;
+  for(i = 0; i < self->linePos; i++){
+    tick = &self->tickBuffer[i];
+    if((DBL_MAX == tick->depth[0].bid_price)
+    ||(DBL_MAX == tick->depth[0].ask_price)){
+      continue;
+    }
+    snprintf(line, sizeof(line), "%s,%s,%s,%d,%f,%f,%f,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d\n"
+      , tick->instrument_id
+      , self->tradingDay
+      , tick->update_time
+      , tick->update_msec
+      , tick->last_price
+      , tick->upper_limit
+      , tick->lower_limit
+      , tick->depth[0].bid_price
+      , tick->depth[0].bid_volume
+      , tick->depth[0].ask_price
+      , tick->depth[0].ask_volume
+      , tick->depth[1].bid_price
+      , tick->depth[1].bid_volume
+      , tick->depth[1].ask_price
+      , tick->depth[1].ask_volume
+      , tick->depth[2].bid_price
+      , tick->depth[2].bid_volume
+      , tick->depth[2].ask_price
+      , tick->depth[2].ask_volume
+      , tick->depth[3].bid_price
+      , tick->depth[3].bid_volume
+      , tick->depth[3].ask_price
+      , tick->depth[3].ask_volume
+      , tick->depth[4].bid_price
+      , tick->depth[4].bid_volume
+      , tick->depth[4].ask_price
+      , tick->depth[4].ask_volume
+    );
+
+    len = strlen(line);
+    memcpy(&buffer[pos], line, len);
+    pos += len;
+  }
+  self->linePos = 0;
+
+  do{
+    FILE* fp = fopen(self->csvFile, "a");
+    if(!fp){
+      break;
+    }
+
+    fwrite(buffer, pos, 1, fp);
+    
+    fclose(fp);
+  }while(0);
+  
+  free(buffer);
+
+  return ;
+
+}
+
+
+void trader_mduser_api_gf_record_free(trader_mduser_api_gf* self)
+{
+  trader_mduser_api_gf_record_flush(self);
+
+  if(self->tickBuffer){
+    free(self->tickBuffer);
+    self->tickBuffer = NULL;
+  }
+}
 

@@ -21,6 +21,7 @@ bin_PROGRAMS=\
 			traderMduserXhSf \
 			traderMduserSwEfh32FemasAF \
 			traderMduserSwEfh32Rem \
+			traderMduserSwEfh32Ctp66 \
 			testMduserClient
 
 # static library
@@ -390,6 +391,7 @@ traderMduserXhSf_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 
 #traderMduserSwEfh32FemasAF
 #traderMduserSwEfh32Rem
+#traderMduserSwEfh32Ctp66
 traderMduserSwEfh32FemasAF_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
@@ -413,6 +415,19 @@ traderMduserSwEfh32Rem_CFLAGS=-DSW_EFH32_REM\
 traderMduserSwEfh32Rem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 	-L. -lswmduser -ltradercmn -lmduserapi\
 	-Lrem -lremmduser -lEESQuoteApi
+
+traderMduserSwEfh32Ctp66_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserSwEfh32Ctp66_CFLAGS=-DSW_EFH32_CTP66\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserSwEfh32Ctp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lswmduser -ltradercmn -lmduserapi\
+    -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
+
 
 # testMduserShm testMduserClient
 testMduserClient_SOURCES=\
