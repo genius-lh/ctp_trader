@@ -446,7 +446,8 @@ void ctp_trader_on_rsp_user_login(void* arg, CThostFtdcRspUserLoginField *pRspUs
   }
 
   trader_trader_api_on_rsp_user_login(self, errNo, errMsg);
-    
+
+#ifndef CTPMINI
   CThostFtdcSettlementInfoConfirmField req;
   memset(&req, 0, sizeof(CThostFtdcSettlementInfoConfirmField));
 
@@ -456,7 +457,7 @@ void ctp_trader_on_rsp_user_login(void* arg, CThostFtdcRspUserLoginField *pRspUs
   strcpy(req.ConfirmTime, "09:00:00");
   
   pTraderApi->ReqSettlementInfoConfirm(&req, pImp->nTraderRequestID++);
-  
+#endif
 }
 
 void ctp_trader_on_rsp_user_logout(void* arg, CThostFtdcUserLogoutField *pRspUserLogout, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
