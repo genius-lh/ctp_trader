@@ -1912,6 +1912,18 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
   }
 
   if(3 == self->TriggerType){
+    
+    if((0 == memcmp(tick_data->UpdateTime, "09:00:00", 8))
+    ||(0 == memcmp(tick_data->UpdateTime, "10:15:00", 8))
+    ||(0 == memcmp(tick_data->UpdateTime, "13:30:00", 8))){
+      CMN_INFO("盘中重新开盘\n");
+      if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
+      && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
+        return 1;
+      }
+      return 0;
+    }
+    
     if((self->oT1Tick.AskVolume1 + self->oT1Tick.BidVolume1) > (self->oT2Tick.AskVolume1 + self->oT2Tick.BidVolume1)){
       // T1 为主力合约
       if(0 == strcmp(self->T1, tick_data->InstrumentID)){
