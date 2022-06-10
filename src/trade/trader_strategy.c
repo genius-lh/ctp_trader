@@ -1886,33 +1886,40 @@ int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
 int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
 {
 
-  if(0 == self->TriggerType){
+  if(TRIGGER_TYPE_0 == self->TriggerType){
     self->TriggerType = 0;
     if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
     && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
       if(0 == strcmp(self->T1, tick_data->InstrumentID)){
-        self->TriggerType = 1;
+        self->TriggerType = TRIGGER_TYPE_1;
       }else{
-        self->TriggerType = 2;
+        self->TriggerType = TRIGGER_TYPE_2;
       }
+      CMN_INFO("self->TriggerType=[%d]self->T1=[%s]self->T2=[%s]\n", self->TriggerType, self->T1, self->T2);
+      return 1;
     }
-    CMN_INFO("self->TriggerType=[%d]self->T1=[%s]self->T2=[%s]\n", self->TriggerType, self->T1, self->T2);
   }
   
-  if(1 == self->TriggerType){
+  if(TRIGGER_TYPE_1 == self->TriggerType){
     if(0 == strcmp(self->T1, tick_data->InstrumentID)){
       return 1;
     }
   }
   
-  if(2 == self->TriggerType){
+  if(TRIGGER_TYPE_2 == self->TriggerType){
     if(0 == strcmp(self->T2, tick_data->InstrumentID)){
       return 1;
     }
   }
+  
+  if(TRIGGER_TYPE_4 == self->TriggerType){
+    if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
+    && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
+      return 1;
+    }
+  }
 
-  if(3 == self->TriggerType){
-    
+  if(TRIGGER_TYPE_3 == self->TriggerType){
     if((0 == memcmp(tick_data->UpdateTime, "09:00:00", 8))
     ||(0 == memcmp(tick_data->UpdateTime, "10:15:00", 8))
     ||(0 == memcmp(tick_data->UpdateTime, "13:30:00", 8))){

@@ -425,7 +425,7 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
   update->stage[num].T2Weight = 1;
   update->stage[num].T2Ratio = 1;
   update->stage[num].NightClosingTime = 0;
-  update->stage[num].TriggerType = 3;
+  update->stage[num].TriggerType = TRIGGER_TYPE_3;
 
   for(pChild = pRequest->child; pChild != NULL; pChild = pChild->next){
     if(!strcmp(pChild->string, "whichGrid")){
@@ -500,19 +500,20 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
     }else{
       //EMPTY
     }
-    if(3 == update->stage[num].TriggerType){
+    if(TRIGGER_TYPE_3 == update->stage[num].TriggerType){
       if((0 == memcmp(update->stage[num].T1, "IF", 2))
       ||(0 == memcmp(update->stage[num].T1, "IH", 2))
       ||(0 == memcmp(update->stage[num].T1, "IC", 2))){
-        update->stage[num].TriggerType = 0;
+        update->stage[num].TriggerType = TRIGGER_TYPE_0;
       }
 
+      // 大商所特殊处理
       if(0 == memcmp(update->stage[num].T1, "m2", 2)){
-        update->stage[num].TriggerType = 1;
+        update->stage[num].TriggerType = TRIGGER_TYPE_1;
       }
       
       if(0 == memcmp(update->stage[num].T2, "m2", 2)){
-        update->stage[num].TriggerType = 2;
+        update->stage[num].TriggerType = TRIGGER_TYPE_2;
       }
       
     }

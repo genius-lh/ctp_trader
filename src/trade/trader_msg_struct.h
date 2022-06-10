@@ -48,6 +48,12 @@ struct trade_position_def {
 
 #define TRADER_CMD_UPDATE_NUM 32
 
+#define TRIGGER_TYPE_0 0
+#define TRIGGER_TYPE_1 1
+#define TRIGGER_TYPE_2 2
+#define TRIGGER_TYPE_3 3
+#define TRIGGER_TYPE_4 4
+
 // ¸üÐÂ
 struct trader_cmd_update_req_def {
   short num;
