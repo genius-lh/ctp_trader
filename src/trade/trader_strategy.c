@@ -370,6 +370,13 @@ int trader_strategy_on_status(trader_strategy* self, instrument_status* status_d
       self->oT2Tick.BidVolume1);
     return 0;
   }
+
+  //中午收盘判断
+  if((0 == memcmp(self->oT1Tick.UpdateTime, "11:29:59", 8))
+  ||(0 == memcmp(self->oT2Tick.UpdateTime, "11:29:59", 8))){
+    CMN_INFO("下午开盘\n");
+    return 0;
+  }
   
   CMN_INFO("status_data->InstrumentID[%s]\n", status_data->InstrumentID);
   
