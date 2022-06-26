@@ -406,7 +406,7 @@ double trader_strategy_t2_price(trader_strategy* self, char long_short, char ope
     // Âò
     // ¶à¿ª ¿ÕÆ½
     t2set = trader_strategy_t2_buy_price(self);
-    t2set += self->PriceTick * self->T2Over;
+    t2set += self->T2PriceTick * self->T2Over;
 
     // ÕÇÍ£ÅÐ¶Ï
     if(t2set > t2->UpperLimitPrice){
@@ -416,7 +416,7 @@ double trader_strategy_t2_price(trader_strategy* self, char long_short, char ope
     // Âô
     // ¿Õ¿ª ¶àÆ½
     t2set = trader_strategy_t2_sell_price(self);
-    t2set -= self->PriceTick * self->T2Over;
+    t2set -= self->T2PriceTick * self->T2Over;
 
     // µøÍ£ÅÐ¶Ï
     if(t2set < t2->LowerLimitPrice){
@@ -434,14 +434,14 @@ double trader_strategy_t2_price_opponent(trader_strategy* self, char buy_sell)
   double t2set;
 
   if(TRADER_POSITION_BUY == cBuySell){
-    t2set = t2->AskPrice1 + self->T2Over * self->PriceTick;
+    t2set = t2->AskPrice1 + self->T2Over * self->T2PriceTick;
     // ÕÇÍ£ÅÐ¶Ï
     if(t2set > t2->UpperLimitPrice){
       t2set = t2->UpperLimitPrice;
     } 
 
   }else{
-    t2set = t2->BidPrice1 - self->T2Over * self->PriceTick;
+    t2set = t2->BidPrice1 - self->T2Over * self->T2PriceTick;
     // µøÍ£ÅÐ¶Ï
     if(t2set < t2->LowerLimitPrice){
       t2set = t2->LowerLimitPrice;

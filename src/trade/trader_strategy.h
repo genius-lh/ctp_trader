@@ -43,6 +43,7 @@ struct trader_strategy_trade_def{
   double T2Price;
   int T1TradeVolume;
   int T2TradeVolume;
+  int T2CancelNumber;
 };
 
 

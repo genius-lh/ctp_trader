@@ -150,6 +150,7 @@ struct ContractDetails
 	std::string marketRuleIds;
 	std::string realExpirationDate;
 	std::string lastTradeTime;
+	std::string stockType;
 
 	TagValueListSPtr secIdList;
 

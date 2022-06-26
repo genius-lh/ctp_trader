@@ -83,7 +83,6 @@ const int MIN_SERVER_VER_CANCEL_HEADTIMESTAMP       = 123;
 const int MIN_SERVER_VER_SYNT_REALTIME_BARS         = 124;
 const int MIN_SERVER_VER_CFD_REROUTE                = 125;
 const int MIN_SERVER_VER_MARKET_RULES               = 126;
-const int MIN_SERVER_VER_DAILY_PNL                  = 127;
 const int MIN_SERVER_VER_PNL                        = 127;
 const int MIN_SERVER_VER_NEWS_QUERY_ORIGINS         = 128;
 const int MIN_SERVER_VER_UNREALIZED_PNL             = 129;
@@ -108,12 +107,18 @@ const int MIN_SERVER_VER_D_PEG_ORDERS               = 148;
 const int MIN_SERVER_VER_MKT_DEPTH_PRIM_EXCHANGE    = 149;
 const int MIN_SERVER_VER_COMPLETED_ORDERS           = 150;
 const int MIN_SERVER_VER_PRICE_MGMT_ALGO            = 151;
+const int MIN_SERVER_VER_STOCK_TYPE                 = 152;
+const int MIN_SERVER_VER_ENCODE_MSG_ASCII7          = 153;
+const int MIN_SERVER_VER_SEND_ALL_FAMILY_CODES		= 154;
+const int MIN_SERVER_VER_NO_DEFAULT_OPEN_CLOSE		= 155;
+const int MIN_SERVER_VER_PRICE_BASED_VOLATILITY     = 156;
+const int MIN_SERVER_VER_REPLACE_FA_END             = 157;
 
 /* 100+ messaging */
 // 100 = enhanced handshake, msg length prefixes
 
 const int MIN_CLIENT_VER = 100;
-const int MAX_CLIENT_VER = MIN_SERVER_VER_PRICE_MGMT_ALGO;
+const int MAX_CLIENT_VER = MIN_SERVER_VER_REPLACE_FA_END;
 
 
 // incoming msg id's
@@ -194,6 +199,7 @@ const int TICK_BY_TICK                              = 99;
 const int ORDER_BOUND                               = 100;
 const int COMPLETED_ORDER                           = 101;
 const int COMPLETED_ORDERS_END                      = 102;
+const int REPLACE_FA_END                            = 103;
 
 const int HEADER_LEN = 4; // 4 bytes for msg length
 const int MAX_MSG_LEN = 0xFFFFFF; // 16Mb - 1byte
@@ -312,6 +318,7 @@ class TWSAPIDLLEXP EDecoder
     const char* processOrderBoundMsg(const char* ptr, const char* endPtr);
     const char* processCompletedOrderMsg(const char* ptr, const char* endPtr);
     const char* processCompletedOrdersEndMsg(const char* ptr, const char* endPtr);
+    const char* processReplaceFAEndMsg(const char* ptr, const char* endPtr);
 
 
     int processConnectAck(const char*& beginPtr, const char* endPtr);

@@ -283,7 +283,7 @@ public:
 	void reqAllOpenOrders();
 	void reqManagedAccts();
 	void requestFA(faDataType pFaDataType);
-	void replaceFA(faDataType pFaDataType, const std::string& cxml);
+	void replaceFA(int reqId, faDataType pFaDataType, const std::string& cxml);
 	void reqHistoricalData(TickerId id, const Contract& contract,
 		const std::string& endDateTime, const std::string& durationStr,
 		const std::string&  barSizeSetting, const std::string& whatToShow,
@@ -358,6 +358,7 @@ public:
 private:
 
 	virtual int receive(char* buf, size_t sz) = 0;
+	static bool isAsciiPrintable(const std::string& s);
 
 protected:
 
@@ -422,12 +423,7 @@ protected:
 
 template<> void EClient::EncodeField<bool>(std::ostream& os, bool);
 template<> void EClient::EncodeField<double>(std::ostream& os, double);
-
-template<class T>
-void EClient::EncodeField(std::ostream& os, T value)
-{
-	os << value << '\0';
-}
+template<> void EClient::EncodeField<std::string> (std::ostream& os, std::string);
 
 #define ENCODE_CONTRACT(x) EClient::EncodeContract(msg, x);
 #define ENCODE_TAGVALUELIST(x) EClient::EncodeTagValueList(msg, x);

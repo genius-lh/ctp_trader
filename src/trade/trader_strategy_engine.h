@@ -61,7 +61,10 @@ struct trader_strategy_engine_def {
 
   // 共享内存
   trader_mduser_shm_header* pShmHdr;
-  
+
+  // 腿二追单限制
+  int t2CancelLimit;
+
   // 外部接口
   trader_strategy_engine_method* pMethod;
 };

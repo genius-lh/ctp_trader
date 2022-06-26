@@ -5,7 +5,7 @@ add_compile_options(-g -fPIC -Wall -std=c++11)
 
 add_library(TwsSocketClient
 	SHARED
-	ContractCondition.cpp
+		ContractCondition.cpp
         DefaultEWrapper.cpp
         EClient.cpp
         EClientSocket.cpp

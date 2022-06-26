@@ -734,11 +734,25 @@ int trader_strategy_order_t2_open_cancel(trader_strategy* self,  trader_order* o
   self->mapHalfTraded->pMethod->xRemove(
     self->mapHalfTraded, order_data->UserOrderLocalID);
 
+  if(pStrategyTrade->T2CancelNumber > self->pEngine->t2CancelLimit){
+    CMN_WARN("UserOrderLocalID=[%s]T2CancelNumber[%d]>t2CancelLimit[%d]\n"
+      , order_data->UserOrderLocalID
+      , pStrategyTrade->T2CancelNumber
+      , self->pEngine->t2CancelLimit);
+    return -2;
+  }
+  
+  CMN_DEBUG("UserOrderLocalID=[%s]T2CancelNumber[%d]<=t2CancelLimit[%d]\n"
+    , order_data->UserOrderLocalID
+    , pStrategyTrade->T2CancelNumber
+    , self->pEngine->t2CancelLimit);
+
   // 重新计算T2价格
   int nReset = order_data->VolumeOriginal - order_data->VolumeTraded;
   double fT2Price = trader_strategy_t2_price_opponent(self, order_data->Direction);
   pStrategyTrade->T2Price = fT2Price;
   pStrategyTrade->TradeVolume = nReset;
+  pStrategyTrade->T2CancelNumber++;
   
   // 下单T2
   trader_strategy_insert_t2_open(self, pStrategyTrade);
@@ -761,12 +775,26 @@ int trader_strategy_order_t2_close_cancel(trader_strategy* self,  trader_order* 
   self->mapHalfTraded->pMethod->xRemove(
     self->mapHalfTraded, order_data->UserOrderLocalID);
 
+  if(pStrategyTrade->T2CancelNumber > self->pEngine->t2CancelLimit){
+    CMN_WARN("UserOrderLocalID=[%s]T2CancelNumber[%d]>t2CancelLimit[%d]\n"
+      , order_data->UserOrderLocalID
+      , pStrategyTrade->T2CancelNumber
+      , self->pEngine->t2CancelLimit);
+    return -2;
+  }
+  
+  CMN_DEBUG("UserOrderLocalID=[%s]T2CancelNumber[%d]<=t2CancelLimit[%d]\n"
+    , order_data->UserOrderLocalID
+    , pStrategyTrade->T2CancelNumber
+    , self->pEngine->t2CancelLimit);
+
   // 重新计算T2价格
   int nReset = order_data->VolumeOriginal - order_data->VolumeTraded;
   double fT2Price = trader_strategy_t2_price_opponent(self, order_data->Direction);
   pStrategyTrade->T2Price = fT2Price;
   pStrategyTrade->TradeVolume = nReset;
-  
+  pStrategyTrade->T2CancelNumber++;
+
   // 下单T2
   trader_strategy_t2_close_imp(self, pStrategyTrade);
   
@@ -907,6 +935,7 @@ int trader_strategy_trade_t1_open(trader_strategy* self, trader_trade* trade_dat
   pStrategyTrade->T2Price = lPrice;
   pStrategyTrade->T1TradeVolume = trade_data->TradeVolume;
   pStrategyTrade->T2TradeVolume = 0;
+  pStrategyTrade->T2CancelNumber = 0;
   
   trader_strategy_insert_t2_open(self, pStrategyTrade);
 
@@ -1351,6 +1380,7 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
       pStrategyTrade->T2Price = t2price;
       pStrategyTrade->T1TradeVolume = nT1TradeVolume;
       pStrategyTrade->T2TradeVolume = 0;
+      pStrategyTrade->T2CancelNumber = 0;
       trader_strategy_t2_close_imp(self, pStrategyTrade);
     }else{
       if(nSize3 > 0){
@@ -1365,6 +1395,7 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
         pStrategyTrade->T2Price = t2price;
         pStrategyTrade->T1TradeVolume = nSize3 / self->T2Ratio;
         pStrategyTrade->T2TradeVolume = 0;
+        pStrategyTrade->T2CancelNumber = 0;
         trader_strategy_t2_close_imp(self, pStrategyTrade);
       }
         
@@ -1379,6 +1410,7 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
       pStrategyTrade->T2Price = t2price;
       pStrategyTrade->T1TradeVolume = nT1TradeVolume - nSize3 / self->T2Ratio;
       pStrategyTrade->T2TradeVolume = 0;
+      pStrategyTrade->T2CancelNumber = 0;
       trader_strategy_t2_close_imp(self, pStrategyTrade);
     }
   }else{
@@ -1391,6 +1423,7 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
     pStrategyTrade->T2Price = t2price;
     pStrategyTrade->T1TradeVolume = nT1TradeVolume;
     pStrategyTrade->T2TradeVolume = 0;
+    pStrategyTrade->T2CancelNumber = 0;
     trader_strategy_t2_close_imp(self, pStrategyTrade);
   }
 

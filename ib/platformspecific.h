@@ -5,7 +5,7 @@
 #ifndef TWS_API_CLIENT_PLATFORMSPECIFIC_H
 #define TWS_API_CLIENT_PLATFORMSPECIFIC_H
 
-#ifdef _MSC_VER
+#if defined(_WIN32)
 
 #ifdef TWSAPIDLL
 #ifndef TWSAPIDLLEXP
@@ -14,14 +14,17 @@
 #endif
 
 #define assert ASSERT
-#if _MSC_VER<=1800
+#if defined(_MSC_VER) && _MSC_VER<=1800
 #define snprintf _snprintf
 #endif
+
 #include <WinSock2.h>
 #include <Windows.h>
 #include <time.h>
+
 #define IB_WIN32
 #define atoll _atoi64
+
 #else
 
 #include <arpa/inet.h>

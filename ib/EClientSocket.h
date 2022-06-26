@@ -27,6 +27,7 @@ public:
 
 	bool eConnect( const char *host, int port, int clientId = 0, bool extraAuth = false);
 	// override virtual funcs from EClient
+	bool eConnect(const char *host, unsigned int port, int clientId = 0);
 	void eDisconnect(bool resetState = true);
 
 	bool isSocketOK() const;

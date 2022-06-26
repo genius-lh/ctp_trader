@@ -38,5 +38,6 @@ static const CodeMsgPair BAD_MESSAGE(508, "Bad message");
 static const CodeMsgPair SOCKET_EXCEPTION(509, "Exception caught while reading socket - ");
 static const CodeMsgPair FAIL_CREATE_SOCK(520, "Failed to create socket");
 static const CodeMsgPair SSL_FAIL(530, "SSL specific error: ");
+static const CodeMsgPair INVALID_SYMBOL(579, "Invalid symbol in string - ");
 
 #endif

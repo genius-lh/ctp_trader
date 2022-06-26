@@ -50,7 +50,7 @@ int ib_future_contract_make(char* instrument, long tick_id, IBFutureContract* fu
     strncpy(future->secType, "FUT", sizeof(future->secType));
     strncpy(future->currency, "USD", sizeof(future->currency));
     if(0 == memcmp(future->symbol, "COIL", 4)){
-      strncpy(future->exchange, "QBALGOIEU", sizeof(future->exchange));
+      strncpy(future->exchange, "IPE", sizeof(future->exchange));
     }else if (0 == memcmp(future->symbol, "ZM", 2)){
       strncpy(future->exchange, "ECBOT", sizeof(future->exchange));
     }else{

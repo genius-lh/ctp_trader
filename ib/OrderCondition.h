@@ -30,7 +30,7 @@ public:
 	virtual const char* readExternal(const char* ptr, const char* endPtr);
 	virtual void writeExternal(std::ostream &out) const;
 
-	std::string toString();
+	virtual std::string toString();
 	bool conjunctionConnection() const;
 	void conjunctionConnection(bool isConjunctionConnection);	
 	OrderConditionType type();

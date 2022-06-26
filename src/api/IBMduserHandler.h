@@ -35,6 +35,8 @@ public:
   void tickPrice( TickerId tickerId, TickType field, double price, const TickAttrib& attrib);
   
   void tickSize( TickerId tickerId, TickType field, int size);
+
+  void tickByTickBidAsk(int reqId, time_t time, double bidPrice, double askPrice, int bidSize, int askSize, const TickAttribBidAsk& tickAttribBidAsk);
     
   void error(int id, int errorCode, const std::string& errorString);
 
