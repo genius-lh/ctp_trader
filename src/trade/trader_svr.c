@@ -1446,6 +1446,14 @@ trader_contract* trader_svr_get_contract(trader_svr* self, char* contract_id)
     memset(iter, 0, sizeof(trader_contract));
     strcpy(iter->contract,  contract_id);
     iter->PriceTick = 0.01;
+    //外盘特殊处理
+    if(0 == memcmp("GC", iter->contract, 2)){
+      iter->PriceTick = 0.1;
+    }else if(0 == memcmp("SI", iter->contract, 2)){
+      iter->PriceTick = 0.005;
+    }else{
+
+    }
     
     self->nContractNum++;
     TAILQ_INSERT_TAIL(&self->listTraderContract, iter, next);

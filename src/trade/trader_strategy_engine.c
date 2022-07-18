@@ -177,6 +177,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
 
     pStrategy->pT1Tick = trader_strategy_engine_tick_search(self, pStrategy->T1);
     pStrategy->pT2Tick = trader_strategy_engine_tick_search(self, pStrategy->T2);
+    pStrategy->pT3Tick = trader_strategy_engine_tick_search(self, USDCNH);
 
   }
   

@@ -187,5 +187,9 @@ struct instrument_status_def{
 
 typedef char mduser_instrument[32];
 
+#define USDCNH "USD.CNH"
+
+#define OZ 31.1034768f
+
 #endif //_TRADER_DATA_H_
 

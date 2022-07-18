@@ -218,9 +218,16 @@ int trader_strategy_judge_sell_close(trader_strategy* self)
 double trader_strategy_buy_price_diff(trader_strategy* self)
 {
   trader_tick* t1 = self->pT1Tick;
+  trader_tick* t3 = self->pT3Tick;
   
   double t1set = t1->BidPrice1;
   double t2set = trader_strategy_t2_sell_price(self);
+
+  if((0 == memcmp("GC", t1->InstrumentID, 2))
+  ||(0 == memcmp("SI", t1->InstrumentID, 2))){
+    // 金衡盎司价格换算
+    t1set = t1->BidPrice1 * t3->AskPrice1 / OZ;
+  }
 
   //配比
   t1set *= self->T1Weight;
@@ -238,9 +245,16 @@ double trader_strategy_buy_price_diff(trader_strategy* self)
 double trader_strategy_sell_price_diff(trader_strategy* self)
 {
   trader_tick* t1 = self->pT1Tick;
+  trader_tick* t3 = self->pT3Tick;
 
   double t1set = t1->AskPrice1;
   double t2set = trader_strategy_t2_buy_price(self);
+
+  if((0 == memcmp("GC", t1->InstrumentID, 2))
+  ||(0 == memcmp("SI", t1->InstrumentID, 2))){
+    // 金衡盎司价格换算
+    t1set = t1->AskPrice1 * t3->BidPrice1 / OZ;
+  }
 
   // 配比
   t1set *= self->T1Weight;

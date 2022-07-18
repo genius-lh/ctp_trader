@@ -129,6 +129,7 @@ void trader_mduser_shm_http_calc(trader_mduser_shm_http* self, void* response, c
   do{
     trader_tick* t1Tick = NULL;
     trader_tick* t2Tick = NULL;
+    trader_tick* t3Tick = NULL;
     double t1Weight = atof(w1);
     double t2Weight = atof(w2);
     double d1;
@@ -143,6 +144,8 @@ void trader_mduser_shm_http_calc(trader_mduser_shm_http* self, void* response, c
         t1Tick = tick;
       }else if(!strcmp(tick->InstrumentID, t2)){
         t2Tick = tick;
+      }else if(!strcmp(tick->InstrumentID, USDCNH)){
+        t3Tick = tick;
       }
       tick++;
     }
@@ -151,9 +154,21 @@ void trader_mduser_shm_http_calc(trader_mduser_shm_http* self, void* response, c
       if((DBL_MAX != t1Tick->BidPrice1)
       &&(DBL_MAX != t1Tick->AskPrice1)
       &&(DBL_MAX != t2Tick->BidPrice1)
-      &&(DBL_MAX != t2Tick->AskPrice1)){
-        d1 = t1Weight * t1Tick->AskPrice1 - t2Weight * t2Tick->AskPrice1;
-        d2 = t1Weight * t1Tick->BidPrice1 - t2Weight * t2Tick->BidPrice1;
+      &&(DBL_MAX != t2Tick->AskPrice1)
+      &&(0 != t1Tick->AskPrice1)
+      &&(0 != t2Tick->AskPrice1)){
+
+        if((!memcmp(t1, "GC", 2)) || (!memcmp(t1, "SI", 2))) {
+          d1 = t3Tick->BidPrice1 * t1Tick->AskPrice1 / OZ - t2Tick->AskPrice1;
+          d2 = t3Tick->AskPrice1 * t1Tick->BidPrice1 / OZ - t2Tick->BidPrice1;
+        }else{
+          d1 = t1Weight * t1Tick->AskPrice1 - t2Weight * t2Tick->AskPrice1;
+          d2 = t1Weight * t1Tick->BidPrice1 - t2Weight * t2Tick->BidPrice1;
+        }
+
+        // ¼Û²î±ä»»
+        //d1 /= t2Weight;
+        //d2 /= t2Weight;
         asix = time(NULL) * 1000;
 
         evbuffer_add_printf(evb, SUCCESS_RESPONSE, asix, d1, d2);

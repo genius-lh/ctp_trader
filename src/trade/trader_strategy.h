@@ -125,6 +125,9 @@ struct trader_strategy_def{
   // T2 行情
   trader_tick* pT2Tick;
   
+  // T3 行情
+  trader_tick* pT3Tick;
+  
   // 订单队列
   cmn_util_map* mapOrder;
   
