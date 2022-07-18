@@ -351,6 +351,12 @@ void CRemTraderHandler::OnOrderAccept(EES_OrderAcceptField* pAccept )
     , pAccept->m_MarketSessionId
     , pAccept->m_HedgeFlag
   );
+
+  CMN_INFO("{ConsumingTime}ClientOrderToken=[%d]MarketSessionId=[%d]\n"
+    , pAccept->m_ClientOrderToken
+    , pAccept->m_MarketSessionId
+  );
+
   return;
 }
 
@@ -388,7 +394,7 @@ void CRemTraderHandler::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
   traderOrder->OrderStatus = TRADER_ORDER_OS_NOTRADEQUEUEING;
   // 订单状态
   //traderOrder->OrderStatus = pAccept->m_ExchangeStatus;
-  snprintf(traderOrder->OrderSysID, sizeof(traderOrder->OrderSysID), "%ld", pAccept->m_MarketOrderToken);
+  snprintf(traderOrder->OrderSysID, sizeof(traderOrder->OrderSysID), "%lld", pAccept->m_MarketOrderToken);
   ///插入时间
   //strcpy(traderOrder.InsertTime, pAccept->m_AcceptTime);
   tm tradeTm;
@@ -396,6 +402,11 @@ void CRemTraderHandler::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
   m_TraderApi->ConvertFromTimestamp(pAccept->m_MarketTime, tradeTm, nanoSec);
   ///成交时间
   snprintf(traderOrder->InsertTime, sizeof(traderOrder->InsertTime), "%02d:%02d:%02d", tradeTm.tm_hour, tradeTm.tm_min, tradeTm.tm_sec);
+
+  CMN_INFO("{ConsumingTime}ClientOrderToken=[%d]UserOrderLocalID=[%s]\n"
+    , pAccept->m_ClientOrderToken
+    , traderOrder->UserOrderLocalID
+  );
 
   trader_trader_api_on_rtn_order(self, traderOrder);
 }
@@ -719,6 +730,10 @@ void CRemTraderHandler::OnSymbolStatusReport(EES_SymbolStatus* pSymbolStatus)
 
   // 过滤期权合约
   if(0 == memcmp(pSymbolStatus->m_Symbol, "IO", 2)){
+    return ;
+  }
+
+  if(strnlen(pSymbolStatus->m_Symbol, sizeof(EES_Symbol)) > 6){
     return ;
   }
   
