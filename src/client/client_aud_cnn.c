@@ -502,6 +502,7 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
     }
     if(TRIGGER_TYPE_3 == update->stage[num].TriggerType){
       if((0 == memcmp(update->stage[num].T1, "IF", 2))
+      ||(0 == memcmp(update->stage[num].T1, "IM", 2))
       ||(0 == memcmp(update->stage[num].T1, "IH", 2))
       ||(0 == memcmp(update->stage[num].T1, "IC", 2))){
         update->stage[num].TriggerType = TRIGGER_TYPE_0;
