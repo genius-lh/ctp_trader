@@ -49,7 +49,15 @@ int cmn_log_svr_catalog_name(cmn_log_evt_t* apEvt, char* catalog)
 
   
   struct tm now;
-  localtime_r(&(pEvt->msg_time.tv_sec), &now);    
+  time_t tt = pEvt->msg_time.tv_sec;
+
+  tt += 4 * 60 * 60;
+  localtime_r(&tt, &now);
+
+  if(now.tm_wday > 5){
+    tt += 24 * 60 * 60 * 2;
+    localtime_r(&tt, &now);
+  }
 
   sprintf(catalog, "%s.%04d%02d%02d", pEvt->catalog, 
     now.tm_year+1900, now.tm_mon+1, now.tm_mday);
