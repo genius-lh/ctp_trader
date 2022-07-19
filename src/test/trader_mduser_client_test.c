@@ -228,6 +228,10 @@ int main(int argc, char* argv[])
 
   tt += 4 * 60 * 60;
   localtime_r(&tt, &now);
+  if(now.tm_wday > 5){
+    tt += 24 * 60 * 60 * 2;
+    localtime_r(&tt, &now);
+  }
   char sDate[9];
   snprintf(test->csvFile, sizeof(test->csvFile), "%s.%04d%02d%02d",
     filenamePreifx,
