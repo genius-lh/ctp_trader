@@ -159,8 +159,8 @@ void trader_mduser_shm_http_calc(trader_mduser_shm_http* self, void* response, c
       &&(0 != t2Tick->AskPrice1)){
 
         if((!memcmp(t1, "GC", 2)) || (!memcmp(t1, "SI", 2))) {
-          d1 = t3Tick->BidPrice1 * t1Tick->AskPrice1 / OZ - t2Tick->AskPrice1;
-          d2 = t3Tick->AskPrice1 * t1Tick->BidPrice1 / OZ - t2Tick->BidPrice1;
+          d1 = t1Weight * t3Tick->BidPrice1 * t1Tick->AskPrice1 / OZ - t2Weight * t2Tick->AskPrice1;
+          d2 = t1Weight * t3Tick->AskPrice1 * t1Tick->BidPrice1 / OZ - t2Weight * t2Tick->BidPrice1;
         }else{
           d1 = t1Weight * t1Tick->AskPrice1 - t2Weight * t2Tick->AskPrice1;
           d2 = t1Weight * t1Tick->BidPrice1 - t2Weight * t2Tick->BidPrice1;
