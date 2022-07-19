@@ -15,6 +15,9 @@
 
 #include "trader_strategy_limit.h"
 
+#define OUNCE_TO_GRAM(_price, _rate) ((_price)*(_rate)/OZ)
+#define GRAM_TO_OUNCE(_price, _rate) ((_price)*OZ/(_rate))
+
 static int trader_strategy_double_to_int(double val);
 static double trader_strategy_t1_buy_price(trader_strategy* self, double diff);
 static double trader_strategy_t2_buy_price(trader_strategy* self);
@@ -226,7 +229,7 @@ double trader_strategy_buy_price_diff(trader_strategy* self)
   if((0 == memcmp("GC", t1->InstrumentID, 2))
   ||(0 == memcmp("SI", t1->InstrumentID, 2))){
     // 金衡盎司价格换算
-    t1set = t1->BidPrice1 * t3->AskPrice1 / OZ;
+    t1set = OUNCE_TO_GRAM(t1->BidPrice1, t3->AskPrice1);
   }
 
   //配比
@@ -253,7 +256,7 @@ double trader_strategy_sell_price_diff(trader_strategy* self)
   if((0 == memcmp("GC", t1->InstrumentID, 2))
   ||(0 == memcmp("SI", t1->InstrumentID, 2))){
     // 金衡盎司价格换算
-    t1set = t1->AskPrice1 * t3->BidPrice1 / OZ;
+    t1set = OUNCE_TO_GRAM(t1->AskPrice1, t3->BidPrice1);
   }
 
   // 配比
@@ -536,15 +539,25 @@ int trader_strategy_auto_buy(trader_strategy* self)
 
 double trader_strategy_t1_buy_price(trader_strategy* self, double diff)
 {
+  trader_tick* t1 = self->pT1Tick;
+  trader_tick* t3 = self->pT3Tick;
+
   double t2set = trader_strategy_t2_sell_price(self);
   double t1set;
   if(IS_STG_OPTION(self->STG)){
-    t1set = (diff - t2set * self->T2Weight) / self->T1Weight;
+    t1set = (diff - t2set * self->T2Weight);
   }else{
-    t1set = (diff + t2set * self->T2Weight) / self->T1Weight;
+    t1set = (diff + t2set * self->T2Weight);
   }
-
+  
+  if((0 == memcmp("GC", t1->InstrumentID, 2))
+  ||(0 == memcmp("SI", t1->InstrumentID, 2))){
+    // 金衡盎司价格换算
+    t1set = GRAM_TO_OUNCE(t1set, t3->AskPrice1);
+  }
+  
   // 数据向下取整
+  t1set /= self->T1Weight;
   t1set = ((int)(t1set / self->PriceTick - 0.5)) * self->PriceTick;
   
   CMN_INFO("t1set[%.4lf]diff[%.4lf]t2set[%.4lf]T2Weight[%.4lf]T1Weight[%.4lf]\n", 
@@ -573,15 +586,25 @@ double trader_strategy_t2_buy_price(trader_strategy* self)
 
 double trader_strategy_t1_sell_price(trader_strategy* self, double diff)
 {
+  trader_tick* t1 = self->pT1Tick;
+  trader_tick* t3 = self->pT3Tick;
+
   double t2set = trader_strategy_t2_buy_price(self);
   double t1set; 
   if(IS_STG_OPTION(self->STG)){
-    t1set = (diff - t2set * self->T2Weight) / self->T1Weight;
+    t1set = (diff - t2set * self->T2Weight);
   }else{
-    t1set = (diff + t2set * self->T2Weight) / self->T1Weight;
+    t1set = (diff + t2set * self->T2Weight);
+  }
+  
+  if((0 == memcmp("GC", t1->InstrumentID, 2))
+  ||(0 == memcmp("SI", t1->InstrumentID, 2))){
+    // 金衡盎司价格换算
+    t1set = GRAM_TO_OUNCE(t1set, t3->BidPrice1);
   }
   
   // 数据向上取整
+  t1set /= self->T1Weight;
   t1set = ((int)(t1set / self->PriceTick + 0.5)) * self->PriceTick;
   
   CMN_INFO("t1set[%.4lf]diff[%.4lf]t2set[%.4lf]T2Weight[%.4lf]T1Weight[%.4lf]\n", 
