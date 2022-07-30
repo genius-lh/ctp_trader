@@ -94,6 +94,10 @@ static int check_mask(char* mask, cffex_l2_t* md);
 static void check_sum(unsigned int* check_value, const unsigned short* data, int len);
 static unsigned short check_sum_udp(const char* data, int len);
 
+static int load_mask(char* mask);
+static int save_mask(char* mask);
+static int file_mask(char* filename, int size);
+
 #ifdef __cplusplus
 }
 #endif
@@ -157,6 +161,11 @@ void trader_mduser_api_cffex_l2_start(trader_mduser_api* self)
 
     pImp->mask_flag = 0;
 
+    ret = load_mask(pImp->mask);
+    if(!ret){
+      pImp->mask_flag = 1;
+    }
+
   }while(0);
 
 	ret = pthread_create(&pImp->thread_id, NULL, trader_mduser_api_cffex_l2_thread, (void*)self);
@@ -203,6 +212,10 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
     return ;
   }
 
+  if(0 == memcmp(pMarketData->InstrumentID, "MO", 2)){
+    return ;
+  }
+
   if(!pImp->mask_flag){
     if(0x7f == pMarketData->OpenPrice[0]){
       return ;
@@ -212,6 +225,7 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
       pMarketData->OpenPrice, sizeof(pMarketData->OpenPrice), 
       pMarketData->Val2433, sizeof(pMarketData->Val2433));
     check_mask(pImp->mask, pMarketData);
+    save_mask(pImp->mask);
   }
   
   // 记录数据
@@ -537,5 +551,77 @@ unsigned short check_sum_udp(const char* data, int len)
   checkvalue += (checkvalue >> 16);
   checkvalue = (~checkvalue);
   return checkvalue;
+}
+
+int load_mask(char* mask)
+{
+  char maskFile[64];
+  int ret;
+  
+  ret = file_mask(maskFile, sizeof(maskFile));
+  if(ret < 0){
+    return -1;
+  }
+
+  FILE* fp = fopen(maskFile, "r");
+  if(!fp){
+    return -2;
+  }
+
+  ret = fread(mask, sizeof(long), 1, fp);
+
+  fclose(fp);
+  
+  if(ret < 1){
+    return -3;
+  }
+
+  return 0;
+}
+
+int save_mask(char* mask)
+{
+  char maskFile[64];
+  int ret;
+  
+  ret = file_mask(maskFile, sizeof(maskFile));
+  if(ret < 0){
+    return -1;
+  }
+
+  FILE* fp = fopen(maskFile, "r");
+  if(fp){
+    // 文件已存在
+    fclose(fp);
+    return -2;
+  }
+  
+  fp = fopen(maskFile, "w");
+  if(!fp){
+    // 文件创建异常
+    return -3;
+  }
+  
+  ret = fwrite(mask, sizeof(long), 1, fp);
+
+  fclose(fp);
+  
+  if(ret < 1){
+    return -3;
+  }
+
+  return 0;
+}
+
+int file_mask(char* filename, int size)
+{
+  time_t tt = time(NULL);
+  struct tm now;
+  localtime_r(&tt, &now);
+  
+  snprintf(filename, size, "cffex_l2_%04d%02d%02d",
+    now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+
+  return 0;
 }
 
