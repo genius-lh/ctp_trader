@@ -71,6 +71,8 @@ static int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick
 
 static int trader_strategy_print_order_time(trader_strategy* self, trader_order* order_data);
 
+static int trader_strategy_is_auction_tick(trader_strategy* self);
+
 static trader_strategy_method* trader_strategy_method_get();
 
 trader_strategy_method* trader_strategy_method_get()
@@ -220,6 +222,12 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   
   // 待成交队列处理
   trader_strategy_tick_not_finished(self);
+
+  // 是否是集合竞价
+  ret = trader_strategy_is_auction_tick(self);
+  if(ret){
+    return 0;
+  }
 
   // 成交队列处理
   trader_strategy_tick_finished(self);
@@ -392,6 +400,24 @@ int trader_strategy_on_status(trader_strategy* self, instrument_status* status_d
 int trader_strategy_on_timer_status(trader_strategy* self)
 {
   if(!self->used){
+    return 0;
+  }
+
+  if((0 == self->oT1Tick.AskVolume1)
+  || (0 == self->oT1Tick.BidVolume1)
+  || (0 == self->oT2Tick.AskVolume1)
+  || (0 == self->oT2Tick.BidVolume1)){
+    // 行情不正常
+    CMN_INFO("T1.AskVolume1=[%d]T1.BidVolume1=[%d]T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
+      self->oT1Tick.AskVolume1,
+      self->oT1Tick.BidVolume1,
+      self->oT2Tick.AskVolume1,
+      self->oT2Tick.BidVolume1);
+    return 0;
+  }
+
+  int ret = trader_strategy_is_auction_tick(self);
+  if(!ret){
     return 0;
   }
 
@@ -1929,6 +1955,7 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
   if(TRIGGER_TYPE_3 == self->TriggerType){
     if((0 == memcmp(tick_data->UpdateTime, "09:00:00", 8))
     ||(0 == memcmp(tick_data->UpdateTime, "10:15:00", 8))
+    ||(0 == memcmp(tick_data->UpdateTime, "13:00:00", 8))
     ||(0 == memcmp(tick_data->UpdateTime, "13:30:00", 8))){
       CMN_INFO("盘中重新开盘\n");
       if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
@@ -1979,6 +2006,39 @@ int trader_strategy_print_order_time(trader_strategy* self, trader_order* order_
 
   return 0;
 }
+
+int trader_strategy_is_auction_tick(trader_strategy* self)
+{
+  trader_tick* t1 = &self->oT1Tick;
+  do{
+    if(0 == memcmp(t1->UpdateTime, "09:29:00", 8)){
+      if((0 == memcmp(t1->InstrumentID, "IH", 2))
+      ||(0 == memcmp(t1->InstrumentID, "IC", 2))
+      ||(0 == memcmp(t1->InstrumentID, "IF", 2))
+      ||(0 == memcmp(t1->InstrumentID, "IM", 2))){
+        break;
+      }
+    }
+    
+    if(0 == memcmp(t1->UpdateTime, "20:59:00", 8)){
+      if(self->IsSHFE || self->T2IsSHFE){
+        break;
+      }
+    }
+
+    return 0;
+  }while(0);
+
+  CMN_INFO("SID[%02d][%s]T1[%s]T2[%s]\n"
+    , self->idx
+    , t1->UpdateTime
+    , self->T1
+    , self->T2
+  );
+
+  return 1;
+}
+
 
 trader_strategy* trader_strategy_new()
 {

@@ -254,9 +254,7 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pStrategyEngine->pendingMicroSec = self->pendingMicroSec;
   self->pStrategyEngine->t2CancelLimit = 10; // TODO
 
-#ifdef XELE
   self->pStrategyEngine->pMethod->xInit(self->pStrategyEngine);
-#endif
 
   self->nContractNum = 0;
   TAILQ_INIT(&self->listTraderContract);
@@ -340,11 +338,11 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
 
   self->BrokerId = (char*)malloc(sizeof(char) * (strlen(pCfg->pMethod->xGetBrokerId(pCfg)) + 1));
   strcpy(self->BrokerId, pCfg->pMethod->xGetBrokerId(pCfg));
-  CMN_DEBUG("self->BrokerId[%s]\n", self->BrokerId);
+  CMN_INFO("self->BrokerId[%s]\n", self->BrokerId);
   
   self->MdPrefix = (char*)malloc(sizeof(char) * (strlen(pCfg->pMethod->xGetMdPrefix(pCfg)) + 1));
   strcpy(self->MdPrefix, pCfg->pMethod->xGetMdPrefix(pCfg));
-  CMN_DEBUG("self->MdPrefix[%s]\n", self->MdPrefix);
+  CMN_INFO("self->MdPrefix[%s]\n", self->MdPrefix);
 
   self->MdFrontAdd = (char*)malloc(sizeof(char) * (strlen(pCfg->pMethod->xGetMdFrontAdd(pCfg)) + 1));
   strcpy(self->MdFrontAdd, pCfg->pMethod->xGetMdFrontAdd(pCfg));
@@ -352,7 +350,7 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
 
   self->TrFrontAdd = (char*)malloc(sizeof(char) * (strlen(pCfg->pMethod->xGetTrFrontAdd(pCfg)) + 1));
   strcpy(self->TrFrontAdd, pCfg->pMethod->xGetTrFrontAdd(pCfg));
-  CMN_DEBUG("self->TrFrontAdd[%s]\n", self->TrFrontAdd);
+  CMN_INFO("self->TrFrontAdd[%s]\n", self->TrFrontAdd);
 
   self->WorkSpace = (char*)malloc(sizeof(char) * (strlen(pCfg->pMethod->xGetWorkspace(pCfg)) + 1));
   strcpy(self->WorkSpace, pCfg->pMethod->xGetWorkspace(pCfg));
@@ -382,15 +380,15 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
 
   nRet = glbPflGetInt("TRADER", "PENDING_MSEC", cfg_file, &self->pendingMicroSec);
   if(nRet < 0){
-    self->pendingMicroSec = 50;
+    self->pendingMicroSec = 20;
   }
-  CMN_DEBUG("self->pendingMicroSec[%d]\n", self->pendingMicroSec);
+  CMN_INFO("self->pendingMicroSec[%d]\n", self->pendingMicroSec);
 
   nRet = glbPflGetInt("TRADER", "CANCEL_LIMIT", cfg_file, &self->cancelLimit);
   if(nRet < 0){
     self->cancelLimit = 400;
   }
-  CMN_DEBUG("self->cancelLimit[%d]\n", self->cancelLimit);
+  CMN_INFO("self->cancelLimit[%d]\n", self->cancelLimit);
 
   return 0;
 }

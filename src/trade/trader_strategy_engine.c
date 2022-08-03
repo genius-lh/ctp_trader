@@ -45,7 +45,7 @@ static void  trader_strategy_engine_timeout_cb(evutil_socket_t fd, short event, 
 
 static void trader_strategy_engine_status_timer_init(trader_strategy_engine* self);
 
-static void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char* pUpdateTime, int pUpdateMillisec);
+static void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char* instrument, char* pUpdateTime, int pUpdateMillisec);
 
 static void  trader_strategy_engine_status_timer_timeout_cb(evutil_socket_t fd, short event, void *arg);
 
@@ -207,7 +207,7 @@ int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick
     pStrategy->pMethod->xOnTick(pStrategy, &oTick);
   }
 
-  trader_strategy_engine_status_timer_tick(self, oTick.UpdateTime, oTick.UpdateMillisec);
+  trader_strategy_engine_status_timer_tick(self, oTick.InstrumentID, oTick.UpdateTime, oTick.UpdateMillisec);
 
   return 0;
 }
@@ -569,7 +569,13 @@ void trader_strategy_engine_free(trader_strategy_engine* self)
     pTraderStrategy = self->trader_strategys[i];
     trader_strategy_free(pTraderStrategy);
   }
-  
+
+  if(self->tickTimerEvent){
+    evtimer_del(self->tickTimerEvent);
+    event_free(self->tickTimerEvent);
+    self->tickTimerEvent = NULL;
+  }
+
   if(self){
     free(self);
   }
@@ -579,42 +585,51 @@ void trader_strategy_engine_free(trader_strategy_engine* self)
 void trader_strategy_engine_status_timer_init(trader_strategy_engine* self)
 {
   CMN_INFO("Enter!\n");
-  self->statusFlag = 1;
-  strncpy(self->currentTime, "09:29:00", sizeof(self->currentTime));
-  self->tickTimerEvent = NULL;
-  //self->pendingMicroSec = 20;
+  self->statusFlag = 0;
+  self->tickTimerEvent = evtimer_new(self->pBase, trader_strategy_engine_status_timer_timeout_cb, (void*)self);
   return;
 }
 
-void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char* pUpdateTime, int pUpdateMillisec)
+void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char* instrument, char* pUpdateTime, int pUpdateMillisec)
 {
-  if(!self->statusFlag){
-    return;
-  }
-
-  if(0 != strncmp(self->currentTime, pUpdateTime, sizeof(self->currentTime))){    
-    self->statusFlag = 0;
-    return;
-  }
-
-  CMN_INFO("Enter!\n");
-  self->statusFlag = 0;
   int UpdateMillisec = 0;
   int UpdateSec = 59;
 
-  if(0 == pUpdateMillisec){
-    UpdateSec = 60;
-    UpdateMillisec = self->pendingMicroSec;
-  }else{
-    UpdateSec = 59;
-    UpdateMillisec = 1000 - pUpdateMillisec + self->pendingMicroSec;
+  // self->statusFlag
+  // 0 - 等待行情
+  // 非0 - 进入定时状态
+  if(self->statusFlag){
+    return;
   }
+
+  do{
+    if(0 == memcmp(pUpdateTime, "09:29:00", 8)){
+      if(0 == memcmp(instrument, "IC", 2)){
+        UpdateSec = 59;
+        UpdateMillisec = 990 - pUpdateMillisec;
+        break;
+      }
+    }
+
+    if(0 == memcmp(pUpdateTime, "20:59:00", 8)){
+      if(0 == memcmp(instrument, "rb", 2)){
+        UpdateSec = 59;
+        UpdateMillisec = 490;
+        break;
+      }
+    }
+
+    return;
+  }while(0);
+  CMN_INFO("timeout UpdateSec=[%d]UpdateMillisec[%d]!\n"
+    , UpdateSec, UpdateMillisec);
+
+  self->statusFlag = 1;
 
   struct timeval t1_timeout = {
     UpdateSec, UpdateMillisec*1000
   };
 
-  self->tickTimerEvent = evtimer_new(self->pBase, trader_strategy_engine_status_timer_timeout_cb, (void*)self);
   evtimer_add(self->tickTimerEvent, &t1_timeout);
 
   return ;
@@ -623,12 +638,16 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
 void  trader_strategy_engine_status_timer_timeout_cb(evutil_socket_t fd, short event, void *arg)
 {
   trader_strategy_engine* self = (trader_strategy_engine*)arg;
-  self->statusFlag = 1;
-  if(self->tickTimerEvent){
-    evtimer_del(self->tickTimerEvent);
-    event_free(self->tickTimerEvent);
-    self->tickTimerEvent = NULL;
+  struct timeval t1_timeout = {
+    0, self->pendingMicroSec * 1000
+  };
+  if(self->statusFlag < 10){
+    self->statusFlag++;
+    evtimer_add(self->tickTimerEvent, &t1_timeout);
+  }else{
+    self->statusFlag = 0;
   }
+  
   trader_strategy_engine_status_timer_event(self);
   return;
 }
