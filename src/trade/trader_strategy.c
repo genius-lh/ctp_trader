@@ -1233,12 +1233,10 @@ int trader_strategy_insert_t1_close(trader_strategy* self, char long_short)
   int nSize3 = 0;
   
   if(TRADER_POSITION_LONG == cLongShort){
-    nSize1 = self->nPositionBuy - self->hold * self->T2Ratio;
+    nSize1 = self->nPositionBuy - self->hold;
   }else{
-    nSize1 = self->nPositionSell - self->hold * self->T2Ratio;
+    nSize1 = self->nPositionSell - self->hold;
   }
-
-  nSize1 /= self->T2Ratio;
 
   if(nSize1 > self->Mult){
     nSize1 = self->Mult;

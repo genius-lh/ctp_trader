@@ -35,9 +35,13 @@ int CIBTraderApi::ReqOrderInsert(CIBInputOrderField *pInputOrder)
 
   
 	order.action = ConvOrderAction(pInputOrder->Direction);
-	order.orderType = "LMT";
 	order.totalQuantity = (double)pInputOrder->Volume;
-	order.lmtPrice = pInputOrder->LimitPrice;
+  if(pInputOrder->LimitPrice > 0){
+  	order.orderType = "LMT";
+  	order.lmtPrice = pInputOrder->LimitPrice;
+  }else{
+  	order.orderType = "MKT";
+  }
 
   // TODO
   OrderId orderId = pInputOrder->UserOrderLocalID;
