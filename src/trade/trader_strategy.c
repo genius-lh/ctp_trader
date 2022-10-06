@@ -1327,6 +1327,11 @@ int trader_strategy_insert_t2_open(trader_strategy* self, trader_strategy_trade*
   if(self->T2MarketPrice){
     if(!memcmp(self->T2ExchangeID, "IB", 2)){
       t2price = 0.0f;
+      CMN_INFO("T2=[%s]t2price=[%lf]vol=[%d]\n"
+        , self->T2
+        , t2price
+        , strategy_trade->TradeVolume
+      );
     }
   }
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  self->T2,
@@ -1582,7 +1587,11 @@ int trader_strategy_t2_close_imp(trader_strategy* self, trader_strategy_trade* s
   if(self->T2MarketPrice){
     if(!memcmp(self->T2ExchangeID, "IB", 2)){
       t2price = 0.0f;
-    }
+      CMN_INFO("T2=[%s]t2price=[%lf]vol=[%d]\n"
+        , self->T2
+        , t2price
+        , strategy_trade->TradeVolume
+      );    }
   }
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  self->T2,
     strategy_trade->T2Direction, strategy_trade->T2Offset,
@@ -1925,6 +1934,12 @@ int trader_strategy_insert_t3(trader_strategy* self, trader_trade* trade_data)
   self->pEngine->pMethod->xGenLocalId(self->pEngine, TRADER_POSITION_TYPE_OPEN_T3, sLocalUserId);
 
   // ÏÂµ¥
+  CMN_INFO("cT1Direction=[%d]nPlanVol=[%d]sLocalUserId=[%s]\n"
+    , cT1Direction
+    , nPlanVol
+    , sLocalUserId
+  );
+  
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  USDCNH,
     cT1Direction, cCloseType,  0.0f, 
     nPlanVol, sLocalUserId, 
