@@ -70,7 +70,7 @@ static int trader_strategy_print_tick(trader_strategy* self);
 static int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data);
 static int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data);
 
-static int trader_strategy_insert_t3(trader_strategy* self, char long_short, int vol, double price, char* instrument);
+static int trader_strategy_insert_t3(trader_strategy* self, trader_trade* trade_data);
 
 static trader_strategy_method* trader_strategy_method_get();
 
@@ -929,13 +929,15 @@ int trader_strategy_trade_t1_open(trader_strategy* self, trader_trade* trade_dat
     CMN_WARN("trade_data->UserOrderLocalID=[%s]\n", trade_data->UserOrderLocalID);
     return -2;
   }
-  
+
   pStrategyPlan->nT1TradedVol += trade_data->TradeVolume;
 
   if(pStrategyPlan->nT1TradedVol == pStrategyPlan->nPlanVol){
     trader_strategy_release_order(self, trade_data->UserOrderLocalID);
   }
   
+  // 锁定汇率
+  trader_strategy_insert_t3(self, trade_data);
 
   // 获取T2方向
   cBuySell = trader_strategy_t2_direction(self, pStrategyPlan->cLongShort, TRADER_POSITION_OPEN);
@@ -996,6 +998,9 @@ int trader_strategy_trade_t1_close(trader_strategy* self, trader_trade* trade_da
   if(pStrategyPlan->nT1TradedVol == pStrategyPlan->nPlanVol){
     trader_strategy_release_order(self, trade_data->UserOrderLocalID);
   }
+
+  // 锁定汇率
+  trader_strategy_insert_t3(self, trade_data);
 
   // 获取T2方向
   cBuySell = trader_strategy_t2_direction(self, pStrategyPlan->cLongShort, TRADER_POSITION_CLOSE);
@@ -1062,6 +1067,8 @@ int trader_strategy_trade_t2_open(trader_strategy* self, trader_trade* trade_dat
     self->mapHalfTraded->pMethod->xRemove(self->mapHalfTraded, trade_data->UserOrderLocalID);
   }
 
+  // 锁定汇率
+  trader_strategy_insert_t3(self, trade_data);
   
 
   return 0;
@@ -1113,6 +1120,10 @@ int trader_strategy_trade_t2_close(trader_strategy* self, trader_trade* trade_da
     // 全部成交，清理
     self->mapHalfTraded->pMethod->xRemove(self->mapHalfTraded, trade_data->UserOrderLocalID);
   }
+
+  // 锁定汇率
+  trader_strategy_insert_t3(self, trade_data);
+
   return 0;
 }
 
@@ -1879,7 +1890,7 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
 
 }
 
-int trader_strategy_insert_t3(trader_strategy* self, char long_short, int vol, double price, char* instrument)
+int trader_strategy_insert_t3(trader_strategy* self, trader_trade* trade_data)
 {
   if(!self->IBLockCash){
     return 0;
@@ -1887,15 +1898,15 @@ int trader_strategy_insert_t3(trader_strategy* self, char long_short, int vol, d
 
   int multiple = 1;
 
-  if(0 == memcmp(instrument, "GC", 2)){
+  if(0 == memcmp(trade_data->InstrumentID, "GC", 2)){
     multiple = 1000;
-  }else if(0 == memcmp(instrument, "SI", 2)){
+  }else if(0 == memcmp(trade_data->InstrumentID, "SI", 2)){
     multiple = 5000;
   }else{
     return 0;
   }
-  int nPlanVol = (int)(price * multiple) / 1000 * 1000;
-  char cT1Direction = long_short;
+  int nPlanVol = (int)(trade_data->TradePrice * multiple) / 1000 * 1000;
+  char cT1Direction = trade_data->Direction;
   char cCloseType = TRADER_POSITION_OPEN;
   char sLocalUserId[21];  
 
