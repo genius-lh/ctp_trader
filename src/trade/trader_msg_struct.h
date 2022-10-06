@@ -88,6 +88,10 @@ struct trader_cmd_update_req_def {
     int T2IsSHFE; // 是否是上期
     char T1ExchangeID[9];
     char T2ExchangeID[9];
+
+    int IBLockCash;
+    int T2MarketPrice;
+
   } stage[TRADER_CMD_UPDATE_NUM];
 };
 

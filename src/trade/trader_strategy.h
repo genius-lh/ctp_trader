@@ -119,6 +119,9 @@ struct trader_strategy_def{
   
   int TriggerType;
 
+  int IBLockCash;
+  int T2MarketPrice;
+
   // T1 ÐÐÇé
   trader_tick* pT1Tick;
   

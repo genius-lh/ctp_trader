@@ -184,6 +184,7 @@ struct instrument_status_def{
 #define TRADER_POSITION_TYPE_CLOSE_T1_ACTION '5'
 #define TRADER_POSITION_TYPE_OPEN_T2_ACTION '6'
 #define TRADER_POSITION_TYPE_CLOSE_T2_ACTION '7'
+#define TRADER_POSITION_TYPE_OPEN_T3 '8'
 
 typedef char mduser_instrument[32];
 

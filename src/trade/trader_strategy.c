@@ -70,6 +70,8 @@ static int trader_strategy_print_tick(trader_strategy* self);
 static int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data);
 static int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data);
 
+static int trader_strategy_insert_t3(trader_strategy* self, char long_short, int vol, double price, char* instrument);
+
 static trader_strategy_method* trader_strategy_method_get();
 
 trader_strategy_method* trader_strategy_method_get()
@@ -1876,6 +1878,38 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
   return 0;
 
 }
+
+int trader_strategy_insert_t3(trader_strategy* self, char long_short, int vol, double price, char* instrument)
+{
+  if(!self->IBLockCash){
+    return 0;
+  }
+
+  int multiple = 1;
+
+  if(0 == memcmp(instrument, "GC", 2)){
+    multiple = 1000;
+  }else if(0 == memcmp(instrument, "SI", 2)){
+    multiple = 5000;
+  }else{
+    return 0;
+  }
+  int nPlanVol = (int)(price * multiple) / 1000 * 1000;
+  char cT1Direction = long_short;
+  char cCloseType = TRADER_POSITION_OPEN;
+  char sLocalUserId[21];  
+
+  self->pEngine->pMethod->xGenLocalId(self->pEngine, TRADER_POSITION_TYPE_OPEN_T3, sLocalUserId);
+
+  // ÏÂµ¥
+  self->pEngine->pMethod->xSendOrder(self->pEngine, self,  USDCNH,
+    cT1Direction, cCloseType,  0.0f, 
+    nPlanVol, sLocalUserId, 
+    self->T1ExchangeID);
+
+  
+}
+
 
 
 trader_strategy* trader_strategy_new()

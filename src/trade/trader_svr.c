@@ -1449,8 +1449,13 @@ trader_contract* trader_svr_get_contract(trader_svr* self, char* contract_id)
     //外盘特殊处理
     if(0 == memcmp("GC", iter->contract, 2)){
       iter->PriceTick = 0.1;
+      strncpy(iter->ExchangeID, "IB", sizeof(iter->ExchangeID));
     }else if(0 == memcmp("SI", iter->contract, 2)){
       iter->PriceTick = 0.005;
+      strncpy(iter->ExchangeID, "IB", sizeof(iter->ExchangeID));
+    }else if(0 == memcmp("COIL", iter->contract, 2)){
+      iter->PriceTick = 0.01;
+      strncpy(iter->ExchangeID, "IB", sizeof(iter->ExchangeID));
     }else{
 
     }

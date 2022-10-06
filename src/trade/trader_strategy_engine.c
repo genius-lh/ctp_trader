@@ -134,6 +134,8 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
   	CMN_INFO("T2IsSHFE[%d]\n", pUpdate->stage[i].T2IsSHFE);
   	CMN_INFO("T1ExchangeID[%s]\n", pUpdate->stage[i].T1ExchangeID);
   	CMN_INFO("T2ExchangeID[%s]\n", pUpdate->stage[i].T2ExchangeID);
+  	CMN_INFO("IBLockCash[%d]\n", pUpdate->stage[i].IBLockCash);
+  	CMN_INFO("T2MarketPrice[%d]\n", pUpdate->stage[i].T2MarketPrice);
     
     pStrategy->idx = pUpdate->stage[i].StageId;
     strcpy(pStrategy->T1, pUpdate->stage[i].T1);
@@ -169,6 +171,9 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->T2IsSHFE = pUpdate->stage[i].T2IsSHFE;
     strncpy(pStrategy->T1ExchangeID, pUpdate->stage[i].T1ExchangeID, sizeof(pStrategy->T1ExchangeID));
     strncpy(pStrategy->T2ExchangeID, pUpdate->stage[i].T2ExchangeID, sizeof(pStrategy->T2ExchangeID));
+
+    pStrategy->IBLockCash = pUpdate->stage[i].IBLockCash;
+    pStrategy->T2MarketPriceT2MarketPrice = pUpdate->stage[i].T2MarketPrice;
 
     strcpy(pStrategy->oBuyPosition.T1, pStrategy->T1);
     strcpy(pStrategy->oBuyPosition.T2, pStrategy->T2);

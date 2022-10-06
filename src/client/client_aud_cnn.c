@@ -423,6 +423,8 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
   update->stage[num].T1Ratio = 1;
   update->stage[num].T2Ratio = 1;
   update->stage[num].NightClosingTime = 0;
+  update->stage[num].IBLockCash = 0;
+  update->stage[num].T2MarketPrice = 0;
 #ifdef FEMAS
   update->stage[num].TriggerType = 0;
 #else
@@ -492,9 +494,13 @@ int client_aud_cnn_fill_req_update(struct trader_cmd_update_req_def* update, int
     }else if(!strcmp(pChild->string, "t2Ratio")){
       update->stage[num].T2Ratio = atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "nightClosingTime")){
-        update->stage[num].NightClosingTime = atoi(pChild->valuestring);
+      update->stage[num].NightClosingTime = atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "triggerType")){
-        update->stage[num].TriggerType = atoi(pChild->valuestring);
+      update->stage[num].TriggerType = atoi(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "ibLockCash")){
+      update->stage[num].IBLockCash = atoi(pChild->valuestring);
+    }else if(!strcmp(pChild->string, "t2MarketPrice")){
+      update->stage[num].T2MarketPrice = atoi(pChild->valuestring);
     }else if(!strcmp(pChild->string, "IsActivate")){
       if(pChild->type == cJSON_False){
         update->stage[num].Used = 0;
