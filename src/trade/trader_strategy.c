@@ -1323,9 +1323,15 @@ int trader_strategy_insert_t2_open(trader_strategy* self, trader_strategy_trade*
   self->pEngine->pMethod->xGenLocalId(self->pEngine, TRADER_POSITION_TYPE_OPEN_T2, sLocalUserId);
 
   // 下单
+  double t2price = strategy_trade->T2Price;
+  if(self->T2MarketPrice){
+    if(!memcmp(self->T2ExchangeID, "IB", 2)){
+      t2price = 0.0f;
+    }
+  }
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  self->T2,
-    strategy_trade->T2Direction, TRADER_POSITION_OPEN, 
-    strategy_trade->T2Price, strategy_trade->TradeVolume, sLocalUserId,    
+    strategy_trade->T2Direction, TRADER_POSITION_OPEN,
+    t2price, strategy_trade->TradeVolume, sLocalUserId,
     self->T2ExchangeID);
 
   // 加入T1队列
@@ -1572,9 +1578,15 @@ int trader_strategy_t2_close_imp(trader_strategy* self, trader_strategy_trade* s
   self->pEngine->pMethod->xGenLocalId(self->pEngine, TRADER_POSITION_TYPE_CLOSE_T2, sLocalUserId);
 
   // 下单
+  double t2price = strategy_trade->T2Price;
+  if(self->T2MarketPrice){
+    if(!memcmp(self->T2ExchangeID, "IB", 2)){
+      t2price = 0.0f;
+    }
+  }
   self->pEngine->pMethod->xSendOrder(self->pEngine, self,  self->T2,
-    strategy_trade->T2Direction, strategy_trade->T2Offset, 
-    strategy_trade->T2Price, strategy_trade->TradeVolume, sLocalUserId, 
+    strategy_trade->T2Direction, strategy_trade->T2Offset,
+    t2price, strategy_trade->TradeVolume, sLocalUserId,
     self->T2ExchangeID);
 
   // 加入T1队列
