@@ -173,7 +173,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     strncpy(pStrategy->T2ExchangeID, pUpdate->stage[i].T2ExchangeID, sizeof(pStrategy->T2ExchangeID));
 
     pStrategy->IBLockCash = pUpdate->stage[i].IBLockCash;
-    pStrategy->T2MarketPriceT2MarketPrice = pUpdate->stage[i].T2MarketPrice;
+    pStrategy->T2MarketPrice = pUpdate->stage[i].T2MarketPrice;
 
     strcpy(pStrategy->oBuyPosition.T1, pStrategy->T1);
     strcpy(pStrategy->oBuyPosition.T2, pStrategy->T2);
