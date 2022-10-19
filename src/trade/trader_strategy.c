@@ -1393,6 +1393,10 @@ int trader_strategy_insert_t2_close(trader_strategy* self, char long_short, int 
     if('\0' == self->T2ExchangeID[0]){
       break;
     }
+
+    if(0 == memcmp(self->T2ExchangeID, "IB", 2)){
+      break;
+    }
     
     trader_strategy_limit* pTraderStrategyLimit = self->pEngine->pTraderStrategyLimit;
     nSize2 = pTraderStrategyLimit->pMethod->xGetAvailable(pTraderStrategyLimit, 
@@ -1920,7 +1924,7 @@ int trader_strategy_insert_t3(trader_strategy* self, trader_trade* trade_data)
   int multiple = 1;
 
   if(0 == memcmp(trade_data->InstrumentID, "GC", 2)){
-    multiple = 1000;
+    multiple = 100;
   }else if(0 == memcmp(trade_data->InstrumentID, "SI", 2)){
     multiple = 5000;
   }else{
