@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS=foreign
 
 noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 
-noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so\
+noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so\
 				libctpminimduser.so libctpminitrader.so \
 				libgfmduser.so libsfmduser.so libswmduser.so libefh32mduser.so\
 				libfemasmduser.so libfemastrader.so \
@@ -10,7 +10,7 @@ noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so\
 				libremmduser.so libremtrader.so libcffexl2mduser.so
 
 bin_PROGRAMS=\
-			traderMduserCtp traderStrategyCtp traderMduserCtp66\
+			traderMduserCtp traderStrategyCtp traderMduserCtp66 traderStrategyCtp66\
 			traderMduserCtpMini traderStrategyCtpMini \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
@@ -58,6 +58,11 @@ libctpmduser66_so_SOURCES=src/api/trader_mduser_api_ctp.cpp\
         src/api/CtpMduserHandler.cpp
 libctpmduser66_so_CPPFLAGS=-fPIC -Ictp6.6 -Ilibevent -Ilibevent/compat/sys
 libctpmduser66_so_LDFLAGS=-shared -fPIC
+
+libctptrader66_so_SOURCES=src/api/trader_trader_api_ctp.cpp\
+        src/api/CtpTraderHandler.cpp
+libctptrader66_so_CPPFLAGS=-fPIC -Ictp6.6 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
+libctptrader66_so_LDFLAGS=-shared -fPIC
 
 # libctpminimduser.so libctpminitrader.so
 libctpminimduser_so_SOURCES=src/api/trader_mduser_api_ctp.cpp\
@@ -153,6 +158,31 @@ traderMduserCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
         -L. -ltradercmn -lmduserapi\
         -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
 
+traderStrategyCtp66_SOURCES=\
+        src/log/cmn_log_catalog.c\
+        src/log/cmn_log_appender.c\
+        src/log/cmn_log_svr.c\
+        src/daemon/trader_daemon.c \
+        src/trade/trader_db.c \
+        src/trade/trader_mduser_client.c \
+        src/trade/trader_strategy_engine.c \
+        src/trade/trader_strategy_imp.c \
+        src/trade/trader_strategy_limit.c \
+        src/trade/trader_strategy.c \
+        src/trade/trader_svr.c \
+        src/client/client_aud_cnn.c \
+        src/client/client_aud_svr.c \
+        src/client/client_aud_pool.c
+
+traderStrategyCtp66_CFLAGS=-DCTP -Isrc/api \
+        -Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
+        -Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
+
+traderStrategyCtp66_LDADD=\
+        -lc -lstdc++ -lm -lpthread -lresolv -ldl\
+        -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
+        -L. -ltradercmn -ltraderapi\
+        -Lctp6.6 -lctptrader66 -lthosttraderapi_se
 
 traderStrategyCtp_SOURCES=\
         src/log/cmn_log_catalog.c\
