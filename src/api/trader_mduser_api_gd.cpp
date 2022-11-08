@@ -9,9 +9,11 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <limits.h>
+#include <float.h>
+
+#include "ThostFtdcUserApiDataType.h"
+#include "ThostFtdcUserApiStruct.h"
 
 #pragma pack(1)
 typedef unsigned int uInt32;
@@ -45,6 +47,13 @@ struct ShfeDataField
 
 #pragma pack()
 
+#define DATA_LENGTH sizeof(struct ShfeDataField)
+#define DATA_WITH_HEAD (DATA_LENGTH + 42)
+#define DATA_WITHOUT_HEAD (DATA_LENGTH)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define GFXELE_LOG(...) printf(__VA_ARGS__)
 
@@ -63,6 +72,7 @@ static void trader_mduser_api_gd_subscribe(trader_mduser_api* self, char* instru
 static void* trader_mduser_api_gd_thread(void* arg);
 
 static int trader_mduser_api_gd_prase_url(const char* url, char* local_host, char* remote_host, int* port);
+static void gd_ctp_mduser_on_rtn_depth_market_data(void* arg, CThostFtdcDepthMarketDataField *pMarketData);
 static void gd_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMarketData);
 
 #ifdef __cplusplus
@@ -82,8 +92,13 @@ struct trader_mduser_api_gd_def{
   int loop_flag;
   pthread_mutex_t mutex;
   dict* tick_dick;
+  
+  int commitCount;
+  int linePos;
+  struct ShfeDataField* tickBuffer;
+  char csvFile[256];
+  char tradingDay[9];
 };
-
 
 static unsigned int tickHash(const void *key) {
     return dictGenHashFunction((const unsigned char *)key,
@@ -234,6 +249,30 @@ void trader_mduser_api_gd_subscribe(trader_mduser_api* self, char* instrument)
   return ;
 }
 
+void gd_ctp_mduser_on_rtn_depth_market_data(void* arg, CThostFtdcDepthMarketDataField *pMarketData)
+{
+  trader_mduser_api* self = (trader_mduser_api*)arg;
+  trader_tick oTick;
+  memset(&oTick, 0, sizeof(trader_tick));
+
+  strcpy(oTick.InstrumentID, pMarketData->InstrumentID);
+  strcpy(oTick.TradingDay, pMarketData->TradingDay);
+  strcpy(oTick.UpdateTime, pMarketData->UpdateTime);
+  oTick.UpdateMillisec = pMarketData->UpdateMillisec;
+  oTick.BidPrice1 = pMarketData->BidPrice1;
+  oTick.BidVolume1 = pMarketData->BidVolume1;
+  oTick.AskPrice1 = pMarketData->AskPrice1;
+  oTick.AskVolume1 = pMarketData->AskVolume1;
+  oTick.UpperLimitPrice = pMarketData->UpperLimitPrice;
+  oTick.LowerLimitPrice = pMarketData->LowerLimitPrice;
+  oTick.LastPrice = pMarketData->LastPrice;
+
+  trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
+
+  return;
+
+}
+
 void gd_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMarketData)
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
@@ -247,17 +286,22 @@ void gd_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMa
   
   memset(&oTick, 0, sizeof(trader_tick));
 
-  strcpy(oTick.InstrumentID, pMarketData->m_symbol);
+  strcpy(oTick.InstrumentID, pMarketData->instrument_id);
   strcpy(oTick.TradingDay, "20210101");
-  strcpy(oTick.UpdateTime, pMarketData->m_update_time);
-  oTick.UpdateMillisec = pMarketData->m_millisecond;
-  oTick.BidPrice1 = pMarketData->m_bid_px;
-  oTick.BidVolume1 = pMarketData->m_bid_share;
-  oTick.AskPrice1 = pMarketData->m_ask_px;
-  oTick.AskVolume1 = pMarketData->m_ask_share;
-  oTick.UpperLimitPrice = pMarketData->m_ask_px * 1.1;
-  oTick.LowerLimitPrice = pMarketData->m_bid_px * 0.9;
-  oTick.LastPrice = pMarketData->m_last_px;
+  snprintf(oTick.UpdateTime, sizeof(oTick.UpdateTime), "%02d:%02d:02d"
+    , pMarketData->update_time / 10000000
+    , pMarketData->update_time % 10000000 / 100000
+    , pMarketData->update_time % 100000 / 1000
+  );
+  
+  oTick.UpdateMillisec = pMarketData->update_time % 1000;
+  oTick.BidPrice1 = pMarketData->depth[0].bid_price;
+  oTick.BidVolume1 = pMarketData->depth[0].bid_volume;
+  oTick.AskPrice1 = pMarketData->depth[0].ask_price;
+  oTick.AskVolume1 = pMarketData->depth[0].ask_volume;
+  oTick.UpperLimitPrice = pMarketData->upper_limit;
+  oTick.LowerLimitPrice = pMarketData->lower_limit;
+  oTick.LastPrice = pMarketData->last_price;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
 
@@ -364,13 +408,13 @@ void* trader_mduser_api_gd_thread(void* arg)
     	}					
     	else
     	{
-        //sw_mduser_on_rtn_depth_market_data(self, (CUstpFtdcDepthMarketDataField*)line);
+        //gf_mduser_on_rtn_depth_market_data(self, (CUstpFtdcDepthMarketDataField*)line);
         if(!flag){
           flag = 1;
-          GFXELE_LOG("sw_ctp_mduser_on_rtn_depth_market_data\n");
+          GFXELE_LOG("gf_ctp_mduser_on_rtn_depth_market_data\n");
         }
-        //sw_ctp_mduser_on_rtn_depth_market_data(self, (CThostFtdcDepthMarketDataField*)line);
-        if(n_rcved > sizeof(struct ShfeDataField)){
+        //gf_ctp_mduser_on_rtn_depth_market_data(self, (CThostFtdcDepthMarketDataField*)line);
+        if(n_rcved > DATA_WITH_HEAD){
           GFXELE_LOG("n_rcved[%d] > DATA_WITH_HEAD\n", n_rcved);
         }
         gd_x10_mduser_on_rtn_depth_market_data(self, (struct ShfeDataField*)line);
@@ -424,6 +468,5 @@ int trader_mduser_api_gd_prase_url(const char* url, char* local_host, char* remo
   *port = atoi(q);
   return 0;
 }
-
 
 

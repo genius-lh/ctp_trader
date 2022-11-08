@@ -104,7 +104,7 @@ extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
   api_imp = trader_mduser_api_lts_method_get();
 #endif
 
-#ifdef GD_CFFEX
+#ifdef GD_UDP_CTP
   extern trader_mduser_api_method* trader_mduser_api_gd_method_get();
     api_imp = trader_mduser_api_gd_method_get();
 #endif
@@ -191,6 +191,11 @@ extern trader_mduser_api_method* trader_mduser_api_femas_af_method_get();
 #endif
 
 #ifdef SW_EFH32_CTP66
+extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
+    api_imp = trader_mduser_api_ctp_method_get();
+#endif
+
+#ifdef GD_UDP_CTP
 extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
     api_imp = trader_mduser_api_ctp_method_get();
 #endif

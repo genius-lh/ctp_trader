@@ -4,7 +4,7 @@ noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
 
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so\
 				libctpminimduser.so libctpminitrader.so \
-				libgfmduser.so libsfmduser.so libswmduser.so libefh32mduser.so\
+				libgfmduser.so libgdmduser.so libsfmduser.so libswmduser.so libefh32mduser.so\
 				libfemasmduser.so libfemastrader.so \
 				libfemasmduser_af.so libfemastrader_af.so \
 				libremmduser.so libremtrader.so libcffexl2mduser.so
@@ -19,6 +19,7 @@ bin_PROGRAMS=\
 			traderMduserGfShfe \
 			traderMduserXhsp \
 			traderMduserXhSf \
+			traderMduserGdUdpCtp \
 			traderMduserSwEfh32FemasAF \
 			traderMduserSwEfh32Rem \
 			traderMduserSwEfh32Ctp66 \
@@ -102,6 +103,10 @@ libfemastrader_af_so_LDFLAGS=-shared -fPIC
 libgfmduser_so_SOURCES=src/api/trader_mduser_api_gf.cpp
 libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ictp -Isrc/util -Ilibevent -Ilibevent/compat/sys
 libgfmduser_so_LDFLAGS=-shared -fPIC
+
+libgdmduser_so_SOURCES=src/api/trader_mduser_api_gd.cpp
+libgdmduser_so_CPPFLAGS=-fPIC -Ictp -Isrc/util -Ilibevent -Ilibevent/compat/sys
+libgdmduser_so_LDFLAGS=-shared -fPIC
 
 libsfmduser_so_SOURCES=src/api/trader_mduser_api_sf.cpp
 libsfmduser_so_CPPFLAGS=-fPIC -Isolarflare -Ilibevent -Ilibevent/compat/sys
@@ -457,7 +462,18 @@ traderMduserSwEfh32Ctp66_CFLAGS=-DSW_EFH32_CTP66\
 traderMduserSwEfh32Ctp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 	-L. -lswmduser -ltradercmn -lmduserapi\
     -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
+	
+traderMduserGdUdpCtp_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
 
+traderMduserGdUdpCtp_CFLAGS=-DGD_UDP_CTP\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserGdUdpCtp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lgdmduser -ltradercmn -lmduserapi\
+    -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
 
 # testMduserShm testMduserClient
 testMduserClient_SOURCES=\
