@@ -288,7 +288,7 @@ void gd_x10_mduser_on_rtn_depth_market_data(void* arg, struct ShfeDataField *pMa
 
   strcpy(oTick.InstrumentID, pMarketData->instrument_id);
   strcpy(oTick.TradingDay, "20210101");
-  snprintf(oTick.UpdateTime, sizeof(oTick.UpdateTime), "%02d:%02d:02d"
+  snprintf(oTick.UpdateTime, sizeof(oTick.UpdateTime), "%02d:%02d:%02d"
     , pMarketData->update_time / 10000000
     , pMarketData->update_time % 10000000 / 100000
     , pMarketData->update_time % 100000 / 1000
