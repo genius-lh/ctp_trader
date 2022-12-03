@@ -95,6 +95,8 @@ static int trader_svr_order_cancel_init(trader_svr* self, trader_contract* contr
 static int trader_svr_order_cancel_do(trader_svr* self, char* contract_id);
 static trader_contract* trader_svr_get_contract(trader_svr* self, char* contract_id);
 
+static int trader_svr_redis_get_param(trader_svr* self, char* key, char* val, int size);
+
 int trader_svr_init(trader_svr* self, evutil_socket_t sock)
 {
   CMN_DEBUG("Enter!\n");
@@ -811,7 +813,11 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
 {
   CMN_DEBUG("Enter!\n");
   struct trader_cmd_login_req_def* pLoginInf = &(req->body.login);
-  CMN_DEBUG("UserID=[%s]\n", pLoginInf->UserID);
+  // 更新日志文件名
+  char newCatalog[20];
+  snprintf(newCatalog, sizeof(newCatalog), "trade.%s", pLoginInf->UserID);
+  CMN_INFO("newCatalog[%s]\n", newCatalog);
+  CMN_LOG_UPD(newCatalog);
   
   // 参数保存
   strcpy(&self->CurrentTraceNo[0], req->traceNo);
@@ -833,6 +839,26 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
   self->pTraderDB->pMethod->xInit(self->pTraderDB, sDate);
 
   // 交易登录
+
+#ifdef IB
+  char sQueryCmd[64];
+  char sResult[64];
+  int nRet = 0;
+  snprintf(sQueryCmd, sizeof(sQueryCmd), "IB_USER_PARAM_%s", self->UserId);
+  nRet = trader_svr_redis_get_param(self, sQueryCmd, sResult, sizeof(sResult));
+  if(nRet){
+    CMN_INFO("redis failed![%s]\n", sQueryCmd);
+    strncpy(sResult, self->nClientId, sizeof(sResult));
+  }
+
+  CMN_INFO("UserID=[%s]\n", pLoginInf->UserID);
+  CMN_INFO("ClientId=[%s]\n", sResult);
+
+  self->pIBTraderApi->pMethod->xSetWorkspace(self->pIBTraderApi, ".");
+  self->pIBTraderApi->pMethod->xSetUser(self->pIBTraderApi, sResult, 
+    &self->UserId[0], &self->Passwd[0]);
+  self->pIBTraderApi->pMethod->xStart(self->pIBTraderApi);
+#endif
   
   self->pCtpTraderApi->pMethod->xSetWorkspace(self->pCtpTraderApi, ".");
   self->pCtpTraderApi->pMethod->xSetUser(self->pCtpTraderApi, self->BrokerId, 
@@ -844,12 +870,7 @@ int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req)
     &self->UserId[0], &self->Passwd[0]);
   */
 
-#ifdef IB
-  self->pIBTraderApi->pMethod->xSetWorkspace(self->pIBTraderApi, ".");
-  self->pIBTraderApi->pMethod->xSetUser(self->pIBTraderApi, self->nClientId, 
-    &self->UserId[0], &self->Passwd[0]);
-  self->pIBTraderApi->pMethod->xStart(self->pIBTraderApi);
-#endif
+
 
   return 0;
 }
@@ -1464,6 +1485,22 @@ trader_contract* trader_svr_get_contract(trader_svr* self, char* contract_id)
     TAILQ_INSERT_TAIL(&self->listTraderContract, iter, next);
 
     return iter;
+}
+
+int trader_svr_redis_get_param(trader_svr* self, char* key, char* val, int size)
+{
+  CMN_DEBUG("GET %s\n", key);
+  redisReply *reply;
+  int nRet = -1;
+  reply = redisCommand(self->pRedis, "GET %s", key);
+
+  if(REDIS_REPLY_STRING == reply->type){
+    strncpy(val, reply->str, size);
+    nRet = 0;
+  }
+
+  freeReplyObject(reply);
+  return nRet;
 }
 
 
