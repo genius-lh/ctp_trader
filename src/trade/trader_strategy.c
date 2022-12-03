@@ -16,6 +16,8 @@
 
 #include "trader_strategy.h"
 
+#define OUNCE_TO_GRAM(_price, _rate) ((_price)*(_rate)/OZ)
+
 static int trader_strategy_init(trader_strategy* self);
 static int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data);
 static int trader_strategy_on_order(trader_strategy* self, trader_order* order_data);
@@ -364,6 +366,7 @@ int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int vol
   );
   int nTemp = 0;
   trade_position* pPosition;
+  volume *= self->T2Ratio;
   if(TRADER_POSITION_BUY == buy_sell){
     nTemp = volume - self->nPositionBuy;
     self->nPositionBuy = volume;
@@ -383,7 +386,7 @@ int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int vol
     pPosition = &self->oSellPosition;
   }
   
-  CMN_DEBUG("AFTER\n"
+  CMN_INFO("AFTER\n"
     "nFailedBuyOpen[%d]\n"
     "nFailedSellOpen[%d]\n"
     "nFailedBuyClose[%d]\n"
@@ -446,6 +449,18 @@ int trader_strategy_update_position(trader_strategy* self, char buy_sell, int vo
     pPosition = &self->oSellPosition;
     pPosition->ExpPrice = self->KTOpen;
   }
+
+  trader_tick* t1 = self->pT1Tick;
+  trader_tick* t3 = self->pT3Tick;
+  if((0 == memcmp("GC", t1->InstrumentID, 2))
+  ||(0 == memcmp("SI", t1->InstrumentID, 2))){
+    // 金衡盎司价格换算
+    if(TRADER_POSITION_BUY == buy_sell){
+      t1_price = OUNCE_TO_GRAM(t1_price, t3->AskPrice1);
+    }else{
+      t1_price = OUNCE_TO_GRAM(t1_price, t3->BidPrice1);
+    }
+  }
   
   double real_price = t1_price * self->T1Weight - t2_price * self->T2Weight;
 
@@ -461,6 +476,9 @@ int trader_strategy_update_position(trader_strategy* self, char buy_sell, int vo
 int trader_strategy_print_trade(trader_strategy* self, char buy_sell, int volume, double t1_price, double t2_price, double th)
 {
   // 打印成交情况
+  if(!volume){
+    return 0;
+  }
   if(TRADER_POSITION_BUY == buy_sell){
     CMN_INFO("%s, %s, %lf, %lf, %d, %lf, %d\n"
       , self->T1, self->T2, th
@@ -472,7 +490,7 @@ int trader_strategy_print_trade(trader_strategy* self, char buy_sell, int volume
       , t1_price, volume, t2_price, -volume * self->T2Ratio
     );
   }
-  return;
+  return 0;
 }
 
 // 开盘自动策略
@@ -706,11 +724,11 @@ int trader_strategy_order_t1_open_cancel(trader_strategy* self, trader_order* or
   // 更新可下单笔数
   if(TRADER_POSITION_LONG == pStrategyPlan->cLongShort){
     // 做多撤单
-    self->nOrderBuy -= nReset;
+    self->nOrderBuy -= nReset * self->T2Ratio;
     CMN_DEBUG("self->nOrderBuy=[%d]\n", self->nOrderBuy);
   }else{
     // 做空撤单
-    self->nOrderSell -= nReset;
+    self->nOrderSell -= nReset * self->T2Ratio;
     CMN_DEBUG("self->nOrderSell=[%d]\n", self->nOrderSell);
   }
   
@@ -1145,10 +1163,10 @@ int trader_strategy_insert_t1_open(trader_strategy* self, char long_short)
   int nSize2 = 0;
   // 计算下单量
   nSize1 = self->Mult;
-  nSize2 = (self->MP * self->T2Ratio - self->nPositionBuy - self->nPositionSell);
-  nSize2 /= self->T2Ratio;
+  nSize2 = self->MP - (self->nPositionBuy + self->nPositionSell) / self->T2Ratio;
 
   if(nSize2 <= 0){
+    CMN_ERROR("手数不对\n");
     return -1;
   }
  
@@ -1187,11 +1205,11 @@ int trader_strategy_insert_t1_open(trader_strategy* self, char long_short)
   // 更新委托量
   if(TRADER_POSITION_LONG == cLongShort){
     // 做多开仓
-    self->nOrderBuy += nSize1;
+    self->nOrderBuy += nSize1 * self->T2Ratio;
     CMN_DEBUG("self->nOrderBuy=[%d]!\n", self->nOrderBuy);
   }else{
     // 做空开仓
-    self->nOrderSell += nSize1;
+    self->nOrderSell += nSize1 * self->T2Ratio;
     CMN_DEBUG("self->nOrderSell=[%d]!\n", self->nOrderSell);
   }
   
@@ -1246,9 +1264,14 @@ int trader_strategy_insert_t1_close(trader_strategy* self, char long_short)
   int nSize3 = 0;
   
   if(TRADER_POSITION_LONG == cLongShort){
-    nSize1 = self->nPositionBuy - self->hold;
+    nSize1 = self->nPositionBuy / self->T2Ratio - self->hold;
   }else{
-    nSize1 = self->nPositionSell - self->hold;
+    nSize1 = self->nPositionSell / self->T2Ratio - self->hold;
+  }
+
+  if(nSize1 <= 0){
+    CMN_ERROR("手数不对\n");
+    return -1;
   }
 
   if(nSize1 > self->Mult){
@@ -1262,7 +1285,8 @@ int trader_strategy_insert_t1_close(trader_strategy* self, char long_short)
   char cT1Direction = trader_strategy_t1_direction(self, cLongShort, TRADER_POSITION_CLOSE);
 
   do{
-    if('\0' == self->T1ExchangeID[0]){
+    if(('\0' == self->T1ExchangeID[0])
+    ||(!memcmp(self->T1ExchangeID, "IB", 2))){
       break;
     }
     
@@ -1922,15 +1946,18 @@ int trader_strategy_insert_t3(trader_strategy* self, trader_trade* trade_data)
   }
 
   int multiple = 1;
+  double tradePrice = trade_data->TradePrice;
 
   if(0 == memcmp(trade_data->InstrumentID, "GC", 2)){
     multiple = 100;
+    tradePrice = 1700.0;
   }else if(0 == memcmp(trade_data->InstrumentID, "SI", 2)){
     multiple = 5000;
+    tradePrice = 20.0;
   }else{
     return 0;
   }
-  int nPlanVol = (int)(trade_data->TradePrice * multiple) / 1000 * 1000;
+  int nPlanVol = (int)(tradePrice * multiple) / 1000 * 1000;
   char cT1Direction = trade_data->Direction;
   char cCloseType = TRADER_POSITION_OPEN;
   char sLocalUserId[21];  
