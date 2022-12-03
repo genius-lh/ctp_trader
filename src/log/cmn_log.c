@@ -84,6 +84,13 @@ int cmn_log_clt_ini(cmn_log_clt* self, char* cfg_file, char* a_catalog)
   
 }
 
+int cmn_log_clt_upd(cmn_log_clt* self, char* a_catalog)
+{
+  strncpy(self->catalog, a_catalog, sizeof(self->catalog));
+
+  return 0;
+}
+
 void cmn_log_clt_fini(cmn_log_clt* self)
 {
   if(self->pQueSvr){
