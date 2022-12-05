@@ -54,7 +54,7 @@ int ib_future_contract_make(char* instrument, long tick_id, IBFutureContract* fu
     }else if (0 == memcmp(future->symbol, "ZM", 2)){
       strncpy(future->exchange, "ECBOT", sizeof(future->exchange));
     }else{
-      strncpy(future->exchange, "NYMEX", sizeof(future->exchange));
+      strncpy(future->exchange, "COMEX", sizeof(future->exchange));
     }
   }
   return 0;
