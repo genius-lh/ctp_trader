@@ -98,6 +98,8 @@ void trader_mduser_api_femas_af_start(trader_mduser_api* self)
   
   pUserApi->SubscribeMarketDataTopic (4101, USTP_TERT_QUICK);
 
+  pUserApi->SubscribeMarketDataTopic (5101, USTP_TERT_QUICK);
+
   pUserApi->SubscribeMarketDataTopic (100, USTP_TERT_QUICK);
 
   pUserApi->RegisterFront(self->pAddress);
