@@ -416,7 +416,7 @@ int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int vol
   pPosition->Direction = buy_sell;
   pPosition->RealPrice = 0.0f;
   pPosition->ExpPrice = 0.0f;
-  pPosition->Volume = volume;
+  pPosition->Volume = volume / self->T2Ratio;
 
   return 0;
 }
