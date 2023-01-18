@@ -366,6 +366,9 @@ int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int vol
   );
   int nTemp = 0;
   trade_position* pPosition;
+  if(!self->T2Ratio){
+    self->T2Ratio = 1;
+  }
   volume *= self->T2Ratio;
   if(TRADER_POSITION_BUY == buy_sell){
     nTemp = volume - self->nPositionBuy;
