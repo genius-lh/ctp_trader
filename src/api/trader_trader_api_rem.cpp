@@ -76,7 +76,7 @@ int trader_trader_api_rem_get_max_order_local_id(trader_trader_api* self, long* 
 {
   trader_trader_api_rem* pImp = (trader_trader_api_rem*)self->pUserApi;
   CRemTraderHandler* pTraderHandler = (CRemTraderHandler*)pImp->pTraderHandler;
-  *local_id = pTraderHandler->GetMaxToken();
+  *local_id = pTraderHandler->GetMaxToken() / 10;
   return 0;
 }
 

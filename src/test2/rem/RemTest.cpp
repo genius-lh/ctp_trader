@@ -338,7 +338,7 @@ void CRemTestHandler::OnOrderAccept(EES_OrderAcceptField* pAccept )
     "pAccept->m_SecType=[%d]\n"
     "pAccept->m_Price=[%lf]\n"
     "pAccept->m_Qty=[%d]\n"
-    "pAccept->m_OptExecFlag=[%d]\n"
+//    "pAccept->m_OptExecFlag=[%d]\n"
     "pAccept->m_Tif=[%d]\n"
     "pAccept->m_MinQty=[%d]\n"
     "pAccept->m_CustomField=[%lld]\n"
@@ -356,7 +356,7 @@ void CRemTestHandler::OnOrderAccept(EES_OrderAcceptField* pAccept )
     , pAccept->m_SecType
     , pAccept->m_Price
     , pAccept->m_Qty
-    , pAccept->m_OptExecFlag
+//    , pAccept->m_OptExecFlag
     , pAccept->m_Tif
     , pAccept->m_MinQty
     , pAccept->m_CustomField
@@ -528,7 +528,7 @@ void CRemTestHandler::OnQueryTradeOrder(const char* pAccount, EES_QueryAccountOr
     "pQueryOrder->m_Price=[%lf]\n"
     "pQueryOrder->m_account=[%s]\n"
     "pQueryOrder->m_ExchengeID=[%d]\n"
-    "pQueryOrder->m_OptExecFlag=[%d]\n"
+//    "pQueryOrder->m_OptExecFlag=[%d]\n"
     "pQueryOrder->m_MarketOrderToken=[%lld]\n"
     "pQueryOrder->m_OrderStatus=[%d]\n"
     "pQueryOrder->m_CloseTime=[%lld]\n"
@@ -548,7 +548,7 @@ void CRemTestHandler::OnQueryTradeOrder(const char* pAccount, EES_QueryAccountOr
     , pQueryOrder->m_Price
     , pQueryOrder->m_account
     , pQueryOrder->m_ExchengeID
-    , pQueryOrder->m_OptExecFlag
+//    , pQueryOrder->m_OptExecFlag
     , pQueryOrder->m_MarketOrderToken
     , pQueryOrder->m_OrderStatus
     , pQueryOrder->m_CloseTime
