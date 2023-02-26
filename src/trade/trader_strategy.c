@@ -1963,9 +1963,12 @@ int trader_strategy_insert_t3(trader_strategy* self, trader_trade* trade_data)
   int nPlanVol = (int)(tradePrice * multiple) / 1000 * 1000;
   char cT1Direction = trade_data->Direction;
   char cCloseType = TRADER_POSITION_OPEN;
-  char sLocalUserId[21];  
+  char sLocalUserId[21];
 
   self->pEngine->pMethod->xGenLocalId(self->pEngine, TRADER_POSITION_TYPE_OPEN_T3, sLocalUserId);
+
+  // 乘以成交手数
+  nPlanVol *= trade_data->TradeVolume;
 
   // 下单
   CMN_INFO("cT1Direction=[%d]nPlanVol=[%d]sLocalUserId=[%s]\n"

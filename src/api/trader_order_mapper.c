@@ -96,10 +96,14 @@ int trader_order_mapper_update_order(trader_order_mapper* self, long sysOrderId,
   if(0 == pOrderView->used){
     return -1;
   }
+
+  if(filled <= pOrderView->filled){
+    return -2;
+  }
   
   pOrderView->filled = filled;
   pOrderView->remaining = remaining;
-  pOrderView->status = status;\
+  pOrderView->status = status;
 
   return 0;
 }

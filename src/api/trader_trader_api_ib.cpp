@@ -312,6 +312,11 @@ void ib_trader_on_order(void* arg, long orderId, const char* status, int filled,
     return ;
   }
 
+  if(filled < orderView->filled){
+    //撤单
+    filled = orderView->filled;
+  }
+
   if(filled > orderView->filled){
     memset(&traderTrade, 0, sizeof(traderTrade));
     ///合约代码
