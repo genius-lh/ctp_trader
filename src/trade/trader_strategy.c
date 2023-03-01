@@ -369,6 +369,7 @@ int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int vol
   if(!self->T2Ratio){
     self->T2Ratio = 1;
   }
+  // 统一按照腿二手数计算仓位
   volume *= self->T2Ratio;
   if(TRADER_POSITION_BUY == buy_sell){
     nTemp = volume - self->nPositionBuy;
@@ -755,11 +756,11 @@ int trader_strategy_order_t1_close_cancel(trader_strategy* self,  trader_order* 
   int nReset = order_data->VolumeOriginal - order_data->VolumeTraded;
   if(TRADER_POSITION_LONG == pStrategyPlan->cLongShort){
     // 做多冻结
-    self->nFronzeBuy -= nReset;
+    self->nFronzeBuy -= nReset * self->T2Ratio;
     CMN_DEBUG("self->nFronzeBuy=[%d]\n", self->nFronzeBuy);
   }else{
     // 做空冻结
-    self->nFronzeSell -= nReset;
+    self->nFronzeSell -= nReset * self->T2Ratio;
     CMN_DEBUG("self->nFronzeSell=[%d]\n", self->nFronzeSell);
   }
 
@@ -873,13 +874,13 @@ int trader_strategy_order_t2_open_failed(trader_strategy* self,  trader_order* o
   if(TRADER_POSITION_LONG == pStrategyTrade->cLongShort){
     self->nOrderBuy -= nReset;
     self->nFailedBuyOpen += nReset;
-    CMN_DEBUG("self->nOrderBuy=[%d]\n", self->nOrderBuy);
-    CMN_DEBUG("self->nFailedBuyOpen=[%d]\n", self->nFailedBuyOpen);
+    CMN_INFO("self->nOrderBuy=[%d]\n", self->nOrderBuy);
+    CMN_INFO("self->nFailedBuyOpen=[%d]\n", self->nFailedBuyOpen);
   }else{
     self->nOrderSell -= nReset;
     self->nFailedSellOpen += nReset;
-    CMN_DEBUG("self->nOrderSell=[%d]\n", self->nOrderSell);
-    CMN_DEBUG("self->nFailedSellOpen=[%d]\n", self->nFailedSellOpen);
+    CMN_INFO("self->nOrderSell=[%d]\n", self->nOrderSell);
+    CMN_INFO("self->nFailedSellOpen=[%d]\n", self->nFailedSellOpen);
   }
   
   return 0;
@@ -912,16 +913,16 @@ int trader_strategy_order_t2_close_failed(trader_strategy* self,  trader_order* 
     self->nPositionBuy -= nReset;
     self->nFronzeBuy -= nReset;
     self->nFailedBuyClose += nReset;
-    CMN_DEBUG("self->nPositionBuy=[%d]!\n", self->nPositionBuy);
-    CMN_DEBUG("self->nFronzeBuy=[%d]!\n", self->nFronzeBuy);
-    CMN_DEBUG("self->nFailedBuyClose=[%d]!\n", self->nFailedBuyClose);
+    CMN_INFO("self->nPositionBuy=[%d]!\n", self->nPositionBuy);
+    CMN_INFO("self->nFronzeBuy=[%d]!\n", self->nFronzeBuy);
+    CMN_INFO("self->nFailedBuyClose=[%d]!\n", self->nFailedBuyClose);
   }else{
     self->nPositionSell -= nReset;
     self->nFronzeSell -= nReset;
     self->nFailedSellClose += nReset;
-    CMN_DEBUG("self->nPositionSell=[%d]!\n", self->nPositionSell);
-    CMN_DEBUG("self->nFronzeSell=[%d]!\n", self->nFronzeSell);
-    CMN_DEBUG("self->nFailedSellClose=[%d]!\n", self->nFailedSellClose);
+    CMN_INFO("self->nPositionSell=[%d]!\n", self->nPositionSell);
+    CMN_INFO("self->nFronzeSell=[%d]!\n", self->nFronzeSell);
+    CMN_INFO("self->nFailedSellClose=[%d]!\n", self->nFailedSellClose);
   }
   
   return 0;
@@ -1549,10 +1550,10 @@ int trader_strategy_t1_close_imp(trader_strategy* self, char long_short, char of
   pStrategyPlan->cLongShort = cLongShort;
   
   if(TRADER_POSITION_LONG == cLongShort){
-    self->nFronzeBuy += nSize1; 
+    self->nFronzeBuy += nSize1 * self->T2Ratio; 
     CMN_DEBUG("self->nFronzeBuy=[%d]!\n", self->nFronzeBuy);
   }else{
-    self->nFronzeSell += nSize1; 
+    self->nFronzeSell += nSize1 * self->T2Ratio; 
     CMN_DEBUG("self->nFronzeSell=[%d]!\n", self->nFronzeSell);
   }
   pStrategyPlan->nPlanVol = nSize1;

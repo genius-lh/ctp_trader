@@ -693,7 +693,7 @@ void ctp_query_on_rsp_qry_trading_account(void* arg, CThostFtdcTradingAccountFie
   }
 
   if(pTradingAccount) {
-    CMN_DEBUG(
+    CMN_INFO(
       "pTradingAccount->BrokerID[%s]\n"
       "pTradingAccount->AccountID[%s]\n"
       "pTradingAccount->PreDeposit[%lf]\n"
@@ -732,7 +732,7 @@ void ctp_query_on_rsp_qry_investor_position(void* arg, CThostFtdcInvestorPositio
   }
 
   if(pInvestorPosition) {
-    CMN_DEBUG(
+    CMN_INFO(
       "pInvestorPosition->InstrumentID[%s]\n"
       "pInvestorPosition->BrokerID[%s]\n"
       "pInvestorPosition->InvestorID[%s]\n"
