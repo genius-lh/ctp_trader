@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Decimal.h"
+
 #include "EWrapper.h"
 #include "IBMduserHandler.h"
 #include "IBFutureContractFactory.h"
@@ -34,7 +36,7 @@ void CIBMduserHandler::tickPrice( TickerId tickerId, TickType field, double pric
   return ;
 }
 
-void CIBMduserHandler::tickSize( TickerId tickerId, TickType field, int size)
+void CIBMduserHandler::tickSize( TickerId tickerId, TickType field, Decimal size)
 {
   // BID_SIZE, BID, ASK, ASK_SIZE
   IBFutureContract* future = m_contractFactory->Search(tickerId);
@@ -43,13 +45,13 @@ void CIBMduserHandler::tickSize( TickerId tickerId, TickType field, int size)
   }
 
   if(BID_SIZE == field){
-    m_cb->xOnTickBidSize(m_parent, future->instrument, size);
+    m_cb->xOnTickBidSize(m_parent, future->instrument, (int)size);
   }else if(ASK_SIZE == field){
-    m_cb->xOnTickAskSize(m_parent, future->instrument, size);
+    m_cb->xOnTickAskSize(m_parent, future->instrument, (int)size);
   }else if(DELAYED_BID_SIZE == field){
-    m_cb->xOnTickBidSize(m_parent, future->instrument, size);
+    m_cb->xOnTickBidSize(m_parent, future->instrument, (int)size);
   }else if(DELAYED_ASK_SIZE == field){
-    m_cb->xOnTickAskSize(m_parent, future->instrument, size);
+    m_cb->xOnTickAskSize(m_parent, future->instrument, (int)size);
   }else{
 
   }
@@ -72,4 +74,8 @@ void CIBMduserHandler::connectionClosed()
   m_cb->xOnFrontDisconnected(m_parent);
 }
 
+void CIBMduserHandler::tickByTickBidAsk(int reqId, time_t time, double bidPrice, double askPrice, Decimal bidSize, Decimal askSize, const TickAttribBidAsk& tickAttribBidAsk)
+{
+  return ;
+}
 

@@ -66,6 +66,7 @@ void CIBMduserApi::ReqMarketDataType(int marketDataType)
 void CIBMduserApi::ReqMarketData(IBFutureContract* future)
 {
 	Contract contract;
+	contract.symbol = future->symbol;
 	contract.localSymbol = future->localSymbol;
   contract.secType = future->secType;
   contract.exchange = future->exchange;

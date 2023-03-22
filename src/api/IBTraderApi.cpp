@@ -1,3 +1,4 @@
+#include <iostream>
 
 #include "CommonDefs.h"
 #include "Order.h"
@@ -57,7 +58,7 @@ int CIBTraderApi::ReqOrderAction(CIBOrderActionField *pOrderAction)
 {
   OrderId orderId = pOrderAction->UserOrderActionLocalID;
 
-	Api()->cancelOrder(orderId);
+	Api()->cancelOrder(orderId, "");
 
   return 0;
 
