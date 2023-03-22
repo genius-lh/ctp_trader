@@ -215,6 +215,10 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
   if(0 == memcmp(pMarketData->InstrumentID, "MO", 2)){
     return ;
   }
+  
+  if(0 == memcmp(pMarketData->InstrumentID, "HO", 2)){
+    return ;
+  }
 
   if(!pImp->mask_flag){
     if(0x7f == pMarketData->OpenPrice[0]){
