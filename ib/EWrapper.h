@@ -22,6 +22,8 @@
 #include "HistoricalTick.h"
 #include "HistoricalTickBidAsk.h"
 #include "HistoricalTickLast.h"
+#include "Decimal.h"
+#include "HistoricalSession.h"
 
 enum TickType { BID_SIZE, BID, ASK, ASK_SIZE, LAST, LAST_SIZE,
 				HIGH, LOW, VOLUME, CLOSE,
@@ -115,6 +117,9 @@ enum TickType { BID_SIZE, BID, ASK, ASK_SIZE, LAST, LAST_SIZE,
 				ETF_FROZEN_NAV_LAST,
 				ETF_NAV_HIGH,
 				ETF_NAV_LOW,
+				SOCIAL_MARKET_ANALYTICS,
+				ESTIMATED_IPO_MIDPOINT,
+				FINAL_IPO_LAST,
 				NOT_SET };
 
 typedef std::map<int, std::tuple<std::string, char>> SmartComponentsMap;

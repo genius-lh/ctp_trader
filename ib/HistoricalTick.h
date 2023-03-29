@@ -5,11 +5,13 @@
 #ifndef TWS_API_CLIENT_HISTORICALTICK_H
 #define TWS_API_CLIENT_HISTORICALTICK_H
 
+#include "Decimal.h"
+
 struct HistoricalTick
 {
     long long time;
     double price;
-    long long size;
+    Decimal size;
 };  
 #endif // !historicaltickendtry_def
 

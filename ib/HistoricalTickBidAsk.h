@@ -6,6 +6,7 @@
 #define TWS_API_CLIENT_HISTORICALTICKBIDASK_H
 
 #include "TickAttribBidAsk.h"
+#include "Decimal.h"
 
 struct HistoricalTickBidAsk
 {
@@ -13,8 +14,8 @@ struct HistoricalTickBidAsk
     TickAttribBidAsk tickAttribBidAsk;
     double priceBid;
     double priceAsk;
-    long long sizeBid;
-    long long sizeAsk;
+    Decimal sizeBid;
+    Decimal sizeAsk;
 };
 #endif
 

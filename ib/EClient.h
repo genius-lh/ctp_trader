@@ -13,6 +13,7 @@
 #include "CommonDefs.h"
 #include "TagValue.h"
 #include "Contract.h"
+#include "WshEventData.h"
 
 namespace ibapi {
 namespace client_constants {
@@ -184,6 +185,11 @@ const int REQ_HISTORICAL_TICKS          = 96;
 const int REQ_TICK_BY_TICK_DATA         = 97;
 const int CANCEL_TICK_BY_TICK_DATA      = 98;
 const int REQ_COMPLETED_ORDERS          = 99;
+const int REQ_WSH_META_DATA				= 100;
+const int CANCEL_WSH_META_DATA			= 101;
+const int REQ_WSH_EVENT_DATA			= 102;
+const int CANCEL_WSH_EVENT_DATA			= 103;
+const int REQ_USER_INFO                 = 104;
 
 // TWS New Bulletins constants
 const int NEWS_MSG              = 1;    // standard IB news bulleting message
@@ -268,7 +274,7 @@ public:
 		const std::string& genericTicks, bool snapshot, bool regulatorySnaphsot, const TagValueListSPtr& mktDataOptions);
 	void cancelMktData(TickerId id);
 	void placeOrder(OrderId id, const Contract& contract, const Order& order);
-	void cancelOrder(OrderId id) ;
+	void cancelOrder(OrderId id, const std::string& manualOrderCancelTime);
 	void reqOpenOrders();
 	void reqAccountUpdates(bool subscribe, const std::string& acctCode);
 	void reqExecutions(int reqId, const ExecutionFilter& filter);
@@ -354,6 +360,11 @@ public:
     void reqTickByTickData(int reqId, const Contract &contract, const std::string& tickType, int numberOfTicks, bool ignoreSize);
     void cancelTickByTickData(int reqId);
     void reqCompletedOrders(bool apiOnly);
+	void reqWshMetaData(int reqId);
+	void reqWshEventData(int reqId, const WshEventData &wshEventData);
+	void cancelWshMetaData(int reqId);
+	void cancelWshEventData(int reqid);
+    void reqUserInfo(int reqId);
 
 private:
 
@@ -423,6 +434,7 @@ protected:
 
 template<> void EClient::EncodeField<bool>(std::ostream& os, bool);
 template<> void EClient::EncodeField<double>(std::ostream& os, double);
+template<> void EClient::EncodeField<Decimal>(std::ostream& os, Decimal);
 template<> void EClient::EncodeField<std::string> (std::ostream& os, std::string);
 
 #define ENCODE_CONTRACT(x) EClient::EncodeContract(msg, x);

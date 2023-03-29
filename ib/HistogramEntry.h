@@ -5,10 +5,12 @@
 #ifndef TWS_API_CLIENT_HISTOGRAMENTRY_H
 #define TWS_API_CLIENT_HISTOGRAMENTRY_H
 
+#include "Decimal.h"
+
 struct HistogramEntry
 {
 	double price;
-	long long size;
+	Decimal size;
 };
 
 #endif

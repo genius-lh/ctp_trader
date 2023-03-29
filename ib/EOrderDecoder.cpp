@@ -54,13 +54,7 @@ bool EOrderDecoder::decodeAction(const char*& ptr, const char* endPtr) {
 }
 
 bool EOrderDecoder::decodeTotalQuantity(const char*& ptr, const char* endPtr) {
-    if (m_serverVersion >= MIN_SERVER_VER_FRACTIONAL_POSITIONS)	{
-        DECODE_FIELD( m_order->totalQuantity);
-    } else {
-        long lTotalQuantity;
-        DECODE_FIELD(lTotalQuantity);
-        m_order->totalQuantity = lTotalQuantity;
-    }
+    DECODE_FIELD( m_order->totalQuantity);
 
     return true;
 }
@@ -249,7 +243,7 @@ bool EOrderDecoder::decodePegToStkOrVolOrderParams(const char*& ptr, const char*
 }
 
 bool EOrderDecoder::decodeDisplaySize(const char*& ptr, const char* endPtr) {
-    DECODE_FIELD( m_order->displaySize);
+    DECODE_FIELD_MAX( m_order->displaySize);
 
     return true;
 }
@@ -284,20 +278,23 @@ bool EOrderDecoder::decodeOcaType(const char*& ptr, const char* endPtr) {
     return true;
 }
 
-bool EOrderDecoder::decodeETradeOnly(const char*& ptr, const char* endPtr) {
-    DECODE_FIELD( m_order->eTradeOnly);
+bool EOrderDecoder::skipETradeOnly(const char*& ptr, const char* endPtr) {
+    bool eTradeOnly;
+    DECODE_FIELD( eTradeOnly);
 
     return true;
 }
 
-bool EOrderDecoder::decodeFirmQuoteOnly(const char*& ptr, const char* endPtr) {
-    DECODE_FIELD( m_order->firmQuoteOnly);
+bool EOrderDecoder::skipFirmQuoteOnly(const char*& ptr, const char* endPtr) {
+    bool firmQuoteOnly;
+    DECODE_FIELD( firmQuoteOnly);
 
     return true;
 }
 
-bool EOrderDecoder::decodeNbboPriceCap(const char*& ptr, const char* endPtr) {
-    DECODE_FIELD_MAX( m_order->nbboPriceCap);
+bool EOrderDecoder::skipNbboPriceCap(const char*& ptr, const char* endPtr) {
+    double nbboPriceCap;
+    DECODE_FIELD_MAX( nbboPriceCap);
 
     return true;
 }
@@ -700,7 +697,13 @@ bool EOrderDecoder::decodeRefFuturesConId(const char*& ptr, const char* endPtr) 
 }
 
 bool EOrderDecoder::decodeAutoCancelParent(const char*& ptr, const char* endPtr) {
-    DECODE_FIELD( m_order->autoCancelParent);
+    return decodeAutoCancelParent(ptr, endPtr, MIN_CLIENT_VER);
+}
+
+bool EOrderDecoder::decodeAutoCancelParent(const char*& ptr, const char* endPtr, int minVersionAutoCancelParent) {
+    if (m_version >= minVersionAutoCancelParent) {
+        DECODE_FIELD(m_order->autoCancelParent);
+    }
 
     return true;
 }
@@ -743,8 +746,39 @@ bool EOrderDecoder::decodeCompletedStatus(const char*& ptr, const char* endPtr) 
 
 bool EOrderDecoder::decodeUsePriceMgmtAlgo(const char*& ptr, const char* endPtr) {
     if (m_serverVersion >= MIN_SERVER_VER_PRICE_MGMT_ALGO) {
-        DECODE_FIELD((int&)m_order->usePriceMgmtAlgo);
+        int usePriceMgmtAlgo;
+        DECODE_FIELD( usePriceMgmtAlgo);
+        m_order->usePriceMgmtAlgo = (UsePriceMmgtAlgo)usePriceMgmtAlgo;
     }
 
     return true;
 }
+
+bool EOrderDecoder::decodeDuration(const char*& ptr, const char* endPtr) {
+    if (m_serverVersion >= MIN_SERVER_VER_DURATION) {
+        DECODE_FIELD(m_order->duration);
+    }
+
+    return true;
+}
+
+bool EOrderDecoder::decodePostToAts(const char*& ptr, const char* endPtr) {
+    if (m_serverVersion >= MIN_SERVER_VER_POST_TO_ATS) {
+        DECODE_FIELD(m_order->postToAts);
+    }
+
+    return true;
+}
+
+bool EOrderDecoder::decodePegBestPegMidOrderAttributes(const char*& ptr, const char* endPtr) {
+    if (m_serverVersion >= MIN_SERVER_VER_PEGBEST_PEGMID_OFFSETS) {
+        DECODE_FIELD(m_order->minTradeQty);
+        DECODE_FIELD(m_order->minCompeteSize);
+        DECODE_FIELD(m_order->competeAgainstBestOffset);
+        DECODE_FIELD(m_order->midOffsetAtWhole);
+        DECODE_FIELD(m_order->midOffsetAtHalf);
+    }
+
+    return true;
+}
+

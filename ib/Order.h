@@ -8,12 +8,16 @@
 #include "TagValue.h"
 #include "OrderCondition.h"
 #include "SoftDollarTier.h"
+#include "Decimal.h"
 #include <float.h>
 #include <limits.h>
+
+#include <cmath>
 
 #define UNSET_DOUBLE DBL_MAX
 #define UNSET_INTEGER INT_MAX
 #define UNSET_LONG LLONG_MAX
+#define COMPETE_AGAINST_BEST_OFFSET_UP_TO_MID INFINITY
 
 enum Origin { CUSTOMER,
               FIRM,
@@ -54,7 +58,7 @@ struct Order
 
 	// main order fields
 	std::string action;
-	double     totalQuantity = 0;
+	Decimal  totalQuantity = UNSET_DECIMAL;
 	std::string orderType;
 	double   lmtPrice = UNSET_DOUBLE;
 	double   auxPrice = UNSET_DOUBLE;
@@ -99,9 +103,6 @@ struct Order
 
 	// SMART routing only
 	double   discretionaryAmt = 0;
-	bool     eTradeOnly = true;
-	bool     firmQuoteOnly = true;
-	double   nbboPriceCap = UNSET_DOUBLE;
 	bool     optOutSmartRouting = false;
 
 	// BOX exchange orders only
@@ -225,7 +226,7 @@ struct Order
 	bool discretionaryUpToLimitPrice = false;
 
 	std::string autoCancelDate = "";
-	double filledQuantity = UNSET_DOUBLE;
+	Decimal filledQuantity = UNSET_DECIMAL;
 	int refFuturesConId = UNSET_INTEGER;
 	bool autoCancelParent = false;
 	std::string shareholder = "";
@@ -234,6 +235,15 @@ struct Order
 	long long parentPermId = UNSET_LONG;
 
 	UsePriceMmgtAlgo usePriceMgmtAlgo = UsePriceMmgtAlgo::DEFAULT;
+	int duration = UNSET_INTEGER;
+	int postToAts = UNSET_INTEGER;
+	std::string advancedErrorOverride = "";
+	std::string manualOrderTime = "";
+	int minTradeQty = UNSET_INTEGER;
+	int minCompeteSize = UNSET_INTEGER;
+	double competeAgainstBestOffset = UNSET_DOUBLE;
+	double midOffsetAtWhole = UNSET_DOUBLE;
+	double midOffsetAtHalf = UNSET_DOUBLE;
 
 public:
 

@@ -10,6 +10,8 @@
 #include "HistoricalTick.h"
 #include "HistoricalTickBidAsk.h"
 #include "HistoricalTickLast.h"
+#include "Decimal.h"
+#include "HistoricalSession.h"
 
 
 
@@ -113,12 +115,31 @@ const int MIN_SERVER_VER_SEND_ALL_FAMILY_CODES		= 154;
 const int MIN_SERVER_VER_NO_DEFAULT_OPEN_CLOSE		= 155;
 const int MIN_SERVER_VER_PRICE_BASED_VOLATILITY     = 156;
 const int MIN_SERVER_VER_REPLACE_FA_END             = 157;
+const int MIN_SERVER_VER_DURATION                   = 158;
+const int MIN_SERVER_VER_MARKET_DATA_IN_SHARES      = 159;
+const int MIN_SERVER_VER_POST_TO_ATS                = 160;
+const int MIN_SERVER_VER_WSHE_CALENDAR              = 161;
+const int MIN_SERVER_VER_AUTO_CANCEL_PARENT         = 162;
+const int MIN_SERVER_VER_FRACTIONAL_SIZE_SUPPORT    = 163;
+const int MIN_SERVER_VER_SIZE_RULES                 = 164;
+const int MIN_SERVER_VER_HISTORICAL_SCHEDULE        = 165;
+const int MIN_SERVER_VER_ADVANCED_ORDER_REJECT      = 166;
+const int MIN_SERVER_VER_USER_INFO                  = 167;
+const int MIN_SERVER_VER_CRYPTO_AGGREGATED_TRADES   = 168;
+const int MIN_SERVER_VER_MANUAL_ORDER_TIME          = 169;
+const int MIN_SERVER_VER_PEGBEST_PEGMID_OFFSETS     = 170;
+const int MIN_SERVER_VER_WSH_EVENT_DATA_FILTERS     = 171;
+const int MIN_SERVER_VER_IPO_PRICES                 = 172;
+const int MIN_SERVER_VER_WSH_EVENT_DATA_FILTERS_DATE = 173;
+const int MIN_SERVER_VER_INSTRUMENT_TIMEZONE         = 174;
+const int MIN_SERVER_VER_HMDS_MARKET_DATA_IN_SHARES  = 175;
+const int MIN_SERVER_VER_BOND_ISSUERID               = 176;
 
 /* 100+ messaging */
 // 100 = enhanced handshake, msg length prefixes
 
 const int MIN_CLIENT_VER = 100;
-const int MAX_CLIENT_VER = MIN_SERVER_VER_REPLACE_FA_END;
+const int MAX_CLIENT_VER = MIN_SERVER_VER_BOND_ISSUERID;
 
 
 // incoming msg id's
@@ -200,6 +221,11 @@ const int ORDER_BOUND                               = 100;
 const int COMPLETED_ORDER                           = 101;
 const int COMPLETED_ORDERS_END                      = 102;
 const int REPLACE_FA_END                            = 103;
+const int WSH_META_DATA                             = 104;
+const int WSH_EVENT_DATA                            = 105;
+const int HISTORICAL_SCHEDULE                       = 106;
+const int USER_INFO                                 = 107;
+
 
 const int HEADER_LEN = 4; // 4 bytes for msg length
 const int MAX_MSG_LEN = 0xFFFFFF; // 16Mb - 1byte
@@ -319,6 +345,10 @@ class TWSAPIDLLEXP EDecoder
     const char* processCompletedOrderMsg(const char* ptr, const char* endPtr);
     const char* processCompletedOrdersEndMsg(const char* ptr, const char* endPtr);
     const char* processReplaceFAEndMsg(const char* ptr, const char* endPtr);
+    const char* processWshMetaData(const char* ptr, const char* endPtr);
+    const char* processWshEventData(const char* ptr, const char* endPtr);
+    const char* processHistoricalSchedule(const char* ptr, const char* endPtr);
+    const char* processUserInfo(const char* ptr, const char* endPtr);
 
 
     int processConnectAck(const char*& beginPtr, const char* endPtr);
@@ -344,6 +374,7 @@ public:
     static bool DecodeField(double&, const char*& ptr, const char* endPtr);
     static bool DecodeField(std::string&, const char*& ptr, const char* endPtr);
     static bool DecodeField(char&, const char*& ptr, const char* endPtr);
+    static bool DecodeField(Decimal&, const char*& ptr, const char* endPtr);
 
     static bool DecodeFieldTime(time_t&, const char*& ptr, const char* endPtr);
 

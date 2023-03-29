@@ -6,6 +6,7 @@
 #define TWS_API_CLIENT_BAR_H
 
 #include <string>
+#include "Decimal.h"
 
 struct Bar
 {
@@ -14,8 +15,8 @@ struct Bar
 	double low;
 	double open;
 	double close;
-	double wap;
-	long long volume;
+	Decimal wap;
+	Decimal volume;
 	int count;
 };
 

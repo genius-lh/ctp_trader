@@ -30,4 +30,6 @@ enum MarketDataType {
 	DELAYED_FROZEN = 4
 };
 
+const std::string INFINITY_STR = "Infinity";
+
 #endif /* common_defs_h_INCLUDED */

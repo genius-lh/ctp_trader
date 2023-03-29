@@ -23,7 +23,7 @@ const char* OrderCondition::readExternal(const char* ptr, const char* endPtr) {
 }
 
 void OrderCondition::writeExternal(std::ostream & msg) const {
-	ENCODE_FIELD(conjunctionConnection() ? "a" : "o")
+	ENCODE_FIELD(conjunctionConnection() ? std::string("a") : std::string("o"))
 }
 
 std::string OrderCondition::toString() {

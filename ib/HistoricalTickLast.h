@@ -6,6 +6,7 @@
 #define TWS_API_CLIENT_HISTORICALTICKLAST_H
 
 #include "TickAttribLast.h"
+#include "Decimal.h"
 #include <string>
 
 struct HistoricalTickLast
@@ -13,7 +14,7 @@ struct HistoricalTickLast
     long long time;
     TickAttribLast tickAttribLast;
     double price;
-    long long size;
+    Decimal size;
     std::string exchange;
     std::string specialConditions;
 };
