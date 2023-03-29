@@ -19,6 +19,7 @@ extern "C" {
 #include "trader_mduser_api.h"
 
 #include "efvi-common.h"
+#include "dict.h"
 
 typedef struct __attribute__((__packed__)) 
 {
@@ -110,13 +111,87 @@ struct trader_mduser_api_cffex_l2_def{
 	char interface[64];			///< ×é²¥IP
 	char filter[64];				///< ±¾µØIP
 	pthread_t thread_id;
-  int loop_flag;
+  int loop_flag;  
+  pthread_mutex_t mutex;
+  dict* tick_dick;
   char store_file[64];
   int store_cnt;
   cffex_l2_t store[1024];
   int mask_flag;
   char mask[0x1c];
 };
+
+static unsigned int tickHash(const void *key) {
+    return dictGenHashFunction((const unsigned char *)key,
+                               strlen((const char*)key));
+}
+
+static void *tickKeyDup(void *privdata, const void *src) {
+    ((void) privdata);
+    int l1 = strlen((const char*)src)+1;
+    char* dup = (char*)malloc(l1 * sizeof(char));
+    strncpy(dup, (const char*)src, l1);
+    return dup;
+}
+
+static int tickKeyCompare(void *privdata, const void *key1, const void *key2) {
+    int l1, l2;
+    ((void) privdata);
+
+    l1 = strlen((const char*)key1);
+    l2 = strlen((const char*)key2);
+    if (l1 != l2) return 0;
+    return memcmp(key1,key2,l1) == 0;
+}
+
+static void tickKeyDestructor(void *privdata, void *key) {
+    ((void) privdata);
+    free((char*)key);
+}
+
+static dictType* tickDictTypeGet() {
+  static dictType tickDict = {
+    tickHash,
+    tickKeyDup,
+    NULL,
+    tickKeyCompare,
+    tickKeyDestructor,
+    NULL
+  };
+  return &tickDict;
+}
+
+static void trader_mduser_api_cffex_l2_tick_dict_init(trader_mduser_api_cffex_l2* self)
+{
+  dictType* tickDictType = tickDictTypeGet();
+  self->tick_dick = dictCreate(tickDictType,NULL);
+  pthread_mutex_init(&self->mutex, NULL);
+  return;
+}
+
+static int trader_mduser_api_cffex_l2_tick_dict_add(trader_mduser_api_cffex_l2* self, const char* instrument)
+{
+  int ret;
+  pthread_mutex_lock(&self->mutex);
+  ret = dictAdd(self->tick_dick, (void*)instrument, (void*)NULL);
+  pthread_mutex_unlock(&self->mutex);
+  return ret;
+}
+
+static int trader_mduser_api_cffex_l2_tick_dict_find(trader_mduser_api_cffex_l2* self, const char* instrument)
+{
+  int ret;
+  pthread_mutex_lock(&self->mutex);
+  ret = (NULL != dictFind(self->tick_dick, (void*)instrument));
+  pthread_mutex_unlock(&self->mutex);
+  return ret;
+}
+
+static void trader_mduser_api_cffex_l2_tick_dict_destory(trader_mduser_api_cffex_l2* self)
+{
+  dictRelease(self->tick_dick);
+  return;
+}
 
 
 trader_mduser_api_method* trader_mduser_api_cffex_l2_method_get()
@@ -165,6 +240,12 @@ void trader_mduser_api_cffex_l2_start(trader_mduser_api* self)
     if(!ret){
       pImp->mask_flag = 1;
     }
+    
+    trader_mduser_api_cffex_l2_tick_dict_init(pImp);
+    
+    trader_mduser_api_on_rsp_user_login(self, 0, "OK");
+    
+    sleep(1);
 
   }while(0);
 
@@ -182,6 +263,8 @@ void trader_mduser_api_cffex_l2_stop(trader_mduser_api* self)
   if(pImp->thread_id){
     pthread_join(pImp->thread_id, &ret);
   }
+  
+  trader_mduser_api_cffex_l2_tick_dict_destory(pImp);
   free(pImp);
   self->pUserApi = (void*)NULL;
   
@@ -200,6 +283,8 @@ void trader_mduser_api_cffex_l2_logout(trader_mduser_api* self)
 
 void trader_mduser_api_cffex_l2_subscribe(trader_mduser_api* self, char* instrument)
 {
+  trader_mduser_api_cffex_l2* pImp = (trader_mduser_api_cffex_l2*)self->pUserApi;
+  trader_mduser_api_cffex_l2_tick_dict_add(pImp, instrument);
   return ;
 }
 
@@ -207,18 +292,6 @@ void cffex_l2_mduser_on_rtn_depth_market_data(void* arg, cffex_l2_t *pMarketData
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
   trader_mduser_api_cffex_l2* pImp = (trader_mduser_api_cffex_l2*)self->pUserApi;
-
-  if(0 == memcmp(pMarketData->InstrumentID, "IO", 2)){
-    return ;
-  }
-
-  if(0 == memcmp(pMarketData->InstrumentID, "MO", 2)){
-    return ;
-  }
-  
-  if(0 == memcmp(pMarketData->InstrumentID, "HO", 2)){
-    return ;
-  }
 
   if(!pImp->mask_flag){
     if(0x7f == pMarketData->OpenPrice[0]){
@@ -308,6 +381,11 @@ void* trader_mduser_api_cffex_l2_thread(void* arg)
         if (msg_buf.iov[i].iov_len == sizeof(cffex_l2_t))
         {
           md = (cffex_l2_t *)msg_buf.iov[i].iov_base;
+
+          int found = trader_mduser_api_cffex_l2_tick_dict_find(pImp, md->InstrumentID);
+          if(!found){
+            continue;
+          }
           
           if(check_sum_udp((char*)msg_buf.iov[i].iov_base, msg_buf.iov[i].iov_len)){
             GFXELE_LOG("checksum failed\n");

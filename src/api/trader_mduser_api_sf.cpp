@@ -11,6 +11,7 @@
 
 #include <limits.h>
 #include <float.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +23,47 @@ extern "C" {
 #include "trader_mduser_api.h"
 
 #include "efvi-common.h"
-#include "cffex_md.h"
+#include "dict.h"
+
+#pragma pack(1)
+typedef struct MarketDepthUpdate 
+{
+  int8_t          ETH_IP_UDP[40];
+  unsigned char 	Flag;					//协议标志
+  char 			TypeID;					//协议版本
+  unsigned short  Length;					//包长度
+  int 			PacketNo;				//全0
+  unsigned int	ChangeNo;				//增量编号
+  short			InstrumentNo;			//合约编码
+  char			InstrumentID[10];		//合约
+  unsigned int	UpdateTime;				//最后更新时间(秒)
+  unsigned short	UpdateMillisec;			//最后更新时间(毫秒)
+  int				Volume;
+  int				OpenInterest;
+  int				BidVolume1;
+  int				BidVolume2;
+  int				BidVolume3;
+  int				BidVolume4;
+  int				BidVolume5;
+  int				AskVolume1;
+  int				AskVolume2;
+  int				AskVolume3;
+  int				AskVolume4;
+  int				AskVolume5;
+  double			LastPrice;
+  double			BidPrice1;
+  double			BidPrice2;
+  double			BidPrice3;
+  double			BidPrice4;
+  double			BidPrice5;
+  double			AskPrice1;
+  double			AskPrice2;
+  double			AskPrice3;
+  double			AskPrice4;
+  double			AskPrice5;
+  double			Turnover;
+}cffex_md_t;
+#pragma pack()
 
 extern int init_connector(const char *interface,const char *filter);
 extern void receive_frame(recv_buf_t *buf);
@@ -53,13 +94,86 @@ struct trader_mduser_api_sf_def{
 	char filter[64];				///< 本地IP
 	pthread_t thread_id;
   int loop_flag;
-  
   int commitCount;
   int linePos;
   cffex_md_t* tickBuffer;
   char csvFile[256];
   char tradingDay[9];
+
+  pthread_mutex_t mutex;
+  dict* tick_dick;
 };
+
+static unsigned int tickHash(const void *key) {
+    return dictGenHashFunction((const unsigned char *)key,
+                               strlen((const char*)key));
+}
+
+static void *tickKeyDup(void *privdata, const void *src) {
+    ((void) privdata);
+    int l1 = strlen((const char*)src)+1;
+    char* dup = (char*)malloc(l1 * sizeof(char));
+    strncpy(dup, (const char*)src, l1);
+    return dup;
+}
+
+static int tickKeyCompare(void *privdata, const void *key1, const void *key2) {
+    int l1, l2;
+    ((void) privdata);
+
+    l1 = strlen((const char*)key1);
+    l2 = strlen((const char*)key2);
+    if (l1 != l2) return 0;
+    return memcmp(key1,key2,l1) == 0;
+}
+
+static void tickKeyDestructor(void *privdata, void *key) {
+    ((void) privdata);
+    free((char*)key);
+}
+
+static dictType* tickDictTypeGet() {
+  static dictType tickDict = {
+    tickHash,
+    tickKeyDup,
+    NULL,
+    tickKeyCompare,
+    tickKeyDestructor,
+    NULL
+  };
+  return &tickDict;
+}
+static void trader_mduser_api_sf_tick_dict_init(trader_mduser_api_sf* self)
+{
+  dictType* tickDictType = tickDictTypeGet();
+  self->tick_dick = dictCreate(tickDictType,NULL);
+  pthread_mutex_init(&self->mutex, NULL);
+  return;
+}
+
+static int trader_mduser_api_sf_tick_dict_add(trader_mduser_api_sf* self, const char* instrument)
+{
+  int ret;
+  pthread_mutex_lock(&self->mutex);
+  ret = dictAdd(self->tick_dick, (void*)instrument, (void*)NULL);
+  pthread_mutex_unlock(&self->mutex);
+  return ret;
+}
+
+static int trader_mduser_api_sf_tick_dict_find(trader_mduser_api_sf* self, const char* instrument)
+{
+  int ret;
+  pthread_mutex_lock(&self->mutex);
+  ret = (NULL != dictFind(self->tick_dick, (void*)instrument));
+  pthread_mutex_unlock(&self->mutex);
+  return ret;
+}
+
+static void trader_mduser_api_sf_tick_dict_destory(trader_mduser_api_sf* self)
+{
+  dictRelease(self->tick_dick);
+  return;
+}
 
 static void trader_mduser_api_sf_record_init(trader_mduser_api_sf* self);
 static void trader_mduser_api_sf_record_on_tick(trader_mduser_api_sf* self, cffex_md_t *pMarketData);
@@ -108,6 +222,9 @@ void trader_mduser_api_sf_start(trader_mduser_api* self)
     
     trader_mduser_api_sf_record_init(pImp);
 
+    trader_mduser_api_sf_tick_dict_init(pImp);
+    
+    trader_mduser_api_on_rsp_user_login(self, 0, "OK");
   }while(0);
 
 	ret = pthread_create(&pImp->thread_id, NULL, trader_mduser_api_sf_thread, (void*)self);
@@ -124,6 +241,8 @@ void trader_mduser_api_sf_stop(trader_mduser_api* self)
   if(pImp->thread_id){
     pthread_join(pImp->thread_id, &ret);
   }
+
+  trader_mduser_api_sf_tick_dict_destory(pImp);
 
   trader_mduser_api_sf_record_free(pImp);
 
@@ -145,6 +264,8 @@ void trader_mduser_api_sf_logout(trader_mduser_api* self)
 
 void trader_mduser_api_sf_subscribe(trader_mduser_api* self, char* instrument)
 {
+  trader_mduser_api_sf* pImp = (trader_mduser_api_sf*)self->pUserApi;
+  trader_mduser_api_sf_tick_dict_add(pImp, instrument);
   return ;
 }
 
@@ -153,30 +274,31 @@ void sf_mduser_on_rtn_depth_market_data(void* arg, cffex_md_t *pMarketData)
   trader_mduser_api* self = (trader_mduser_api*)arg;
   trader_mduser_api_sf* pImp = (trader_mduser_api_sf*)self->pUserApi;
 
-  if(0 == memcmp(pMarketData->InstrumentID, "IO", 2)){
-    return ;
-  }
+  int found = trader_mduser_api_sf_tick_dict_find(pImp, pMarketData->InstrumentID);
 
+  if(!found){
+    return;
+  }
   
-  trader_mduser_api_sf_record_on_tick(pImp, pMarketData);
+  //trader_mduser_api_sf_record_on_tick(pImp, pMarketData);
   
   trader_tick oTick;
   memset(&oTick, 0, sizeof(trader_tick));
 
-  struct timeval tm;
-  
-  gettimeofday(&tm, NULL);
+  struct tm now;
+  time_t current = (time_t)pMarketData->UpdateTime;
+  localtime_r(&current, &now);    
 
   strcpy(oTick.InstrumentID, (char*)pMarketData->InstrumentID);
-  snprintf(oTick.TradingDay, sizeof(oTick.TradingDay), "%02d%06d", tm.tv_sec % 60, tm.tv_usec);
-  strcpy(oTick.UpdateTime, (char*)pMarketData->UpdateTime);
+  snprintf(oTick.TradingDay, sizeof(oTick.TradingDay), "%04d%02d%02d", now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+  snprintf(oTick.UpdateTime, sizeof(oTick.UpdateTime), "%02d:%02d:%02d", now.tm_hour, now.tm_min, now.tm_sec);
   oTick.UpdateMillisec = pMarketData->UpdateMillisec;
   oTick.BidPrice1 = pMarketData->BidPrice1;
   oTick.BidVolume1 = pMarketData->BidVolume1;
   oTick.AskPrice1 = pMarketData->AskPrice1;
   oTick.AskVolume1 = pMarketData->AskVolume1;
-  oTick.UpperLimitPrice = pMarketData->UpperLimitPrice;
-  oTick.LowerLimitPrice = pMarketData->LowerLimitPrice;
+  oTick.UpperLimitPrice = pMarketData->AskPrice5;
+  oTick.LowerLimitPrice = pMarketData->BidPrice5;
   oTick.LastPrice = pMarketData->LastPrice;
 
   trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
@@ -275,14 +397,12 @@ void trader_mduser_api_sf_record_flush(trader_mduser_api_sf* self)
     ||(DBL_MAX == tick->AskPrice1)){
       continue;
     }
-    snprintf(line, sizeof(line), "%s,%s,%s,%d,%f,%f,%f,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d\n"
+    snprintf(line, sizeof(line), "%s,%s,%d,%d,%f,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d,%f,%d\n"
       , tick->InstrumentID
       , self->tradingDay
       , tick->UpdateTime
       , tick->UpdateMillisec
       , tick->LastPrice
-      , tick->UpperLimitPrice
-      , tick->LowerLimitPrice
       , tick->BidPrice1
       , tick->BidVolume1
       , tick->AskPrice1

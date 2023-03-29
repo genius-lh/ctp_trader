@@ -109,7 +109,7 @@ libgdmduser_so_CPPFLAGS=-fPIC -Ictp -Isrc/util -Ilibevent -Ilibevent/compat/sys
 libgdmduser_so_LDFLAGS=-shared -fPIC
 
 libsfmduser_so_SOURCES=src/api/trader_mduser_api_sf.cpp
-libsfmduser_so_CPPFLAGS=-fPIC -Isolarflare -Ilibevent -Ilibevent/compat/sys
+libsfmduser_so_CPPFLAGS=-fPIC -Isolarflare -Isrc/util -Ilibevent -Ilibevent/compat/sys
 libsfmduser_so_LDFLAGS=-shared -fPIC
 
 libswmduser_so_SOURCES=src/api/trader_mduser_api_sw.cpp
@@ -122,7 +122,7 @@ libefh32mduser_so_LDFLAGS=-shared -fPIC
 
 #libcffexl2mduser.so
 libcffexl2mduser_so_SOURCES=src/api/trader_mduser_api_cffex_l2.cpp
-libcffexl2mduser_so_CPPFLAGS=-fPIC -Isolarflare -Ilibevent -Ilibevent/compat/sys
+libcffexl2mduser_so_CPPFLAGS=-fPIC -Isolarflare -Isrc/util -Ilibevent -Ilibevent/compat/sys
 libcffexl2mduser_so_LDFLAGS=-shared -fPIC
 
 #libremmduser.so
