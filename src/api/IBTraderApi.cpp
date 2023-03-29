@@ -36,7 +36,7 @@ int CIBTraderApi::ReqOrderInsert(CIBInputOrderField *pInputOrder)
 
   
 	order.action = ConvOrderAction(pInputOrder->Direction);
-	order.totalQuantity = (double)pInputOrder->Volume;
+	order.totalQuantity = pInputOrder->Volume;
   if(pInputOrder->LimitPrice > 0){
   	order.orderType = "LMT";
   	order.lmtPrice = pInputOrder->LimitPrice;

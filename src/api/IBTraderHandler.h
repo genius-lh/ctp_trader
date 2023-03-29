@@ -33,23 +33,23 @@ public:
   
   virtual ~CIBTraderHandler() {};
 
-  void error(int id, int errorCode, const std::string& errorString);
+  void error(int id, int errorCode, const std::string& errorString, const std::string& advancedOrderRejectJson);
   
   void connectAck();
   
   void connectionClosed();
   
-  void orderStatus(OrderId orderId, const std::string& status, double filled,
-  		double remaining, double avgFillPrice, int permId, int parentId,
-  		double lastFillPrice, int clientId, const std::string& whyHeld, double mktCapPrice);
-  
-  void openOrder( OrderId orderId, const Contract& contract, const Order& order, const OrderState& orderState) ;
+  void orderStatus( OrderId orderId, const std::string& status, Decimal filled,
+    Decimal remaining, double avgFillPrice, int permId, int parentId,
+    double lastFillPrice, int clientId, const std::string& whyHeld, double mktCapPrice);
+
+  void openOrder( OrderId orderId, const Contract& contract, const Order& order, const OrderState& orderState);
   
   void openOrderEnd();
 
   void nextValidId( OrderId orderId);
   
-  void position( const std::string& account, const Contract& contract, double position, double avgCost);
+  void position( const std::string& account, const Contract& contract, Decimal position, double avgCost);
 
   void positionEnd();
 

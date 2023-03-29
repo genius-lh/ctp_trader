@@ -271,6 +271,19 @@ void ib_trader_on_position(void* arg, const char* account, const char* contract,
 {
   trader_trader_api* self = (trader_trader_api*)arg;
   trader_position traderPosition;
+
+  if(account && contract){
+    CMN_INFO("account=[%s]"
+      "contract=[%s]"
+      "position=%d"
+      "avg_cost=%lf"
+      , account
+      , contract
+      , position
+      , avg_cost
+    );
+  }
+  
   memset(&traderPosition, 0, sizeof(traderPosition));
   
   int errNo = 0;
