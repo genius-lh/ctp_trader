@@ -44,7 +44,7 @@ void CIBTraderHandler::orderStatus(OrderId orderId, const std::string& status, D
   printf("OrderStatus. Id: %ld, Status: %s, Filled: %s, Remaining: %s, AvgFillPrice: %s, PermId: %s, LastFillPrice: %s, ClientId: %s, WhyHeld: %s, MktCapPrice: %s\n", 
       orderId, status.c_str(), decimalStringToDisplay(filled).c_str(), decimalStringToDisplay(remaining).c_str(), Utils::doubleMaxString(avgFillPrice).c_str(), Utils::intMaxString(permId).c_str(), 
       Utils::doubleMaxString(lastFillPrice).c_str(), Utils::intMaxString(clientId).c_str(), whyHeld.c_str(), Utils::doubleMaxString(mktCapPrice).c_str());
-  m_cb->xOnOrder(m_parent, orderId, status.c_str(), filled, remaining, avgFillPrice, permId, lastFillPrice, clientId, mktCapPrice);
+  m_cb->xOnOrder(m_parent, orderId, status.c_str(), (int)decimalToDouble(filled), (int)decimalToDouble(remaining), avgFillPrice, permId, lastFillPrice, clientId, mktCapPrice);
 }
 
 void CIBTraderHandler::openOrder( OrderId orderId, const Contract& contract, const Order& order, const OrderState& orderState) 
@@ -71,7 +71,7 @@ void CIBTraderHandler::nextValidId( OrderId orderId)
 
 void CIBTraderHandler::position( const std::string& account, const Contract& contract, Decimal position, double avgCost)
 {
-  m_cb->xOnPosition(m_parent, account.c_str(), contract.localSymbol.c_str(), position, avgCost);
+  m_cb->xOnPosition(m_parent, account.c_str(), contract.localSymbol.c_str(), (int)decimalToDouble(position), avgCost);
 }
 
 void CIBTraderHandler::positionEnd() {

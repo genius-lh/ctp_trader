@@ -45,13 +45,13 @@ void CIBMduserHandler::tickSize( TickerId tickerId, TickType field, Decimal size
   }
 
   if(BID_SIZE == field){
-    m_cb->xOnTickBidSize(m_parent, future->instrument, (int)size);
+    m_cb->xOnTickBidSize(m_parent, future->instrument, (int)decimalToDouble(size));
   }else if(ASK_SIZE == field){
-    m_cb->xOnTickAskSize(m_parent, future->instrument, (int)size);
+    m_cb->xOnTickAskSize(m_parent, future->instrument, (int)decimalToDouble(size));
   }else if(DELAYED_BID_SIZE == field){
-    m_cb->xOnTickBidSize(m_parent, future->instrument, (int)size);
+    m_cb->xOnTickBidSize(m_parent, future->instrument, (int)decimalToDouble(size));
   }else if(DELAYED_ASK_SIZE == field){
-    m_cb->xOnTickAskSize(m_parent, future->instrument, (int)size);
+    m_cb->xOnTickAskSize(m_parent, future->instrument, (int)decimalToDouble(size));
   }else{
 
   }
