@@ -144,6 +144,12 @@ extern trader_mduser_api_method* trader_mduser_api_sw_method_get();
   api_imp = trader_mduser_api_sw_method_get();
 #endif
 
+#ifdef DZ_EFVI_MINI
+extern trader_mduser_api_method* trader_mduser_api_ef_vi_method_get();
+  api_imp = trader_mduser_api_ef_vi_method_get();
+#endif
+
+
 
 #ifdef DLL_MODE
   api_imp = (trader_mduser_api_method*)trader_mduser_svr_main_load_func(self);
@@ -198,6 +204,11 @@ extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
 #ifdef GD_UDP_CTP
 extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
     api_imp = trader_mduser_api_ctp_method_get();
+#endif
+
+#ifdef DZ_EFVI_MINI
+extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
+  api_imp = trader_mduser_api_ctp_method_get();
 #endif
 
 #ifdef DLL_MODE

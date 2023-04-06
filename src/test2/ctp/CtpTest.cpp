@@ -103,14 +103,6 @@ void CCtpSopTraderHandler::OnFrontConnected()
   if(0 == m_Loop){
     return ;
   }
-  CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)m_Arg;
-  CThostFtdcReqAuthenticateField reqAuthenticateField;
-  memset(&reqAuthenticateField, 0, sizeof(reqAuthenticateField));
-  strcpy(reqAuthenticateField.BrokerID, m_BrokerID);
-  strcpy(reqAuthenticateField.UserID, m_UserId);
-  strcpy(reqAuthenticateField.AppID, m_AppID);
-  strcpy(reqAuthenticateField.AuthCode, m_AuthCode);
-  pTraderApi->ReqAuthenticate(&reqAuthenticateField, m_RequestId++);
   return ;
 }
 
@@ -136,14 +128,6 @@ void CCtpSopTraderHandler::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRs
       pRspInfo->ErrorID,
       pRspInfo->ErrorMsg);
   }
-  CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)m_Arg;
-  CThostFtdcReqUserLoginField reqUserLoginField;
-  memset(&reqUserLoginField, 0, sizeof(reqUserLoginField));
-  strcpy(reqUserLoginField.BrokerID, m_BrokerID);
-  strcpy(reqUserLoginField.UserID, m_UserId);
-  strcpy(reqUserLoginField.Password, m_OldPasswd);
-
-  pTraderApi->ReqUserLogin(&reqUserLoginField, m_RequestId++);
   return ;
 }
 
@@ -157,9 +141,10 @@ void CCtpSopTraderHandler::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserL
       pRspInfo->ErrorID,
       pRspInfo->ErrorMsg);
   }
-  
-  SettlementInfoConfirm();
 
+  if(!pRspInfo->ErrorID){
+    SettlementInfoConfirm();
+  }
 }
 
 ///登出请求响应
@@ -575,6 +560,17 @@ void CCtpSopTraderHandler::OnErrRtnExecOrderAction(CThostFtdcExecOrderActionFiel
 
 }
 
+void CCtpSopTraderHandler::OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
+{
+  CTP_LOG("%s\n", __FUNCTION__);
+  if(pRspInfo){
+    CTP_LOG("pRspInfo->ErrorID=[%d]\n"
+      "pRspInfo->ErrorMsg=[%s]\n",
+      pRspInfo->ErrorID,
+      pRspInfo->ErrorMsg);
+  }
+}
+
 void CCtpSopTraderHandler::Loop()
 {
   int choose;
@@ -627,6 +623,15 @@ void CCtpSopTraderHandler::Loop()
     case 15:
       Withdraw();
       break;
+    case 16:
+      PasswordUpdate();
+      break;
+    case 17:
+      Login();
+      break;
+    case 18:
+      Authenticate();
+      break;
     case 0:
       LogOut();
       m_Loop = 0;
@@ -659,6 +664,9 @@ int CCtpSopTraderHandler::ShowMenu()
         "13-认沽行权\n"
         "14-订单查询\n"
         "15-撤单\n"
+        "16-修改密码\n"
+        "17-登录\n"
+        "18-认证\n"
         "0-退出\n"
         "**********************\n"
         "请选择："
@@ -1118,6 +1126,7 @@ void CCtpSopTraderHandler::Query()
   scanf("%ld", &sysOrderId);
   QueryOrder(instrument, exchangeid, sysOrderId);
 }
+
 void CCtpSopTraderHandler::Withdraw()
 {
   CTP_LOG("15-撤单\n");
@@ -1133,5 +1142,63 @@ void CCtpSopTraderHandler::Withdraw()
   WithdrawOrder(instrument, exchangeid, sysOrderId);  
 }
 
+void CCtpSopTraderHandler::PasswordUpdate()
+{
+  CTP_LOG("16-修改密码\n");
+  char NewPassword[31];
+  printf("请输入新密码:");
+  scanf("%s", NewPassword);
+  
+  CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)m_Arg;
+  CThostFtdcUserPasswordUpdateField passwordUpdateField;
+  
+  memset(&passwordUpdateField, 0, sizeof(passwordUpdateField));
+  
+  strcpy(passwordUpdateField.BrokerID, m_BrokerID);
+  strcpy(passwordUpdateField.UserID, m_UserId);
+  strcpy(passwordUpdateField.OldPassword, m_OldPasswd);
+  strcpy(passwordUpdateField.NewPassword, NewPassword);
+
+  CTP_LOG("%s\n"
+    "%s\n"
+    "%s\n"
+    "%s\n"
+    , passwordUpdateField.BrokerID
+    , passwordUpdateField.UserID
+    , passwordUpdateField.OldPassword
+    , passwordUpdateField.NewPassword
+  );
+  
+  int nRet = pTraderApi->ReqUserPasswordUpdate(&passwordUpdateField, m_RequestId++);
+  CTP_LOG("ReqUserPasswordUpdate[%d]\n", nRet);
+
+}
+
+
+void CCtpSopTraderHandler::Authenticate()
+{
+  CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)m_Arg;
+  CThostFtdcReqAuthenticateField reqAuthenticateField;
+  memset(&reqAuthenticateField, 0, sizeof(reqAuthenticateField));
+  strcpy(reqAuthenticateField.BrokerID, m_BrokerID);
+  strcpy(reqAuthenticateField.UserID, m_UserId);
+  strcpy(reqAuthenticateField.AppID, m_AppID);
+  strcpy(reqAuthenticateField.AuthCode, m_AuthCode);
+  pTraderApi->ReqAuthenticate(&reqAuthenticateField, m_RequestId++);
+  return;
+}
+
+void CCtpSopTraderHandler::Login()
+{
+  CThostFtdcTraderApi* pTraderApi = (CThostFtdcTraderApi*)m_Arg;
+  CThostFtdcReqUserLoginField reqUserLoginField;
+  memset(&reqUserLoginField, 0, sizeof(reqUserLoginField));
+  strcpy(reqUserLoginField.BrokerID, m_BrokerID);
+  strcpy(reqUserLoginField.UserID, m_UserId);
+  strcpy(reqUserLoginField.Password, m_OldPasswd);
+
+  pTraderApi->ReqUserLogin(&reqUserLoginField, m_RequestId++);
+  return ;
+}
 
 

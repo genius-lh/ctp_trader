@@ -1,12 +1,13 @@
 AUTOMAKE_OPTIONS=foreign
 
-noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a
+noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a libtradertickdict.a
 
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so\
 				libctpminimduser.so libctpminitrader.so \
 				libgfmduser.so libgdmduser.so libsfmduser.so libswmduser.so libefh32mduser.so\
 				libfemasmduser.so libfemastrader.so \
 				libfemasmduser_af.so libfemastrader_af.so \
+				libefvimduser.so \
 				libremmduser.so libremtrader.so libcffexl2mduser.so
 
 bin_PROGRAMS=\
@@ -23,6 +24,7 @@ bin_PROGRAMS=\
 			traderMduserSwEfh32FemasAF \
 			traderMduserSwEfh32Rem \
 			traderMduserSwEfh32Ctp66 \
+			traderMduserEfviMini \
 			testMduserClient
 
 # static library
@@ -43,6 +45,9 @@ libmduserapi_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
 libtraderapi_a_SOURCES=src/api/trader_trader_api.c
 libtraderapi_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
 	-Isrc/util
+
+libtradertickdict_a_SOURCES=src/util/trader_tick_dict.c \
+libtradertickdict_a_CFLAGS=-Isrc/util	
 
 # libctpmduser.so libctptrader.so
 libctpmduser_so_SOURCES=src/api/trader_mduser_api_ctp.cpp\
@@ -124,6 +129,12 @@ libefh32mduser_so_LDFLAGS=-shared -fPIC
 libcffexl2mduser_so_SOURCES=src/api/trader_mduser_api_cffex_l2.cpp
 libcffexl2mduser_so_CPPFLAGS=-fPIC -Isolarflare -Isrc/util -Ilibevent -Ilibevent/compat/sys
 libcffexl2mduser_so_LDFLAGS=-shared -fPIC
+
+#libefvimduser.so
+libefvimduser_so_SOURCES=src/api/efvi_receive_depend.cpp \
+		src/api/trader_mduser_api_ef_vi.cpp
+libefvimduser_so_CPPFLAGS=-fPIC -I. -Ietherfabric -Isrc/util -Ilibevent -Ilibevent/compat/sys
+libefvimduser_so_LDFLAGS=-shared -fPIC
 
 #libremmduser.so
 libremmduser_so_SOURCES=src/api/trader_mduser_api_rem.cpp\
@@ -474,6 +485,19 @@ traderMduserGdUdpCtp_CFLAGS=-DGD_UDP_CTP\
 traderMduserGdUdpCtp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 	-L. -lgdmduser -ltradercmn -lmduserapi\
     -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
+
+traderMduserEfviMini_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserEfviMini_CFLAGS=-DDZ_EFVI_MINI\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserEfviMini_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lefvimduser -ltradertickdict -ltradercmn -lmduserapi \
+	-Letherfabric -lciul1 \
+    -Lctpmini -lctpminimduser -lthostmduserapi
 
 # testMduserShm testMduserClient
 testMduserClient_SOURCES=\

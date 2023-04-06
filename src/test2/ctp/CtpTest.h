@@ -81,6 +81,9 @@ public:
 
   ///执行宣告操作错误回报
   void OnErrRtnExecOrderAction(CThostFtdcExecOrderActionField *pExecOrderAction, CThostFtdcRspInfoField *pRspInfo);
+  
+	///用户口令更新请求响应
+	void OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
 public:
   char* m_AppID;
@@ -120,6 +123,10 @@ public:
   void LogOut();
   void Query();
   void Withdraw();
+  
+  void PasswordUpdate();
+  void Authenticate();
+  void Login();
 
 };
 
