@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS=foreign
 
-noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a libtradertickdict.a
+noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a libtraderutils.a
 
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so\
 				libctpminimduser.so libctpminitrader.so \
@@ -46,8 +46,9 @@ libtraderapi_a_SOURCES=src/api/trader_trader_api.c
 libtraderapi_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
 	-Isrc/util
 
-libtradertickdict_a_SOURCES=src/util/trader_tick_dict.c \
-libtradertickdict_a_CFLAGS=-Isrc/util	
+libtraderutils_a_SOURCES=src/util/trader_tick_dict.c \
+						src/util/trader_ipdata_dump.c 
+libtraderutils_a_CFLAGS=-Isrc/util	
 
 # libctpmduser.so libctptrader.so
 libctpmduser_so_SOURCES=src/api/trader_mduser_api_ctp.cpp\
@@ -495,7 +496,7 @@ traderMduserEfviMini_CFLAGS=-DDZ_EFVI_MINI\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
 traderMduserEfviMini_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lefvimduser -ltradertickdict -ltradercmn -lmduserapi \
+	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
 	-Letherfabric -lciul1 \
     -Lctpmini -lctpminimduser -lthostmduserapi
 

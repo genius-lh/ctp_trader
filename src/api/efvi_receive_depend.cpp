@@ -1,4 +1,5 @@
 #include "efvi_receive_depend.h"
+#include "trader_ipdata_dump.h"
 
 static int sl_parse(ef_filter_spec* fs, const char* ip,  unsigned short port);
 static struct pkt_buf* pkt_buf_from_id(struct resources* res, int pkt_buf_i);
@@ -72,11 +73,41 @@ bool init_resources(struct resources* res, const char* eth_name, const char* ip,
 	}
 	(ef_vi_filter_add(&res->vi, res->dh, &guava_80, NULL));
 
+  
+  res->normal_count = 0;
+  res->discard_count = 0;
+  res->multi_count = 0;
+
+  trader_ipdata_dump* dump_instance = trader_ipdata_dump_new();
+  char store_file[64];
+  do{
+    struct tm now;
+    time_t tt = time(NULL);
+    
+    tt += 4 * 60 * 60;
+    localtime_r(&tt, &now);
+    
+    if(now.tm_wday > 5){
+      tt += 24 * 60 * 60 * 2;
+      localtime_r(&tt, &now);
+    }
+    
+    sprintf(store_file, "efvi%d.%04d%02d%02d", port,
+      now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+
+  }while(0);
+  
+  dump_instance->method->xInit(dump_instance, store_file, 172, 1024);
+
+  res->dump_instance = (void*)dump_instance;
+
+
   return true;
 }
 
 int poll_resources(struct resources* res)
 {
+  trader_ipdata_dump* dump_instance = (trader_ipdata_dump*)res->dump_instance;
   ef_event evs[32];
   //ef_request_id ids[EF_VI_RECEIVE_BATCH];
   int i, n_ev;
@@ -94,20 +125,71 @@ int poll_resources(struct resources* res)
         assert(EF_EVENT_RX_CONT(evs[i]) == 0);
         handle_rx(res, EF_EVENT_RX_RQ_ID(evs[i]),
           EF_EVENT_RX_BYTES(evs[i]) - res->rx_prefix_len);
+        res->normal_count++;
         break;
       case EF_EVENT_TYPE_RX_DISCARD:
         handle_rx_discard(res, EF_EVENT_RX_DISCARD_RQ_ID(evs[i]),
           EF_EVENT_RX_DISCARD_BYTES(evs[i]) - res->rx_prefix_len,
-          EF_EVENT_RX_DISCARD_TYPE(evs[i]));
+          EF_EVENT_RX_DISCARD_TYPE(evs[i]));        
+        res->discard_count++;
         break;
       default:
+        res->multi_count++;
         //LOGE("ERROR: unexpected event type=%d\n", (int) EF_EVENT_TYPE(evs[i]));
         break;
       }
     }
     refill_rx_ring(res);   
+  }else{
+    // Ð´Èë´ÅÅÌ
+    if(dump_instance){
+      dump_instance->method->xFlush(dump_instance);
+    }
   }
   return n_ev;
+}
+
+int wait_resources(struct resources* res)
+{
+  static struct timeval timeout = {
+    0,
+    100000
+  };
+  int ret = ef_eventq_wait(&res->vi, res->dh, ef_eventq_current(&res->vi), &timeout);
+
+  return ret;
+}
+
+int free_resources(struct resources* res)
+{
+  ef_vi_free(&res->vi, res->dh);
+
+  ef_pd_free(&res->pd, res->dh);
+
+  ef_driver_close(res->dh);
+
+  return 0;
+}
+
+int bind_cpu( int cpu_id, pthread_t thd_id )
+{
+	int			cpu = (int)sysconf(_SC_NPROCESSORS_ONLN);
+	cpu_set_t	cpu_info;
+
+	if( cpu < cpu_id )
+	{
+		return -1;
+	}
+
+	CPU_ZERO(&cpu_info);
+	CPU_SET(cpu_id,&cpu_info);
+
+	if( pthread_setaffinity_np( thd_id, sizeof(cpu_set_t), &cpu_info ) != 0 )
+	{
+		return -1;
+	}
+
+	return 0;
 }
 
 int sl_parse(ef_filter_spec* fs, const char* ip, unsigned short port)
@@ -159,6 +241,13 @@ void handle_rx(struct resources* res, int pkt_buf_i, int len)
 	const char*	ptr_udp		= ptr + net_header_len;
 	int	remain_len			= udp_len;
   int read_len;
+
+  // Ð´Èë´ÅÅÌ
+  trader_ipdata_dump* dump_instance = (trader_ipdata_dump*)res->dump_instance;
+  if(dump_instance){
+    dump_instance->method->xAdd(dump_instance, ptr_udp);
+  }
+  
   if(res->read){
   	for (; remain_len > 0;)
   	{

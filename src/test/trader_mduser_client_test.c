@@ -159,7 +159,7 @@ void trader_mduser_client_test_flush(trader_mduser_client_test* self)
     ||(DBL_MAX == tick->AskPrice1)){
       continue;
     }
-    snprintf(line, sizeof(line), "%s,%s,%s,%d,%f,%f,%d,%f,%d,%f,%f\n"
+    snprintf(line, sizeof(line), "%s,%s,%s,%d,%f,%f,%d,%f,%d,%f,%f,%ld\n"
       , tick->InstrumentID
       , tick->TradingDay
       , tick->UpdateTime
@@ -171,6 +171,7 @@ void trader_mduser_client_test_flush(trader_mduser_client_test* self)
       , tick->AskVolume1
       , tick->UpperLimitPrice
       , tick->LowerLimitPrice
+      , tick->Reserved
     );
 
     len = strlen(line);

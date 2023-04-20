@@ -98,8 +98,14 @@ struct resources
 	struct pkt_buf*    free_pkt_bufs;
 	int                free_pkt_bufs_n;
 
+  long               normal_count;
+  long               discard_count;
+  long               multi_count;
+
   int (*read)(void* , const char* , int );
   void* arg;
+
+  void* dump_instance;
 };
 
 
@@ -169,6 +175,12 @@ struct udp_head
 
 extern bool init_resources(struct resources* res, const char* eth_name, const char* ip,  unsigned short port);
 extern int poll_resources(struct resources* res);
+extern int wait_resources(struct resources* res);
+extern int free_resources(struct resources* res);
+
+extern int bind_cpu( int cpu_id, pthread_t thd_id );
+
+
 
 #ifdef __cplusplus
 }
