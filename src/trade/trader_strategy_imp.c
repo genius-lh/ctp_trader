@@ -342,9 +342,11 @@ double trader_strategy_t1_price(trader_strategy* self, char long_short, char ope
     t1set += self->PriceTick * self->T1Over;
 
     // ÕÇÍ£ÅÐ¶Ï
-    if(t1set > t1->UpperLimitPrice){
-      t1set = t1->UpperLimitPrice;
-    } 
+    if(t1->UpperLimitPrice > 0){
+      if(t1set > t1->UpperLimitPrice){
+        t1set = t1->UpperLimitPrice;
+      }
+    }
 
   }else{
     // Âô³ö
@@ -359,8 +361,10 @@ double trader_strategy_t1_price(trader_strategy* self, char long_short, char ope
     t1set -= self->PriceTick * self->T1Over;
 
     // µøÍ£ÅÐ¶Ï
-    if(t1set < t1->LowerLimitPrice){
-      t1set = t1->LowerLimitPrice;
+    if(t1->LowerLimitPrice > 0){
+      if(t1set < t1->LowerLimitPrice){
+        t1set = t1->LowerLimitPrice;
+      }
     }
   }
 
@@ -409,8 +413,10 @@ double trader_strategy_t2_price(trader_strategy* self, char long_short, char ope
     t2set += self->PriceTick * self->T2Over;
 
     // ÕÇÍ£ÅÐ¶Ï
-    if(t2set > t2->UpperLimitPrice){
-      t2set = t2->UpperLimitPrice;
+    if(t2->UpperLimitPrice > 0){
+      if(t2set > t2->UpperLimitPrice){
+        t2set = t2->UpperLimitPrice;
+      }
     } 
   }else{
     // Âô
@@ -419,8 +425,10 @@ double trader_strategy_t2_price(trader_strategy* self, char long_short, char ope
     t2set -= self->PriceTick * self->T2Over;
 
     // µøÍ£ÅÐ¶Ï
-    if(t2set < t2->LowerLimitPrice){
-      t2set = t2->LowerLimitPrice;
+    if(t2->LowerLimitPrice > 0){
+      if(t2set < t2->LowerLimitPrice){
+        t2set = t2->LowerLimitPrice;
+      }
     }
   }
   return t2set;
@@ -436,15 +444,19 @@ double trader_strategy_t2_price_opponent(trader_strategy* self, char buy_sell)
   if(TRADER_POSITION_BUY == cBuySell){
     t2set = t2->AskPrice1 + self->T2Over * self->PriceTick;
     // ÕÇÍ£ÅÐ¶Ï
-    if(t2set > t2->UpperLimitPrice){
-      t2set = t2->UpperLimitPrice;
-    } 
+    if(t2->UpperLimitPrice > 0){
+      if(t2set > t2->UpperLimitPrice){
+        t2set = t2->UpperLimitPrice;
+      }
+    }
 
   }else{
     t2set = t2->BidPrice1 - self->T2Over * self->PriceTick;
     // µøÍ£ÅÐ¶Ï
-    if(t2set < t2->LowerLimitPrice){
-      t2set = t2->LowerLimitPrice;
+    if(t2->LowerLimitPrice > 0){
+      if(t2set < t2->LowerLimitPrice){
+        t2set = t2->LowerLimitPrice;
+      }
     }
   }
     
@@ -460,14 +472,18 @@ int trader_strategy_check_t1_price(trader_strategy* self, double price)
     return -1;
   }
 
-  if(price <= t1->LowerLimitPrice){
-    CMN_ERROR("price[%lf] <= LowerLimitPrice[%lf]\n", price, t1->LowerLimitPrice); 
-    return -1;
+  if(t1->LowerLimitPrice > 0){
+    if(price <= t1->LowerLimitPrice){
+      CMN_ERROR("price[%lf] <= LowerLimitPrice[%lf]\n", price, t1->LowerLimitPrice); 
+      return -1;
+    }
   }
 
-  if(price >= t1->UpperLimitPrice){
-    CMN_ERROR("price[%lf] >= UpperLimitPrice[%lf]\n", price, t1->UpperLimitPrice); 
-    return -1;
+  if(t1->UpperLimitPrice > 0){
+    if(price >= t1->UpperLimitPrice){
+      CMN_ERROR("price[%lf] >= UpperLimitPrice[%lf]\n", price, t1->UpperLimitPrice); 
+      return -1;
+    }
   }
 
   return 0;
@@ -482,16 +498,20 @@ int trader_strategy_check_t2_price(trader_strategy* self, double price)
     return -1;
   }
 
-  if(price < t2->LowerLimitPrice){
-    CMN_ERROR("price[%lf] < LowerLimitPrice[%lf]\n", price, t2->LowerLimitPrice); 
-    return -1;
+  if(t2->LowerLimitPrice > 0){
+    if(price < t2->LowerLimitPrice){
+      CMN_ERROR("price[%lf] < LowerLimitPrice[%lf]\n", price, t2->LowerLimitPrice); 
+      return -1;
+    }
   }
 
-  if(price > t2->UpperLimitPrice){
-    CMN_ERROR("price[%lf] > UpperLimitPrice[%lf]\n", price, t2->UpperLimitPrice); 
-    return -1;
+  if(t2->UpperLimitPrice > 0){
+    if(price > t2->UpperLimitPrice){
+      CMN_ERROR("price[%lf] > UpperLimitPrice[%lf]\n", price, t2->UpperLimitPrice); 
+      return -1;
+    }
   }
-
+  
   return 0;
 }
 

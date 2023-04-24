@@ -196,9 +196,12 @@ int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick
   oTick.BidVolume1 = tick_data->BidVolume1;
   oTick.AskPrice1 = tick_data->AskPrice1;
   oTick.AskVolume1 = tick_data->AskVolume1;
-  oTick.UpperLimitPrice = tick_data->UpperLimitPrice;
-  oTick.LowerLimitPrice = tick_data->LowerLimitPrice;
-
+  if(tick_data->UpperLimitPrice > 0){
+    oTick.UpperLimitPrice = tick_data->UpperLimitPrice;
+  }
+  if(tick_data->LowerLimitPrice > 0){
+    oTick.LowerLimitPrice = tick_data->LowerLimitPrice;
+  }
   //CMN_DEBUG("ÍÆËÍTickÊý¾Ý\n");
   //CMN_INFO("tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
 
