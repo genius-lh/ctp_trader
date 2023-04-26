@@ -44,12 +44,12 @@ libtraderutils_a_CFLAGS=-Isrc/util
 # libctpmduser.so libctptrader.so
 libctpmduser_so_SOURCES=src/api/trader_mduser_api_ctp.cpp\
         src/api/CtpMduserHandler.cpp
-libctpmduser_so_CPPFLAGS=-fPIC -Ictp -Ilibevent -Ilibevent/compat/sys
+libctpmduser_so_CPPFLAGS=-fPIC -Ictp6.3 -Ilibevent -Ilibevent/compat/sys
 libctpmduser_so_LDFLAGS=-shared -fPIC
 
 libctptrader_so_SOURCES=src/api/trader_trader_api_ctp.cpp\
         src/api/CtpTraderHandler.cpp
-libctptrader_so_CPPFLAGS=-fPIC -Ictp -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
+libctptrader_so_CPPFLAGS=-fPIC -Ictp6.3 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libctptrader_so_LDFLAGS=-shared -fPIC
 
 libctpmduser66_so_SOURCES=src/api/trader_mduser_api_ctp.cpp\
@@ -127,7 +127,7 @@ traderMduserCtp_CFLAGS=-DCTP\
 
 traderMduserCtp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
         -L. -ltradercmn -lmduserapi\
-        -Lctp -lctpmduser -lthostmduserapi_se
+        -Lctp6.3 -lctpmduser -lthostmduserapi_se
 
 traderStrategyCtp_SOURCES=\
         src/log/cmn_log_catalog.c\
@@ -153,7 +153,7 @@ traderStrategyCtp_LDADD=\
         -lc -lstdc++ -lm -lpthread -lresolv -ldl\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
-        -Lctp -lctptrader -lthosttraderapi_se
+        -Lctp6.3 -lctptrader -lthosttraderapi_se
 
 traderMduserCtp66_SOURCES=src/svc/trader_mduser_boardcast.c \
         src/svc/trader_mduser_cnn.c \
