@@ -2,29 +2,20 @@ AUTOMAKE_OPTIONS=foreign
 
 noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a libtraderutils.a
 
-noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so\
-				libctpminimduser.so libctpminitrader.so \
-				libgfmduser.so libgdmduser.so libsfmduser.so libswmduser.so libefh32mduser.so\
-				libfemasmduser.so libfemastrader.so \
-				libfemasmduser_af.so libfemastrader_af.so \
+noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so libctpminimduser.so libctpminitrader.so \
+				libfemasmduser.so libfemastrader.so libfemasmduser_af.so libfemastrader_af.so \
 				libefvimduser.so \
-				libremmduser.so libremtrader.so libcffexl2mduser.so
+				libremmduser.so libremtrader.so
 
 bin_PROGRAMS=\
 			traderMduserCtp traderStrategyCtp traderMduserCtp66 traderStrategyCtp66\
 			traderMduserCtpMini traderStrategyCtpMini \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
-			traderMduserRem traderStrategyRem\
-			traderMduserSolarFlare \
-			traderMduserGfShfe \
-			traderMduserXhsp \
-			traderMduserXhSf \
-			traderMduserGdUdpCtp \
-			traderMduserSwEfh32FemasAF \
-			traderMduserSwEfh32Rem \
-			traderMduserSwEfh32Ctp66 \
+			traderMduserRem traderStrategyRem \
 			traderMduserEfviMini \
+			traderMduserEfviCtp66 \
+			traderMduserEfviRem \
 			testMduserClient
 
 # static library
@@ -104,39 +95,6 @@ libfemastrader_af_so_SOURCES=src/api/trader_trader_api_femas_af.cpp\
 libfemastrader_af_so_CPPFLAGS=-fPIC -Ifemas302 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libfemastrader_af_so_LDFLAGS=-shared -fPIC
 
-
-# libgfmduser.so libsfmduser.so libswmduser.so
-libgfmduser_so_SOURCES=src/api/trader_mduser_api_gf.cpp
-libgfmduser_so_CPPFLAGS=-fPIC -Ifemas20 -Ictp -Isrc/util -Ilibevent -Ilibevent/compat/sys
-libgfmduser_so_LDFLAGS=-shared -fPIC
-
-libgdmduser_so_SOURCES=src/api/trader_mduser_api_gd.cpp
-libgdmduser_so_CPPFLAGS=-fPIC -Ictp -Isrc/util -Ilibevent -Ilibevent/compat/sys
-libgdmduser_so_LDFLAGS=-shared -fPIC
-
-libsfmduser_so_SOURCES=src/api/trader_mduser_api_sf.cpp
-libsfmduser_so_CPPFLAGS=-fPIC -Isolarflare -Isrc/util -Ilibevent -Ilibevent/compat/sys
-libsfmduser_so_LDFLAGS=-shared -fPIC
-
-libswmduser_so_SOURCES=src/api/trader_mduser_api_sw.cpp
-libswmduser_so_CPPFLAGS=-fPIC -Isrc/util -Ilibevent -Ilibevent/compat/sys
-libswmduser_so_LDFLAGS=-shared -fPIC
-
-libefh32mduser_so_SOURCES=src/api/trader_mduser_api_efh32.cpp
-libefh32mduser_so_CPPFLAGS=-fPIC -Isrc/util -Ilibevent -Ilibevent/compat/sys
-libefh32mduser_so_LDFLAGS=-shared -fPIC
-
-#libcffexl2mduser.so
-libcffexl2mduser_so_SOURCES=src/api/trader_mduser_api_cffex_l2.cpp
-libcffexl2mduser_so_CPPFLAGS=-fPIC -Isolarflare -Isrc/util -Ilibevent -Ilibevent/compat/sys
-libcffexl2mduser_so_LDFLAGS=-shared -fPIC
-
-#libefvimduser.so
-libefvimduser_so_SOURCES=src/api/efvi_receive_depend.cpp \
-		src/api/trader_mduser_api_ef_vi.cpp
-libefvimduser_so_CPPFLAGS=-fPIC -I. -Ietherfabric -Isrc/util -Ilibevent -Ilibevent/compat/sys
-libefvimduser_so_LDFLAGS=-shared -fPIC
-
 #libremmduser.so
 libremmduser_so_SOURCES=src/api/trader_mduser_api_rem.cpp\
 	src/api/RemMduserHandler.cpp
@@ -148,6 +106,14 @@ libremtrader_so_SOURCES=src/api/trader_trader_api_rem.cpp\
 	src/api/RemTraderHandler.cpp
 libremtrader_so_CPPFLAGS=-fPIC -Irem -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libremtrader_so_LDFLAGS=-shared -fPIC
+
+#libefvimduser.so
+libefvimduser_so_SOURCES=src/api/efvi_receive_depend.cpp \
+		src/api/cffex_unmask.cpp \
+		src/api/trader_mduser_api_ef_vi_imp.cpp \
+		src/api/trader_mduser_api_ef_vi.cpp
+libefvimduser_so_CPPFLAGS=-fPIC -I. -Ietherfabric -Isrc/util -Ilibevent -Ilibevent/compat/sys
+libefvimduser_so_LDFLAGS=-shared -fPIC
 
 # exec
 # traderMduserCtp traderStrategyCtp
@@ -162,6 +128,32 @@ traderMduserCtp_CFLAGS=-DCTP\
 traderMduserCtp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
         -L. -ltradercmn -lmduserapi\
         -Lctp -lctpmduser -lthostmduserapi_se
+
+traderStrategyCtp_SOURCES=\
+        src/log/cmn_log_catalog.c\
+        src/log/cmn_log_appender.c\
+        src/log/cmn_log_svr.c\
+        src/daemon/trader_daemon.c \
+        src/trade/trader_db.c \
+        src/trade/trader_mduser_client.c \
+        src/trade/trader_strategy_engine.c \
+        src/trade/trader_strategy_imp.c \
+        src/trade/trader_strategy_limit.c \
+        src/trade/trader_strategy.c \
+        src/trade/trader_svr.c \
+        src/client/client_aud_cnn.c \
+        src/client/client_aud_svr.c \
+        src/client/client_aud_pool.c
+
+traderStrategyCtp_CFLAGS=-DCTP -Isrc/api \
+        -Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
+        -Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
+
+traderStrategyCtp_LDADD=\
+        -lc -lstdc++ -lm -lpthread -lresolv -ldl\
+        -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
+        -L. -ltradercmn -ltraderapi\
+        -Lctp -lctptrader -lthosttraderapi_se
 
 traderMduserCtp66_SOURCES=src/svc/trader_mduser_boardcast.c \
         src/svc/trader_mduser_cnn.c \
@@ -200,32 +192,6 @@ traderStrategyCtp66_LDADD=\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
         -Lctp6.6 -lctptrader66 -lthosttraderapi_se
-
-traderStrategyCtp_SOURCES=\
-        src/log/cmn_log_catalog.c\
-        src/log/cmn_log_appender.c\
-        src/log/cmn_log_svr.c\
-        src/daemon/trader_daemon.c \
-        src/trade/trader_db.c \
-        src/trade/trader_mduser_client.c \
-        src/trade/trader_strategy_engine.c \
-        src/trade/trader_strategy_imp.c \
-        src/trade/trader_strategy_limit.c \
-        src/trade/trader_strategy.c \
-        src/trade/trader_svr.c \
-        src/client/client_aud_cnn.c \
-        src/client/client_aud_svr.c \
-        src/client/client_aud_pool.c
-
-traderStrategyCtp_CFLAGS=-DCTP -Isrc/api \
-        -Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
-        -Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
-
-traderStrategyCtp_LDADD=\
-        -lc -lstdc++ -lm -lpthread -lresolv -ldl\
-        -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
-        -L. -ltradercmn -ltraderapi\
-        -Lctp -lctptrader -lthosttraderapi_se
 
 #traderMduserCtpMini traderStrategyCtpMini
 traderMduserCtpMini_SOURCES=src/svc/trader_mduser_boardcast.c \
@@ -315,7 +281,7 @@ traderMduserFemasAF_CFLAGS=-DFEMAS302\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
 traderMduserFemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lswmduser -ltradercmn -lmduserapi\
+	-L. -ltradercmn -lmduserapi\
 	-Lfemas302 -lfemasmduser_af -lUSTPmduserapiAF
 
 traderStrategyFemasAF_SOURCES=\
@@ -349,7 +315,7 @@ traderMduserRem_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserRem_CFLAGS=-DREM62\
+traderMduserRem_CFLAGS=-DREM\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
@@ -383,115 +349,41 @@ traderStrategyRem_LDADD=\
 	-L. -ltradercmn -ltraderapi\
 	-Lrem -lremtrader -lEESTraderApi
 
-# traderMduserSolarFlare
-# traderMduserGfShfe
-traderMduserSolarFlare_SOURCES=src/svc/trader_mduser_boardcast.c \
+#traderMduserEfviRem
+#traderMduserEfviCtp66
+#traderMduserEfviMini
+
+traderMduserEfviRem_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserSolarFlare_CFLAGS=-DGF_SOLARFLARE -DGF_CTP_BACKUP\
+traderMduserEfviRem_CFLAGS=-DEFVI -DREM_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserSolarFlare_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lsfmduser -ltradercmn -lmduserapi \
-	-Lsolarflare -lefvi-common -lciul1 \
-	-Lctp -lctpmduser -lthostmduserapi_se
-
-traderMduserGfShfe_SOURCES=src/svc/trader_mduser_boardcast.c \
-	src/svc/trader_mduser_cnn.c \
-	src/svc/trader_mduser_svr.c
-
-traderMduserGfShfe_CFLAGS=-DGF_SHFE -DGF_CTP_BACKUP\
-	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
-	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
-
-traderMduserGfShfe_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lgfmduser -ltradercmn -lmduserapi \
-	-Lctp -lctpmduser -lthostmduserapi_se
-
-traderMduserXhsp_SOURCES=src/svc/trader_mduser_boardcast.c \
-	src/svc/trader_mduser_cnn.c \
-	src/svc/trader_mduser_svr.c
-
-traderMduserXhsp_CFLAGS=-DXHSP_EFH32_CTPMINI\
-	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
-	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
-
-traderMduserXhsp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lefh32mduser -ltradercmn -lmduserapi \
-	-Lctpmini -lctpminimduser -lthostmduserapi
-
-#traderMduserXhSf
-traderMduserXhSf_SOURCES=src/svc/trader_mduser_boardcast.c \
-	src/svc/trader_mduser_cnn.c \
-	src/svc/trader_mduser_svr.c
-
-traderMduserXhSf_CFLAGS=-DXHGZ_SF_REM \
-	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
-	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
-
-traderMduserXhSf_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lcffexl2mduser -ltradercmn -lmduserapi \
-	-Lsolarflare -lefvi-common -lciul1 \
+traderMduserEfviRem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
+	-Letherfabric -lciul1 \
 	-Lrem -lremmduser -lEESQuoteApi
 
-#traderMduserSwEfh32FemasAF
-#traderMduserSwEfh32Rem
-#traderMduserSwEfh32Ctp66
-traderMduserSwEfh32FemasAF_SOURCES=src/svc/trader_mduser_boardcast.c \
+traderMduserEfviCtp66_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserSwEfh32FemasAF_CFLAGS=-DSW_EFH32_FEMAS302\
+traderMduserEfviCtp66_CFLAGS=-DEFVI -DCTP_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserSwEfh32FemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lswmduser -ltradercmn -lmduserapi\
-	-Lfemas302 -lfemasmduser_af -lUSTPmduserapiAF
-
-traderMduserSwEfh32Rem_SOURCES=src/svc/trader_mduser_boardcast.c \
-	src/svc/trader_mduser_cnn.c \
-	src/svc/trader_mduser_svr.c
-
-traderMduserSwEfh32Rem_CFLAGS=-DSW_EFH32_REM\
-	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
-	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
-
-traderMduserSwEfh32Rem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lswmduser -ltradercmn -lmduserapi\
-	-Lrem -lremmduser -lEESQuoteApi
-
-traderMduserSwEfh32Ctp66_SOURCES=src/svc/trader_mduser_boardcast.c \
-	src/svc/trader_mduser_cnn.c \
-	src/svc/trader_mduser_svr.c
-
-traderMduserSwEfh32Ctp66_CFLAGS=-DSW_EFH32_CTP66\
-	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
-	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
-
-traderMduserSwEfh32Ctp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lswmduser -ltradercmn -lmduserapi\
-    -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
-	
-traderMduserGdUdpCtp_SOURCES=src/svc/trader_mduser_boardcast.c \
-	src/svc/trader_mduser_cnn.c \
-	src/svc/trader_mduser_svr.c
-
-traderMduserGdUdpCtp_CFLAGS=-DGD_UDP_CTP\
-	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
-	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
-
-traderMduserGdUdpCtp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
-	-L. -lgdmduser -ltradercmn -lmduserapi\
+traderMduserEfviCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
+	-Letherfabric -lciul1 \
     -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
 
 traderMduserEfviMini_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserEfviMini_CFLAGS=-DDZ_EFVI_MINI\
+traderMduserEfviMini_CFLAGS=-DEFVI -DCTP_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 

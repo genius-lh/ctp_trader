@@ -26,6 +26,7 @@ extern "C" {
 
 #include "trader_data.h"
 #include "trader_mduser_api.h"
+#include "trader_mduser_api_ef_vi.h"
 
 #include "trader_tick_dict.h"
 
@@ -37,6 +38,8 @@ static void trader_mduser_api_ef_vi_login(trader_mduser_api* self);
 static void trader_mduser_api_ef_vi_logout(trader_mduser_api* self);
 static void trader_mduser_api_ef_vi_subscribe(trader_mduser_api* self, char* instrument);
 
+static void trader_mduser_api_ef_vi_config(trader_mduser_api* self);
+
 static void* trader_mduser_api_ef_vi_thread(void* arg);
 static void* trader_mduser_api_ef_vi_msg_thread(void* arg);
 
@@ -44,10 +47,7 @@ static int trader_mduser_api_ef_vi_read(void* arg, const char* data, int size);
 
 typedef struct ef_vi_msg_def{
   long   msg_tp;            /*消息类型*/
-  union{
-    char  msg_data[512];     /*消息内容*/
-    char* msg_ptr;
-  };
+  char  msg_data[512];     /*消息内容*/
 }ef_vi_msg_t;
 
 static int ef_vi_msg_init(void* arg);
@@ -80,9 +80,17 @@ struct trader_mduser_api_ef_vi_def{
   int m_msg_loop;
   int m_msg_id;
 	pthread_t m_msg_thread_id;
+  // 0 - dzsp; 1 - efh3.2; 2 - cffex_l2
+  int m_type;
+  trader_mduser_api_ef_vi_ops m_ops;
   int m_thread_count;
   struct ef_vi_thread* m_thread;
   trader_tick_dict* tick_dict;
+  char m_eth_name[32];
+  struct {
+    char m_ip[16];
+    unsigned short m_port;
+  } m_addr[2];
 };
 
 trader_mduser_api_method* trader_mduser_api_ef_vi_method_get()
@@ -101,72 +109,88 @@ trader_mduser_api_method* trader_mduser_api_ef_vi_method_get()
   return &trader_mduser_api_method_st;
 }
 
-void trader_mduser_api_ef_vi_start(trader_mduser_api* self)
+void trader_mduser_api_ef_vi_config(trader_mduser_api* self)
 {
-  trader_mduser_api_ef_vi* pImp = (trader_mduser_api_ef_vi*)malloc(sizeof(trader_mduser_api_ef_vi));
-  self->pUserApi = (void*)pImp;
-  int ret;
-  
+  trader_mduser_api_ef_vi* pImp = (trader_mduser_api_ef_vi*)self->pUserApi;
   char* pSavePtr;
   char sAddress[256];
   char* pTemp;
-  char sEthName[32];
-  char sIp[16];
-  char sPort1[8];
-  char sPort2[8];
-  unsigned short usPort[2];
   
   int i = 0;
-
 
   do{
     strncpy(sAddress, self->pAddress, sizeof(sAddress));
     
     pTemp = strtok_r(sAddress, "|", &pSavePtr);
-    //CMN_ASSERT (pTemp);
-    strncpy(sEthName, pTemp, sizeof(sEthName));
-        
+    pImp->m_type = (unsigned short)atoi(pTemp);
+    
     pTemp = strtok_r(NULL, "|", &pSavePtr);
-    strncpy(sIp, pTemp, sizeof(sIp));
-
+    pImp->m_thread_count = (unsigned short)atoi(pTemp);
+    
+    pTemp = strtok_r(NULL, "|", &pSavePtr);
+    strncpy(pImp->m_eth_name, pTemp, sizeof(pImp->m_eth_name));
+        
     i = 0;
     pTemp = strtok_r(NULL, "|", &pSavePtr);
-    usPort[i++] = (unsigned short)atoi(pTemp);
+    strncpy(pImp->m_addr[i].m_ip, pTemp, sizeof(pImp->m_addr[i].m_ip));
 
     pTemp = strtok_r(NULL, "|", &pSavePtr);
-    usPort[i++] = (unsigned short)atoi(pTemp);
+    pImp->m_addr[i].m_port = (unsigned short)atoi(pTemp);
 
-    // 初始化消息队列
-    ret = ef_vi_msg_init((void*)pImp);
-    if(ret < 0){
-      exit(0);
-    }
-    
-    // 启动消息队列接收线程
-    ret = pthread_create(&pImp->m_msg_thread_id, NULL, trader_mduser_api_ef_vi_msg_thread, (void*)self);
-
-    pImp->tick_dict = trader_tick_dict_new();
-
-    pImp->m_thread_count = 2;
-    pImp->m_thread = (struct ef_vi_thread*)calloc(pImp->m_thread_count, sizeof(struct ef_vi_thread));
-    if (!pImp->m_thread)
-    {
-      exit(1);
+    if(2 == pImp->m_thread_count){
+      ++i;
+      pTemp = strtok_r(NULL, "|", &pSavePtr);
+      strncpy(pImp->m_addr[i].m_ip, pTemp, sizeof(pImp->m_addr[i].m_ip));
+      
+      pTemp = strtok_r(NULL, "|", &pSavePtr);
+      pImp->m_addr[i].m_port = (unsigned short)atoi(pTemp);
     }
 
-    struct ef_vi_thread* pThread;
+    trader_mduser_api_ef_vi_ops_init(&pImp->m_ops, pImp->m_type);
 
-    for(i = 0; i < pImp->m_thread_count; i++){
-      pThread = &pImp->m_thread[i];
-      ef_vi_thread_init(pThread, i+1, sEthName, sIp, usPort[i], trader_mduser_api_ef_vi_read, (void*)self);
-    }
-
-    trader_mduser_api_on_rsp_user_login(self, 0, "OK");
-
-    for(i = 0; i < pImp->m_thread_count; i++){
-      ef_vi_thread_start(&pImp->m_thread[i]);
-    }
   }while(0);
+
+}
+
+
+void trader_mduser_api_ef_vi_start(trader_mduser_api* self)
+{
+  trader_mduser_api_ef_vi* pImp = (trader_mduser_api_ef_vi*)malloc(sizeof(trader_mduser_api_ef_vi));
+  self->pUserApi = (void*)pImp;
+  int ret;
+  int i = 0;
+
+  // 初始化消息队列
+  ret = ef_vi_msg_init((void*)pImp);
+  if(ret < 0){
+    exit(0);
+  }
+  
+  // 启动消息队列接收线程
+  ret = pthread_create(&pImp->m_msg_thread_id, NULL, trader_mduser_api_ef_vi_msg_thread, (void*)self);
+
+  pImp->tick_dict = trader_tick_dict_new();
+
+  trader_mduser_api_ef_vi_config(self);
+
+  pImp->m_thread = (struct ef_vi_thread*)calloc(pImp->m_thread_count, sizeof(struct ef_vi_thread));
+  if (!pImp->m_thread)
+  {
+    exit(1);
+  }
+
+  struct ef_vi_thread* pThread;
+
+  for(i = 0; i < pImp->m_thread_count; i++){
+    pThread = &pImp->m_thread[i];
+    ef_vi_thread_init(pThread, i+1, pImp->m_eth_name, pImp->m_addr[i].m_ip, pImp->m_addr[i].m_port, trader_mduser_api_ef_vi_read, (void*)self);
+  }
+
+  trader_mduser_api_on_rsp_user_login(self, 0, "OK");
+
+  for(i = 0; i < pImp->m_thread_count; i++){
+    ef_vi_thread_start(&pImp->m_thread[i]);
+  }
 
   return ;
 }
@@ -310,72 +334,31 @@ void* trader_mduser_api_ef_vi_thread(void* arg)
   return (void*)NULL;
 }
 
-// TODO
-#pragma pack(push, 1)
-struct dzqh_fut_md
-{
-  unsigned short  Length;					//包长度
-  int 			PacketNo;				//全0
-  unsigned int	ChangeNo;				//增量编号
-  short			InstrumentNo;			//合约编码
-  char			InstrumentID[10];		//合约
-  unsigned int	UpdateTime;				//最后更新时间(秒)
-  unsigned short	UpdateMillisec;			//最后更新时间(毫秒)
-  int				Volume;
-  int				OpenInterest;
-  int				BidVolume1;
-  int				BidVolume2;
-  int				BidVolume3;
-  int				BidVolume4;
-  int				BidVolume5;
-  int				AskVolume1;
-  int				AskVolume2;
-  int				AskVolume3;
-  int				AskVolume4;
-  int				AskVolume5;
-  double			LastPrice;
-  double			BidPrice1;
-  double			BidPrice2;
-  double			BidPrice3;
-  double			BidPrice4;
-  double			BidPrice5;
-  double			AskPrice1;
-  double			AskPrice2;
-  double			AskPrice3;
-  double			AskPrice4;
-  double			AskPrice5;
-  double			Turnover;
-};
-
-#pragma pack(pop)
-
-
 int trader_mduser_api_ef_vi_read(void* arg, const char* data, int size)
 {
   trader_mduser_api* self = (trader_mduser_api*)arg;
   trader_mduser_api_ef_vi* pImp = (trader_mduser_api_ef_vi*)self->pUserApi;
   trader_tick_dict* tickDict = pImp->tick_dict;
-
-  if(sizeof(struct dzqh_fut_md) > size){
-    //TODO
-    
+  int md_size = pImp->m_ops.m_md_size;
+  
+  if(md_size > size){    
     return size;
   }
 
-  struct dzqh_fut_md* pMarketData = (struct dzqh_fut_md*)data;
+  const char* InstrumentID = data + pImp->m_ops.m_md_id_pos;
 
   void* save_ptr;
-  int found = tickDict->pMethod->xFind(tickDict, pMarketData->InstrumentID, &save_ptr);
+  int found = tickDict->pMethod->xFind(tickDict, InstrumentID, &save_ptr);
   if(!found){
-    return sizeof(struct dzqh_fut_md);
+    return md_size;
   }
 
-  int ret = ef_vi_msg_send((void *) pImp, data, sizeof(struct dzqh_fut_md));
+  int ret = ef_vi_msg_send((void *) pImp, data, md_size);
   if(ret < 0){
     printf("ef_vi_msg_send[%d][%d]", ret, errno);
   }
 
-  return sizeof(struct dzqh_fut_md);
+  return md_size;
   
 }
 
@@ -455,8 +438,6 @@ void* trader_mduser_api_ef_vi_msg_thread(void* arg)
   trader_tick oTick;
   memset(&oTick, 0, sizeof(trader_tick));
 
-  struct dzqh_fut_md* pMarketData = (struct dzqh_fut_md*)ipc_msg.msg_data;
-
   pImp->m_msg_loop = 1;
 
   while(pImp->m_msg_loop){
@@ -468,22 +449,8 @@ void* trader_mduser_api_ef_vi_msg_thread(void* arg)
       usleep(100);
       continue;
     }
-    struct tm now;
-    time_t current = (time_t)pMarketData->UpdateTime;
-    localtime_r(&current, &now);    
-    
-    strcpy(oTick.InstrumentID, (char*)pMarketData->InstrumentID);
-    snprintf(oTick.TradingDay, sizeof(oTick.TradingDay), "%04d%02d%02d", now.tm_year+1900, now.tm_mon+1, now.tm_mday);
-    snprintf(oTick.UpdateTime, sizeof(oTick.UpdateTime), "%02d:%02d:%02d", now.tm_hour, now.tm_min, now.tm_sec);
-    oTick.UpdateMillisec = pMarketData->UpdateMillisec;
-    oTick.BidPrice1 = pMarketData->BidPrice1;
-    oTick.BidVolume1 = pMarketData->BidVolume1;
-    oTick.AskPrice1 = pMarketData->AskPrice1;
-    oTick.AskVolume1 = pMarketData->AskVolume1;
-    oTick.UpperLimitPrice = pMarketData->AskPrice5;
-    oTick.LowerLimitPrice = pMarketData->BidPrice5;
-    oTick.LastPrice = pMarketData->LastPrice;
-    oTick.Reserved = (long)pMarketData->ChangeNo;
+
+    pImp->m_ops.md_fill(&oTick, ipc_msg.msg_data);
     
     trader_mduser_api_on_rtn_depth_market_data(self, &oTick);
   }

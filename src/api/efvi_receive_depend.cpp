@@ -77,7 +77,9 @@ bool init_resources(struct resources* res, const char* eth_name, const char* ip,
   res->normal_count = 0;
   res->discard_count = 0;
   res->multi_count = 0;
+  res->dump_instance = (void*)NULL;
 
+/*
   trader_ipdata_dump* dump_instance = trader_ipdata_dump_new();
   char store_file[64];
   do{
@@ -100,7 +102,7 @@ bool init_resources(struct resources* res, const char* eth_name, const char* ip,
   dump_instance->method->xInit(dump_instance, store_file, 172, 1024);
 
   res->dump_instance = (void*)dump_instance;
-
+*/
 
   return true;
 }

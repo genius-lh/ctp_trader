@@ -83,7 +83,7 @@ int trader_mduser_svr_init_cnn(trader_mduser_svr* self)
   api_imp = trader_mduser_api_femas_af_method_get();
 #endif
 
-#ifdef REM62
+#ifdef REM
 extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
   api_imp = trader_mduser_api_rem_method_get();
 #endif
@@ -144,7 +144,7 @@ extern trader_mduser_api_method* trader_mduser_api_sw_method_get();
   api_imp = trader_mduser_api_sw_method_get();
 #endif
 
-#ifdef DZ_EFVI_MINI
+#ifdef EFVI
 extern trader_mduser_api_method* trader_mduser_api_ef_vi_method_get();
   api_imp = trader_mduser_api_ef_vi_method_get();
 #endif
@@ -164,51 +164,20 @@ extern trader_mduser_api_method* trader_mduser_api_ef_vi_method_get();
   if(!self->pCnnBackup){
     return 0;
   }
-#ifdef GF_CTP_BACKUP
-    //CTP
+
+#ifdef CTP_BACKUP
 extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
     api_imp = trader_mduser_api_ctp_method_get();
 #endif
-  
-#ifdef FEMAS302
-extern trader_mduser_api_method* trader_mduser_api_sw_method_get();
-  api_imp = trader_mduser_api_sw_method_get();
-#endif
 
-#ifdef XHSP_EFH32_CTPMINI
-    //CTP
-extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
-  api_imp = trader_mduser_api_ctp_method_get();
-#endif
-
-#ifdef XHGZ_SF_REM
+#ifdef REM_BACKUP
 extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
   api_imp = trader_mduser_api_rem_method_get();
 #endif
 
-#ifdef SW_EFH32_REM
-extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
-  api_imp = trader_mduser_api_rem_method_get();
-#endif
-
-#ifdef SW_EFH32_FEMAS302
+#ifdef FEMAS_AF_BACKUP
 extern trader_mduser_api_method* trader_mduser_api_femas_af_method_get();
   api_imp = trader_mduser_api_femas_af_method_get();
-#endif
-
-#ifdef SW_EFH32_CTP66
-extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
-    api_imp = trader_mduser_api_ctp_method_get();
-#endif
-
-#ifdef GD_UDP_CTP
-extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
-    api_imp = trader_mduser_api_ctp_method_get();
-#endif
-
-#ifdef DZ_EFVI_MINI
-extern trader_mduser_api_method* trader_mduser_api_ctp_method_get();
-  api_imp = trader_mduser_api_ctp_method_get();
 #endif
 
 #ifdef DLL_MODE
