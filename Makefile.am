@@ -87,12 +87,12 @@ libfemastrader_so_LDFLAGS=-shared -fPIC
 # libfemasmduser_af.so libfemastrader_af.so
 libfemasmduser_af_so_SOURCES=src/api/trader_mduser_api_femas_af.cpp\
 	src/api/FemasAFMduserHandler.cpp
-libfemasmduser_af_so_CPPFLAGS=-fPIC -Ifemas302 -Ilibevent -Ilibevent/compat/sys
+libfemasmduser_af_so_CPPFLAGS=-fPIC -Ifemas20 -Ilibevent -Ilibevent/compat/sys
 libfemasmduser_af_so_LDFLAGS=-shared -fPIC
 
 libfemastrader_af_so_SOURCES=src/api/trader_trader_api_femas_af.cpp\
 	src/api/FemasAFTraderHandler.cpp
-libfemastrader_af_so_CPPFLAGS=-fPIC -Ifemas302 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
+libfemastrader_af_so_CPPFLAGS=-fPIC -Ifemas20 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libfemastrader_af_so_LDFLAGS=-shared -fPIC
 
 #libremmduser.so
@@ -276,13 +276,13 @@ traderMduserFemasAF_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
 	src/svc/trader_mduser_svr.c
 
-traderMduserFemasAF_CFLAGS=-DFEMAS302\
+traderMduserFemasAF_CFLAGS=-DFEMAS_AF\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
 traderMduserFemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 	-L. -ltradercmn -lmduserapi\
-	-Lfemas302 -lfemasmduser_af -lUSTPmduserapiAF
+	-Lfemas20 -lfemasmduser_af -lUSTPmduserapiAF
 
 traderStrategyFemasAF_SOURCES=\
 	src/log/cmn_log_catalog.c\
@@ -300,7 +300,7 @@ traderStrategyFemasAF_SOURCES=\
 	src/client/client_aud_svr.c \
 	src/client/client_aud_pool.c
 
-traderStrategyFemasAF_CFLAGS=-DFEMAS302 -Isrc/api \
+traderStrategyFemasAF_CFLAGS=-DFEMAS_AF -Isrc/api \
 	-Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
@@ -308,7 +308,7 @@ traderStrategyFemasAF_LDADD=\
 	-lc -lstdc++ -lm -lpthread -lresolv -ldl\
 	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
 	-L. -ltradercmn -ltraderapi\
-	-Lfemas302 -lfemastrader_af -lUSTPtraderapiAF
+	-Lfemas20 -lfemastrader_af -lUSTPtraderapiAF
 	
 #traderMduserRem traderStrategyRem 
 traderMduserRem_SOURCES=src/svc/trader_mduser_boardcast.c \
