@@ -22,3 +22,4 @@ add_subdirectory(femas304)
 
 add_subdirectory(femas302)
 
+add_subdirectory(yd)
