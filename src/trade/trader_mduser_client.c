@@ -105,12 +105,13 @@ int trader_mduser_client_on_event(trader_mduser_client* self)
 
 int trader_mduser_client_on_recv(trader_mduser_client* self)
 {
+
   struct bufferevent *bev = self->bev;
 
   struct evbuffer* pEvBuf = bufferevent_get_input(bev);
 
   int nLen = evbuffer_get_length(pEvBuf);
-  char* pData = (char*)malloc(nLen*sizeof(char));
+  char pData[512];
 
   bufferevent_read(bev, pData, nLen);
 
@@ -118,8 +119,6 @@ int trader_mduser_client_on_recv(trader_mduser_client* self)
     (self->recv_data_cb)(self->user_data, pData, nLen);
   }
   
-  free(pData);
-
   return 0;
 }
 

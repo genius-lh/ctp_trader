@@ -229,7 +229,7 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
 
   CMN_DEBUG("self->pMduserClt\n");
   self->pMduserClt = trader_mduser_client_new();
-  self->cacheLen = 0;
+  self->evCache = (struct evbuffer*)NULL;
   
   CMN_DEBUG("boardcastAddr[%s]\n", self->boardcastAddr);
   CMN_DEBUG("boardcastPort[%d]\n", self->boardcastPort);
@@ -1431,12 +1431,22 @@ void trader_svr_free(trader_svr* self)
 void trader_svr_mduser_client_connect_callback(void* user_data)
 {
   CMN_INFO("connected!\n");
+  
+  trader_svr* self = (trader_svr*)user_data;
+  if(!self->evCache){
+    self->evCache = evbuffer_new();
+  }
 }
 
 void trader_svr_mduser_client_disconnect_callback(void* user_data)
 {
   CMN_ERROR("disconnected!\n");
   trader_svr* self = (trader_svr*)user_data;
+  if(self->evCache){
+     evbuffer_free(self->evCache);
+     self->evCache = (struct evbuffer*)NULL;
+  }
+  
   static struct timeval t1_timeout = {
     1, 0
   };
@@ -1447,49 +1457,17 @@ void trader_svr_mduser_client_recv_callback(void* user_data, void* data, int len
 {
   trader_svr* self = (trader_svr*)user_data;
   trader_mduser_evt* pEvt = (trader_mduser_evt*)NULL;
-  int nPos = 0;
-  char pBuff[sizeof(trader_mduser_evt)];
-  trader_tick* tick_data = (trader_tick*)NULL;
-  char* pData = (char*)data;
-  
-  if((self->cacheLen + len) < sizeof(trader_mduser_evt)){
-    memcpy(&self->cache[self->cacheLen], pData, len);
-    self->cacheLen += len;
-    return ;
-  }
 
-  if(self->cacheLen > 0){
-    nPos = sizeof(trader_mduser_evt) - self->cacheLen;
-    memcpy(pBuff, self->cache, self->cacheLen);
-    memcpy(&pBuff[self->cacheLen], pData, nPos);
-    self->cacheLen = 0;
+  trader_mduser_evt mduserData;
+  trader_tick* tick_data = &mduserData.Tick;
+
+  evbuffer_remove(self->evCache, data, len);
+  while(evbuffer_get_length(self->evCache) >= sizeof(trader_mduser_evt)){
+    evbuffer_remove(self->evCache, (void*)&mduserData, sizeof(mduserData));
+    self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
+  }
     
-    pEvt = (trader_mduser_evt*)pBuff;
-    tick_data = &pEvt->Tick;
-    self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
-  }
-
-  while(nPos < len){
-    if((nPos + sizeof(trader_mduser_evt)) > len){
-      self->cacheLen = len - nPos;
-      memcpy(&self->cache[0], &pData[nPos], self->cacheLen);
-      break;
-    }
-
-    pEvt = (trader_mduser_evt*)&pData[nPos];
-    tick_data = &pEvt->Tick;
-    self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
-
-    nPos += sizeof(trader_mduser_evt);
-  }
-
-  //trader_tick* tick_data = &pEvt->Tick;
-  
-  //printf("tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
-
-  //CMN_DEBUG("通知策略引擎行情更新!\n");
-  //self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
-
+  return ;
 }
 
 int trader_svr_redis_init(trader_svr* self)

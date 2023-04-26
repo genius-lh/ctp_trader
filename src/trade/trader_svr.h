@@ -43,8 +43,7 @@ struct trader_svr_def {
   struct event* pConnectTimer;
 
   trader_mduser_client* pMduserClt;
-  char cache[sizeof(trader_mduser_evt)];
-  int cacheLen;
+  struct evbuffer* evCache;
   
   // 对客户端进程
   struct bufferevent *BufClient;

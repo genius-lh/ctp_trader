@@ -18,7 +18,7 @@ struct trader_mduser_client_def {
   struct event_base* base;
   struct bufferevent *bev;
 
-  char ip[15];
+  char ip[64];
   int port;
 
   trader_mduser_client_connect_callback connect_cb;
