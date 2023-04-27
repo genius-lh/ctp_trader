@@ -26,6 +26,7 @@ typedef struct trader_mduser_client_test_api_def trader_mduser_client_test_api;
 struct trader_mduser_client_test_api_def{
   void* test;
   trader_mduser_client* pApi;
+  struct evbuffer* evCache;
   char cache[sizeof(trader_mduser_evt)];
   int cacheLen;
 };
@@ -70,62 +71,39 @@ void client_test_signal_cb(evutil_socket_t fd, short event, void *arg)
 void trader_mduser_client_test_connect_callback(void* user_data)
 {
   printf("connected!\n");
+  trader_mduser_client_test_api* self = (trader_mduser_client_test_api*)user_data;
+  if(!self->evCache){
+    self->evCache = evbuffer_new();
+  }
 }
 
 void trader_mduser_client_test_disconnect_callback(void* user_data)
 {
   printf("disconnected!\n");
+  trader_mduser_client_test_api* self = (trader_mduser_client_test_api*)user_data;
+  if(self->evCache){
+     evbuffer_free(self->evCache);
+     self->evCache = (struct evbuffer*)NULL;
+  }
   sleep(1);
-  trader_mduser_client_test_api* pTestApi = (trader_mduser_client_test_api*)user_data;
-  trader_mduser_client* pApi = pTestApi->pApi;
+  trader_mduser_client* pApi = self->pApi;
   pApi->method->xConnect(pApi);
 }
 
 void trader_mduser_client_test_recv_callback(void* user_data, void* data, int len)
 {
-  trader_mduser_client_test_api* pTestApi = (trader_mduser_client_test_api*)user_data;
-  trader_mduser_client_test* test = (trader_mduser_client_test*)pTestApi->test;
+  trader_mduser_client_test_api* self = (trader_mduser_client_test_api*)user_data;
+  trader_mduser_client_test* test = (trader_mduser_client_test*)self->test;
   
-  int bDone = 0;
-  int nLen;
-  int nPos = 0;
-  int nPos2 = 0;
-  int nRest = len;
-  char pBuff[sizeof(trader_mduser_evt)];
-  trader_mduser_evt* pEvt = (trader_mduser_evt*)pBuff;
-  trader_tick* tick_data = &pEvt->Tick;
-  char* pData = (char*)data;
-  
-  if((pTestApi->cacheLen + len) < sizeof(trader_mduser_evt)){
-    memcpy(&pTestApi->cache[pTestApi->cacheLen], pData, len);
-    pTestApi->cacheLen += len;
-    return ;
-  }
+  trader_mduser_evt mduserData;
+  trader_tick* tick_data = &mduserData.Tick;
 
-  if(pTestApi->cacheLen > 0){
-    nPos = sizeof(trader_mduser_evt) - pTestApi->cacheLen;
-    memcpy(pBuff, pTestApi->cache, pTestApi->cacheLen);
-    memcpy(&pBuff[pTestApi->cacheLen], pData, nPos);
-    pTestApi->cacheLen = 0;
-    
-    pEvt = (trader_mduser_evt*)pBuff;
-    tick_data = &pEvt->Tick;
+  evbuffer_add(self->evCache, data, len);
+  while(evbuffer_get_length(self->evCache) >= sizeof(trader_mduser_evt)){
+    evbuffer_remove(self->evCache, (void*)&mduserData, sizeof(mduserData));
     trader_mduser_client_test_on_tick(test, tick_data);  
   }
 
-  while(nPos < len){
-    if((nPos + sizeof(trader_mduser_evt)) > len){
-      pTestApi->cacheLen = len - nPos;
-      memcpy(&pTestApi->cache[0], &pData[nPos], pTestApi->cacheLen);
-      break;
-    }
-
-    pEvt = (trader_mduser_evt*)&pData[nPos];
-    tick_data = &pEvt->Tick;
-    trader_mduser_client_test_on_tick(test, tick_data);
-
-    nPos += sizeof(trader_mduser_evt);
-  }
   return ;
 }
 
@@ -252,7 +230,7 @@ int main(int argc, char* argv[])
   // 1 
   pTestApi = &test->oTestApi;
   pTestApi->pApi = trader_mduser_client_new();
-  pTestApi->cacheLen = 0;
+  pTestApi->evCache = (struct evbuffer*)NULL;
   pTestApi->test = test;
 
   pTestApi->pApi->method->xInit(pTestApi->pApi, test->pBase, boardcastAddr, boardcastPort,
@@ -266,7 +244,7 @@ int main(int argc, char* argv[])
     // 2 
     pTestApi = &test->oTestApi2;
     pTestApi->pApi = trader_mduser_client_new();
-    pTestApi->cacheLen = 0;
+    pTestApi->evCache = (struct evbuffer*)NULL;
     pTestApi->test = test;
 
     pTestApi->pApi->method->xInit(pTestApi->pApi, test->pBase, boardcastAddr2, boardcastPort2,

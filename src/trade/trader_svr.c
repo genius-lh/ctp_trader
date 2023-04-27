@@ -1461,7 +1461,8 @@ void trader_svr_mduser_client_recv_callback(void* user_data, void* data, int len
   trader_mduser_evt mduserData;
   trader_tick* tick_data = &mduserData.Tick;
 
-  evbuffer_remove(self->evCache, data, len);
+  evbuffer_add(self->evCache, data, len);
+  
   while(evbuffer_get_length(self->evCache) >= sizeof(trader_mduser_evt)){
     evbuffer_remove(self->evCache, (void*)&mduserData, sizeof(mduserData));
     self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
