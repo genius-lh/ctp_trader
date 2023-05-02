@@ -5,6 +5,7 @@ noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a libtraderutils.a
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so libctpminimduser.so libctpminitrader.so \
 				libfemasmduser.so libfemastrader.so libfemasmduser_af.so libfemastrader_af.so \
 				libefvimduser.so \
+				libydtrader.so \
 				libremmduser.so libremtrader.so
 
 bin_PROGRAMS=\
@@ -13,6 +14,7 @@ bin_PROGRAMS=\
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
 			traderMduserRem traderStrategyRem \
+			traderStrategyYd \
 			traderMduserEfviMini \
 			traderMduserEfviCtp66 \
 			traderMduserEfviRem \
@@ -106,6 +108,12 @@ libremtrader_so_SOURCES=src/api/trader_trader_api_rem.cpp\
 	src/api/RemTraderHandler.cpp
 libremtrader_so_CPPFLAGS=-fPIC -Irem -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libremtrader_so_LDFLAGS=-shared -fPIC
+
+#libydtrader.so
+libydtrader_so_SOURCES=src/api/trader_trader_api_yd.cpp\
+	src/api/YdTraderHandler.cpp
+libydtrader_so_CPPFLAGS=-std=c++11 -fPIC -Iyd -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
+libydtrader_so_LDFLAGS=-shared -fPIC
 
 #libefvimduser.so
 libefvimduser_so_SOURCES=src/api/efvi_receive_depend.cpp \
@@ -348,6 +356,32 @@ traderStrategyRem_LDADD=\
 	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
 	-L. -ltradercmn -ltraderapi\
 	-Lrem -lremtrader -lEESTraderApi
+	
+traderStrategyYd_SOURCES=\
+	src/log/cmn_log_catalog.c\
+	src/log/cmn_log_appender.c\
+	src/log/cmn_log_svr.c\
+	src/daemon/trader_daemon.c \
+	src/trade/trader_db.c \
+	src/trade/trader_mduser_client.c \
+	src/trade/trader_strategy_engine.c \
+	src/trade/trader_strategy_imp.c \
+	src/trade/trader_strategy_limit.c \
+	src/trade/trader_strategy.c \
+	src/trade/trader_svr.c \
+	src/client/client_aud_cnn.c \
+	src/client/client_aud_svr.c \
+	src/client/client_aud_pool.c
+
+traderStrategyYd_CFLAGS=-DYD -Isrc/api \
+	-Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
+
+traderStrategyYd_LDADD=\
+	-lc -lstdc++ -lm -lpthread -lresolv -ldl\
+	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
+	-L. -ltradercmn -ltraderapi\
+	-Lyd -lydtrader -lyd
 
 #traderMduserEfviRem
 #traderMduserEfviCtp66
