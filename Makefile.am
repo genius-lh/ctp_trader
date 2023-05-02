@@ -147,6 +147,7 @@ traderStrategyCtp_SOURCES=\
         src/trade/trader_strategy_engine.c \
         src/trade/trader_strategy_imp.c \
         src/trade/trader_strategy_limit.c \
+        src/trade/trader_strategy_position_svr.c \
         src/trade/trader_strategy.c \
         src/trade/trader_svr.c \
         src/client/client_aud_cnn.c \
@@ -185,6 +186,7 @@ traderStrategyCtp66_SOURCES=\
         src/trade/trader_strategy_engine.c \
         src/trade/trader_strategy_imp.c \
         src/trade/trader_strategy_limit.c \
+        src/trade/trader_strategy_position_svr.c \
         src/trade/trader_strategy.c \
         src/trade/trader_svr.c \
         src/client/client_aud_cnn.c \
@@ -224,6 +226,7 @@ traderStrategyCtpMini_SOURCES=\
         src/trade/trader_strategy_engine.c \
         src/trade/trader_strategy_imp.c \
         src/trade/trader_strategy_limit.c \
+        src/trade/trader_strategy_position_svr.c \
         src/trade/trader_strategy.c \
         src/trade/trader_svr.c \
         src/client/client_aud_cnn.c \
@@ -263,6 +266,7 @@ traderStrategyFemas_SOURCES=\
 	src/trade/trader_strategy_engine.c \
 	src/trade/trader_strategy_imp.c \
 	src/trade/trader_strategy_limit.c \
+	src/trade/trader_strategy_position_svr.c \
 	src/trade/trader_strategy.c \
 	src/trade/trader_svr.c \
 	src/client/client_aud_cnn.c \
@@ -302,6 +306,7 @@ traderStrategyFemasAF_SOURCES=\
 	src/trade/trader_strategy_engine.c \
 	src/trade/trader_strategy_imp.c \
 	src/trade/trader_strategy_limit.c \
+	src/trade/trader_strategy_position_svr.c \
 	src/trade/trader_strategy.c \
 	src/trade/trader_svr.c \
 	src/client/client_aud_cnn.c \
@@ -341,6 +346,7 @@ traderStrategyRem_SOURCES=\
 	src/trade/trader_strategy_engine.c \
 	src/trade/trader_strategy_imp.c \
 	src/trade/trader_strategy_limit.c \
+	src/trade/trader_strategy_position_svr.c \
 	src/trade/trader_strategy.c \
 	src/trade/trader_svr.c \
 	src/client/client_aud_cnn.c \
@@ -367,6 +373,7 @@ traderStrategyYd_SOURCES=\
 	src/trade/trader_strategy_engine.c \
 	src/trade/trader_strategy_imp.c \
 	src/trade/trader_strategy_limit.c \
+	src/trade/trader_strategy_position_svr.c \
 	src/trade/trader_strategy.c \
 	src/trade/trader_svr.c \
 	src/client/client_aud_cnn.c \

@@ -124,8 +124,16 @@ int trader_strategy_init(trader_strategy* self)
   self->nFailedBuyClose = 0;
   self->nFailedSellClose = 0;
 
-  trader_strategy_reset_position(self, TRADER_POSITION_BUY, 0);
-  trader_strategy_reset_position(self, TRADER_POSITION_SELL, 0);
+  trader_strategy_position_svr* strategyPosition = self->pEngine->pStrategyPosition;
+
+  strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_BUY, &self->pBuyPosition);  
+  self->nPositionBuy = self->pBuyPosition->Volume;
+  strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_SELL, &self->pSellPosition);
+  self->nPositionSell = self->pSellPosition->Volume;
+
+//  trader_strategy_reset_position(self, TRADER_POSITION_BUY, 0);
+//  trader_strategy_reset_position(self, TRADER_POSITION_SELL, 0);
+
   
   return 0;
 }
@@ -466,7 +474,7 @@ int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int vol
     self->nFronzeBuy = 0;
     self->nFailedBuyOpen = 0;
     self->nFailedBuyClose = 0;
-    pPosition = &self->oBuyPosition;
+    pPosition = self->pBuyPosition;
     
   }else{
     nTemp = volume - self->nPositionSell;
@@ -475,7 +483,7 @@ int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int vol
     self->nFronzeSell = 0;
     self->nFailedSellOpen = 0;
     self->nFailedSellClose = 0;
-    pPosition = &self->oSellPosition;
+    pPosition = self->pSellPosition;
   }
   
   CMN_DEBUG("AFTER\n"
@@ -510,6 +518,15 @@ int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int vol
   pPosition->ExpPrice = 0.0f;
   pPosition->Volume = volume;
 
+  
+  trader_strategy_position_svr* strategyPosition = self->pEngine->pStrategyPosition;
+
+  if(TRADER_POSITION_BUY == buy_sell){
+    strategyPosition->pMethod->xUpdate(strategyPosition, self->pBuyPosition);
+  }else{
+    strategyPosition->pMethod->xUpdate(strategyPosition, self->pSellPosition);
+  }
+
   return 0;
 }
 
@@ -519,9 +536,9 @@ int trader_strategy_query_position(trader_strategy* self, char buy_sell, trade_p
   trade_position* pPosition;
 
   if(TRADER_POSITION_BUY == buy_sell){
-    pPosition = &self->oBuyPosition;
+    pPosition = self->pBuyPosition;
   }else{
-    pPosition = &self->oSellPosition;
+    pPosition = self->pSellPosition;
   }
 
   memcpy(p_position, pPosition, sizeof(trade_position));
@@ -535,10 +552,10 @@ int trader_strategy_update_position(trader_strategy* self, char buy_sell, int vo
 {
   trade_position* pPosition;
   if(TRADER_POSITION_BUY == buy_sell){
-    pPosition = &self->oBuyPosition;
+    pPosition = self->pBuyPosition;
     pPosition->ExpPrice = self->DTOpen;
   }else{
-    pPosition = &self->oSellPosition;
+    pPosition = self->pSellPosition;
     pPosition->ExpPrice = self->KTOpen;
   }
   
@@ -549,6 +566,15 @@ int trader_strategy_update_position(trader_strategy* self, char buy_sell, int vo
   }
   
   pPosition->Volume += volume;
+
+  trader_strategy_position_svr* strategyPosition = self->pEngine->pStrategyPosition;
+
+  if(TRADER_POSITION_BUY == buy_sell){
+    strategyPosition->pMethod->xUpdate(strategyPosition, self->pBuyPosition);
+  }else{
+    strategyPosition->pMethod->xUpdate(strategyPosition, self->pSellPosition);
+  }
+  
   return 0;
 }
 

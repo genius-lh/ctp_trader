@@ -14,6 +14,8 @@
 
 #include "trader_strategy_engine.h"
 
+#include "trader_strategy_position_svr.h"
+
 #include "trader_mduser_api.h"
 
 #include "trader_mduser_client.h"
@@ -66,6 +68,10 @@ struct trader_svr_def {
 
   // 策略Engine
   trader_strategy_engine* pStrategyEngine;
+
+  // 策略持仓
+  trader_strategy_position_svr* pStrategyPosition;
+  
   // 开盘报单等待时间
   int pendingMicroSec;
   

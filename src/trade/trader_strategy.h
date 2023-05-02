@@ -158,7 +158,7 @@ struct trader_strategy_def{
   // 做多单腿
   int nFailedBuyOpen;
   int nFailedBuyClose;
-  trade_position oBuyPosition;
+  trade_position* pBuyPosition;
 
   // 做空
   // 做空持仓
@@ -170,7 +170,7 @@ struct trader_strategy_def{
   // 做空单腿
   int nFailedSellOpen;
   int nFailedSellClose;
-  trade_position oSellPosition;
+  trade_position* pSellPosition;
 
   
   struct trader_strategy_engine_def* pEngine;

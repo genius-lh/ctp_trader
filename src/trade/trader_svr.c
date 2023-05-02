@@ -9,7 +9,7 @@
 #include <float.h>
 
 #include <unistd.h>
-#include<dirent.h>
+#include <dirent.h>
 #include <sys/types.h> 
 #include <sys/stat.h>
 
@@ -152,12 +152,7 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   CMN_DEBUG("FrontAddress[%s]\n", self->TrFrontAdd);
   
   CMN_DEBUG("self->pCtpTraderApi\n");
-#ifdef LTS
-  //LTS
-#include "trader_trader_api_lts.h"
-  self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_lts_method_get());
-#endif
-  
+
 #ifdef CTP
     //CTP
 #include "trader_trader_api_ctp.h"
@@ -170,24 +165,6 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_femas_method_get());
 #endif
 
-#ifdef XSPEED
-    //XSPEED
-#include "trader_trader_api_xspeed.h"
-    self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_xspeed_sop_method_get());
-#endif
-
-#ifdef XELE
-      //XELE
-#include "trader_trader_api_xele.h"
-      self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_xele_method_get());
-#endif
-
-#ifdef FEMAS20
-      //FEMAS20
-#include "trader_trader_api_femas_af.h"
-    self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_femas_af_method_get());
-#endif
-
 #ifdef REM
 #include "trader_trader_api_rem.h"
     self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_rem_method_get());
@@ -198,6 +175,12 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
 #include "trader_trader_api_femas_af.h"
       self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_femas_af_method_get());
 #endif
+
+#ifdef YD
+#include "trader_trader_api_yd.h"
+      self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_yd_method_get());
+#endif
+
 
   self->pCtpTraderApi->pMethod->xSetFrontAddr(self->pCtpTraderApi, self->TrFrontAdd);
   self->pCtpTraderApi->pMethod->xSetAppID(self->pCtpTraderApi, self->appId);
@@ -245,6 +228,9 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   CMN_DEBUG("self->pTraderDB\n");
   self->pTraderDB = trader_db_new(TRADER_DB_NAME);
 
+  CMN_DEBUG("self->pStrategyPosition\n");
+  self->pStrategyPosition = trader_strategy_position_svr_new((void*)self->pRedis);
+
   CMN_DEBUG("self->pStrategyEngine\n");
   self->pStrategyEngine = trader_strategy_engine_new();
   self->pStrategyEngine->nPositionSize = self->nPositionSize;
@@ -255,6 +241,8 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pStrategyEngine->t2CancelLimit = 10; // TODO
 
   self->pStrategyEngine->pMethod->xInit(self->pStrategyEngine);
+
+  self->pStrategyEngine->pStrategyPosition = self->pStrategyPosition;
 
   self->nContractNum = 0;
   TAILQ_INIT(&self->listTraderContract);
@@ -293,6 +281,10 @@ int trader_svr_exit(trader_svr* self)
     bufferevent_free(self->BufMduser);
   }
   */
+
+  if(self->pStrategyPosition){
+    trader_strategy_position_svr_free(self->pStrategyPosition);
+  }
   
   trader_svr_redis_fini(self);
   
@@ -843,6 +835,8 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
       sleep(1);
       CMN_DEBUG("xQryTradingAccount!\n");
       self->pCtpTraderApi->pMethod->xQryTradingAccount(self->pCtpTraderApi);
+
+      self->pStrategyPosition->pMethod->xInit(self->pStrategyPosition, self->UserId);
 
       // 通知登陆成功
       trader_svr_client_notify_login(self, 0, "SUCCESS");

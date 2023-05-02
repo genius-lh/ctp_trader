@@ -170,10 +170,10 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->T2PriceTick = pUpdate->stage[i].T2PriceTick;
     pStrategy->T2IsSHFE = pUpdate->stage[i].T2IsSHFE;
 
-    strcpy(pStrategy->oBuyPosition.T1, pStrategy->T1);
-    strcpy(pStrategy->oBuyPosition.T2, pStrategy->T2);
-    strcpy(pStrategy->oSellPosition.T1, pStrategy->T1);
-    strcpy(pStrategy->oSellPosition.T2, pStrategy->T2);
+    strcpy(pStrategy->pBuyPosition->T1, pStrategy->T1);
+    strcpy(pStrategy->pBuyPosition->T2, pStrategy->T2);
+    strcpy(pStrategy->pSellPosition->T1, pStrategy->T1);
+    strcpy(pStrategy->pSellPosition->T2, pStrategy->T2);
 
   }
   

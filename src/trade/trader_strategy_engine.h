@@ -9,6 +9,7 @@
 #include "trader_trader_api.h"
 
 #include "trader_strategy_limit.h"
+#include "trader_strategy_position_svr.h"
 
 #include <event2/util.h>
 #include <event2/event.h>
@@ -51,6 +52,8 @@ struct trader_strategy_engine_def {
 
   // 持仓信息
   trader_strategy_limit* pTraderStrategyLimit;
+  // 策略持仓
+  trader_strategy_position_svr* pStrategyPosition;
 
   // 计时器
   struct event* tickTimerEvent;
