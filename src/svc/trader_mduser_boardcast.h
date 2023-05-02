@@ -25,6 +25,7 @@ struct trader_mduser_boardcast_cnn_def {
 struct trader_mduser_boardcast_def {
   struct event_base* base;
   struct evconnlistener* listener;
+
   char ip[64];
   int port;
   

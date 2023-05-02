@@ -55,7 +55,7 @@ void trader_mduser_api_on_front_connected(trader_mduser_api* self)
   return ;
 }
 
-void trader_mduser_api_on_front_disconnected(trader_mduser_api* self, int err_cd, char* err_msg)
+void trader_mduser_api_on_front_disconnected(trader_mduser_api* self, int err_cd, const char* err_msg)
 {
   trader_mduser_evt oEvent;
   oEvent.Type = MDUSERONFRONTDISCONNECTED;
@@ -68,7 +68,7 @@ void trader_mduser_api_on_front_disconnected(trader_mduser_api* self, int err_cd
   return ;
 }
 
-void trader_mduser_api_on_rsp_user_login(trader_mduser_api* self, int err_cd, char* err_msg)
+void trader_mduser_api_on_rsp_user_login(trader_mduser_api* self, int err_cd, const char* err_msg)
 {
   trader_mduser_evt oEvent;
   oEvent.Type = MDUSERONRSPUSERLOGIN;
@@ -81,7 +81,7 @@ void trader_mduser_api_on_rsp_user_login(trader_mduser_api* self, int err_cd, ch
   return ;
 }
 
-void trader_mduser_api_on_rsp_user_logout(trader_mduser_api* self, int err_cd, char* err_msg)
+void trader_mduser_api_on_rsp_user_logout(trader_mduser_api* self, int err_cd, const char* err_msg)
 {
   trader_mduser_evt oEvent;
   oEvent.Type = MDUSERONRSPUSERLOGOUT;
@@ -94,7 +94,7 @@ void trader_mduser_api_on_rsp_user_logout(trader_mduser_api* self, int err_cd, c
   return ;
 }
 
-void trader_mduser_api_on_rsp_error(trader_mduser_api* self, int err_cd, char* err_msg)
+void trader_mduser_api_on_rsp_error(trader_mduser_api* self, int err_cd, const char* err_msg)
 {
   trader_mduser_evt oEvent;
   oEvent.Type = MDUSERONRSPERROR;
@@ -107,7 +107,7 @@ void trader_mduser_api_on_rsp_error(trader_mduser_api* self, int err_cd, char* e
   return ;
 }
 
-void trader_mduser_api_on_rsp_sub_market_data(trader_mduser_api* self, int err_cd, char* err_msg)
+void trader_mduser_api_on_rsp_sub_market_data(trader_mduser_api* self, int err_cd, const char* err_msg)
 {
   trader_mduser_evt oEvent;
   oEvent.Type = MDUSERONRSPSUBMARKETDATA;
@@ -120,7 +120,7 @@ void trader_mduser_api_on_rsp_sub_market_data(trader_mduser_api* self, int err_c
   return ;
 }
 
-void trader_mduser_api_on_rsp_un_sub_market_data(trader_mduser_api* self, int err_cd, char* err_msg)
+void trader_mduser_api_on_rsp_un_sub_market_data(trader_mduser_api* self, int err_cd, const char* err_msg)
 {
   trader_mduser_evt oEvent;
   oEvent.Type = MDUSERONRSPUNSUBMARKETDATA;

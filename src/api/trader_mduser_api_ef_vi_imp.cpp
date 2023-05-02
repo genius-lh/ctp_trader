@@ -110,17 +110,54 @@ typedef struct __attribute__((__packed__)) cffex_l2
     char          Val2438[0x18];
 }cffex_l2_t;
 
-typedef struct __attribute__((__packed__)) cffex_l2_data
+typedef struct __attribute__((__packed__)) cffex_l1
+{
+    char          PackageHeader[20];
+    char          Tag2439[4];
+    char          InstrumentID[31];
+    char          UpdateTime[9];
+    int           UpdateMillisec;
+    char          TAG2432[4];
+    long long     OpenPrice;
+    long long     HighestPrice;
+    long long     LowestPrice;
+    long long     ClosePrice;
+    long long     UpperLimitPrice;
+    long long     LowerLimitPrice;
+    long long     SettlementPrice;
+    long long     CurrDelta;
+    char          Tag2433[4];
+    char          Val2433[0x1c];
+    char          Tag2434[4];
+    char          Val2434[0x18];
+}cffex_l1_t;
+
+
+typedef struct __attribute__((__packed__)) cffex_price_data
 {
   long long    BidPrice1;
   int          BidVolume1;
   long long    AskPrice1;
   int          AskVolume1;
-}cffex_l2_data_t;
+}cffex_price_data_t;
+
+typedef struct __attribute__((__packed__)) 
+{
+  long long    LastPrice;
+  int          Volume;
+  long long    Turnover;
+  long long    OpenInterest;
+}cffex_summary_data_t;
+
 
 extern int md_package_size_cffex_l2();
 extern int md_package_id_cffex_l2();
 extern int md_package_fill_cffex_l2(trader_tick* tick, void* obj);
+
+extern int md_package_size_cffex_l1();
+extern int md_package_id_cffex_l1();
+extern int md_package_fill_cffex_l1(trader_tick* tick, void* obj);
+
 
 typedef struct __attribute__((__packed__)) efh3_0_fut_lev1
 {
@@ -296,8 +333,8 @@ int md_package_fill_cffex_l2(trader_tick* tick, void* obj)
   cffex_l2_state_unmask(pMarketData->Val2434, sizeof(pMarketData->Val2434));
   cffex_l2_state_unmask(pMarketData->Val2433, sizeof(pMarketData->Val2433));
 
-  cffex_l2_data_t* price = (cffex_l2_data_t*)pMarketData->Val2434;
-  cffex_l2_data_t* price2 = (cffex_l2_data_t*)pMarketData->Val2433;
+  cffex_price_data_t* price = (cffex_price_data_t*)pMarketData->Val2434;
+  cffex_summary_data_t* summary = (cffex_summary_data_t*)pMarketData->Val2433;
   
   strncpy(tick->InstrumentID, (char*)pMarketData->InstrumentID, sizeof(tick->InstrumentID));
   strncpy(tick->TradingDay, cffex_l2_state_date(), sizeof(tick->TradingDay));
@@ -309,11 +346,55 @@ int md_package_fill_cffex_l2(trader_tick* tick, void* obj)
   tick->AskVolume1 = conv_int(price->AskVolume1);
   tick->UpperLimitPrice = conv_double(pMarketData->UpperLimitPrice);
   tick->LowerLimitPrice = conv_double(pMarketData->LowerLimitPrice);
-  tick->LastPrice = conv_double(price2->BidPrice1);
+  tick->LastPrice = conv_double(summary->LastPrice);
   tick->Reserved = 0;
   
   return 0;
 }
+
+int md_package_size_cffex_l1()
+{
+  return (int)sizeof(cffex_l1_t);
+}
+
+int md_package_id_cffex_l2()
+{
+  cffex_l2_state_load();
+  return (int)offsetof(cffex_l1_t, InstrumentID);
+}
+
+int md_package_fill_cffex_l1(trader_tick* tick, void* obj)
+{
+  cffex_l1_t* pMarketData = (cffex_l1_t*)obj;
+  
+  cffex_l2_state_init((void*)&pMarketData->OpenPrice, (void*)&pMarketData->Val2433[0]);
+
+  if(!cffex_l2_state_ready()){
+    return -1;
+  }
+  
+  cffex_l2_state_unmask(pMarketData->Val2434, sizeof(pMarketData->Val2434));
+  cffex_l2_state_unmask(pMarketData->Val2433, sizeof(pMarketData->Val2433));
+
+  cffex_price_data_t* price = (cffex_price_data_t*)pMarketData->Val2434;
+  cffex_summary_data_t* summary = (cffex_summary_data_t*)pMarketData->Val2433;
+  
+  strncpy(tick->InstrumentID, (char*)pMarketData->InstrumentID, sizeof(tick->InstrumentID));
+  strncpy(tick->TradingDay, cffex_l2_state_date(), sizeof(tick->TradingDay));
+  strncpy(tick->UpdateTime, (char*)pMarketData->UpdateTime, sizeof(tick->UpdateTime));
+  tick->UpdateMillisec = conv_int(pMarketData->UpdateMillisec);
+  tick->BidPrice1 = conv_double(price->BidPrice1);
+  tick->BidVolume1 = conv_int(price->BidVolume1);
+  tick->AskPrice1 = conv_double(price->AskPrice1);
+  tick->AskVolume1 = conv_int(price->AskVolume1);
+  tick->UpperLimitPrice = conv_double(pMarketData->UpperLimitPrice);
+  tick->LowerLimitPrice = conv_double(pMarketData->LowerLimitPrice);
+  tick->LastPrice = conv_double(summary->LastPrice);
+  tick->Reserved = 0;
+  
+  return 0;
+}
+
 
 void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type)
 {
@@ -333,6 +414,10 @@ void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type
     ops->m_md_size = md_package_size_efh30_l1();
     ops->m_md_id_pos = md_package_id_efh30_l1();
     ops->md_fill = md_package_fill_efh30_l1;
+  }else if(4 == type){
+    ops->m_md_size = md_package_size_cffex_l1();
+    ops->m_md_id_pos = md_package_id_cffex_l1();
+    ops->md_fill = md_package_fill_cffex_l1;
   }else{
     exit(-1);
   }
