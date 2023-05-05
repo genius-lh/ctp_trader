@@ -116,13 +116,13 @@ void trader_trader_api_yd_stop(trader_trader_api* self)
     return;
   }
 
-  YDApi* pTraderApi = (YDApi*)pImp->pTraderApi;
+  YDExtendedApi* pTraderApi = (YDExtendedApi*)pImp->pTraderApi;
   CYdTraderHandler* pTraderHandler = (CYdTraderHandler*)pImp->pTraderHandler;
 
   if(pTraderApi){
     pTraderApi->startDestroy();
     pTraderHandler->Join();
-    delete pTraderApi;
+    //delete pTraderApi;
   }
 
   if(pTraderHandler){
@@ -155,9 +155,6 @@ void trader_trader_api_yd_login(trader_trader_api* self)
 
 void trader_trader_api_yd_logout(trader_trader_api* self)
 {
-  trader_trader_api_yd* pImp = (trader_trader_api_yd*)self->pUserApi;
-  YDApi* pTraderApi = (YDApi*)pImp->pTraderApi;
-  pTraderApi->disconnect();
 
   trader_trader_api_on_rsp_user_logout(self, 0, "OK");
 

@@ -127,13 +127,7 @@ int trader_strategy_init(trader_strategy* self)
   trader_strategy_position_svr* strategyPosition = self->pEngine->pStrategyPosition;
 
   strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_BUY, &self->pBuyPosition);  
-  self->nPositionBuy = self->pBuyPosition->Volume;
   strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_SELL, &self->pSellPosition);
-  self->nPositionSell = self->pSellPosition->Volume;
-
-//  trader_strategy_reset_position(self, TRADER_POSITION_BUY, 0);
-//  trader_strategy_reset_position(self, TRADER_POSITION_SELL, 0);
-
   
   return 0;
 }

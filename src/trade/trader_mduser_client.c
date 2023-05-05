@@ -109,14 +109,21 @@ int trader_mduser_client_on_recv(trader_mduser_client* self)
   struct bufferevent *bev = self->bev;
 
   struct evbuffer* pEvBuf = bufferevent_get_input(bev);
+  char pData[2048];
 
-  int nLen = evbuffer_get_length(pEvBuf);
-  char pData[512];
+  int nLen;
 
-  bufferevent_read(bev, pData, nLen);
+  while((nLen = evbuffer_get_length(pEvBuf)) > 0){
 
-  if(self->recv_data_cb){
-    (self->recv_data_cb)(self->user_data, pData, nLen);
+    if(sizeof(pData) < nLen){
+      nLen = sizeof(pData);
+    }
+
+    bufferevent_read(bev, pData, nLen);
+
+    if(self->recv_data_cb){
+      (self->recv_data_cb)(self->user_data, pData, nLen);
+    }
   }
   
   return 0;

@@ -240,9 +240,9 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
   self->pStrategyEngine->pendingMicroSec = self->pendingMicroSec;
   self->pStrategyEngine->t2CancelLimit = 10; // TODO
 
-  self->pStrategyEngine->pMethod->xInit(self->pStrategyEngine);
-
   self->pStrategyEngine->pStrategyPosition = self->pStrategyPosition;
+
+  self->pStrategyEngine->pMethod->xInit(self->pStrategyEngine);
 
   self->nContractNum = 0;
   TAILQ_INIT(&self->listTraderContract);

@@ -87,6 +87,18 @@ trader_strategy_engine_method* trader_strategy_engine_method_get()
 
 int trader_strategy_engine_init(trader_strategy_engine* self)
 {
+  //trader_strategys
+  int i;
+  trader_strategy* pTraderStrategy;
+  for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
+    pTraderStrategy = trader_strategy_new();
+    pTraderStrategy->pEngine = self;
+    pTraderStrategy->idx = i;
+    pTraderStrategy->TriggerType = 0;
+    pTraderStrategy->pMethod->xInit(pTraderStrategy);
+    self->trader_strategys[i] = pTraderStrategy;
+  }
+
   // 获取当前时间
   // 计算下一个时间节点
   trader_strategy_engine_status_timer_init(self);
@@ -174,6 +186,9 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     strcpy(pStrategy->pBuyPosition->T2, pStrategy->T2);
     strcpy(pStrategy->pSellPosition->T1, pStrategy->T1);
     strcpy(pStrategy->pSellPosition->T2, pStrategy->T2);
+
+    pStrategy->nPositionBuy = pStrategy->pBuyPosition->Volume;
+    pStrategy->nPositionSell = pStrategy->pSellPosition->Volume;
 
   }
   
@@ -540,18 +555,6 @@ trader_strategy_engine* trader_strategy_engine_new()
   self->orderStrategyMap = cmn_util_map_new();
   self->nSequence = 1;
   
-  //trader_strategys
-  int i;
-  trader_strategy* pTraderStrategy;
-  for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
-    pTraderStrategy = trader_strategy_new();
-    pTraderStrategy->pMethod->xInit(pTraderStrategy);
-    pTraderStrategy->pEngine = self;
-    pTraderStrategy->idx = i;
-    pTraderStrategy->TriggerType = 0;
-    self->trader_strategys[i] = pTraderStrategy;
-  }
-
   self->pTraderStrategyLimit = trader_strategy_limit_new();
 
   self->pMethod = trader_strategy_engine_method_get();

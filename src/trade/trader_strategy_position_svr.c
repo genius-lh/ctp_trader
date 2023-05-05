@@ -14,7 +14,7 @@
 #include "trader_strategy_position_svr.h"
 
 #define STRATEGY_POSITION_INDEX(stage_id, direction) \
-  (((stage_id) << 1) | ((direction) | 0x1)) & (64 - 1)
+  (((stage_id) << 1) | ((direction) & 0x1)) & (64 - 1)
 
 
 static void trader_strategy_position_svr_init(trader_strategy_position_svr* self, const char* account);
@@ -77,26 +77,21 @@ int trader_strategy_position_svr_query(trader_strategy_position_svr* self, int s
 
 void trader_strategy_position_svr_set(trader_strategy_position_svr* self, trade_position* p_position)
 {
+  char sCmd[64]; 
   redisReply *reply;
   trade_position* position = p_position;
-  CMN_DEBUG("SET SP_%s_%d_%c %s_%s_%d_%f_%f\n"
+  snprintf(sCmd, sizeof(sCmd), "SET SP_%s_%d_%c %d_%f_%f_%s_%s"
     , self->account, position->StageID, position->Direction
-    , position->T1
-    , position->T2
     , position->Volume
     , position->RealPrice
     , position->ExpPrice
+    , position->T1
+    , position->T2
   );
 
+  CMN_DEBUG(sCmd);
   
-  reply = redisCommand((redisContext*)self->redis, "SET SP_%s_%d_%c %s_%s_%d_%f_%f\n"
-    , self->account, position->StageID, position->Direction
-    , position->T1
-    , position->T2
-    , position->Volume
-    , position->RealPrice
-    , position->ExpPrice
-  );
+  reply = redisCommand((redisContext*)self->redis, sCmd);
   
   if(REDIS_REPLY_ERROR == reply->type){
     CMN_ERROR("call redis error[%s]", reply->str);
@@ -107,20 +102,20 @@ void trader_strategy_position_svr_set(trader_strategy_position_svr* self, trade_
 
 void trader_strategy_position_svr_get(trader_strategy_position_svr* self, trade_position* p_position)
 {
-  
+  char sCmd[64]; 
   char* pSavePtr;
   char sReply[256];
   char* pTemp;
 
   redisReply *reply;
   trade_position* position = p_position;
-  CMN_DEBUG("GET SP_%s_%d_%c\n"
+
+  snprintf(sCmd, sizeof(sCmd), "GET SP_%s_%d_%c"
     , self->account, position->StageID, position->Direction
-  );
+    );
+  CMN_DEBUG("redis-cli %s\n", sCmd);
   
-  reply = redisCommand((redisContext*)self->redis, "GET SP_%s_%d_%c\n"
-    , self->account, position->StageID, position->Direction
-  );
+  reply = (redisReply*)redisCommand((redisContext*)self->redis, sCmd);
 
   do{
     if(REDIS_REPLY_STRING != reply->type){
@@ -136,12 +131,6 @@ void trader_strategy_position_svr_get(trader_strategy_position_svr* self, trade_
     strncpy(sReply, reply->str, sizeof(sReply));
     
     pTemp = strtok_r(sReply, "_", &pSavePtr);
-    strncpy(position->T1, pTemp, sizeof(position->T1));
-    
-    pTemp = strtok_r(NULL, "_", &pSavePtr);
-    strncpy(position->T2, pTemp, sizeof(position->T2));
-
-    pTemp = strtok_r(NULL, "_", &pSavePtr);
     position->Volume = atoi(pTemp);
     
     pTemp = strtok_r(NULL, "_", &pSavePtr);
@@ -149,6 +138,17 @@ void trader_strategy_position_svr_get(trader_strategy_position_svr* self, trade_
     
     pTemp = strtok_r(NULL, "_", &pSavePtr);
     position->ExpPrice = atof(pTemp);
+
+    pTemp = strtok_r(NULL, "_", &pSavePtr);
+    if(pTemp){
+      strncpy(position->T1, pTemp, sizeof(position->T1));
+    }
+    
+    pTemp = strtok_r(NULL, "_", &pSavePtr);
+    if(pTemp){
+      strncpy(position->T2, pTemp, sizeof(position->T2));
+    }
+
     
   }while(0);
   freeReplyObject(reply);
@@ -158,6 +158,11 @@ void trader_strategy_position_svr_get(trader_strategy_position_svr* self, trade_
 trader_strategy_position_svr* trader_strategy_position_svr_new(void* redis)
 {
   trader_strategy_position_svr* self = (trader_strategy_position_svr*)malloc(sizeof(trader_strategy_position_svr));
+
+  int i;  
+  for(i = 0; i < sizeof(self->position)/ sizeof(trade_position); i++){
+    memset(&self->position[i], 0, sizeof(trade_position));
+  }
   
   self->redis = redis;
   self->pMethod = trader_strategy_position_svr_method_get();

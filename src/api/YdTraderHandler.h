@@ -50,8 +50,9 @@ private:
 private:
   void* m_Arg;
   YDExtendedApi* m_TraderApi;
-  int    m_TradingDate;            ///< 交易日，格式为yyyyMMdd的int型值
+  int   m_TradingDate;            ///< 交易日，格式为yyyyMMdd的int型值
   int   m_MaxOrderRef;             ///< 以前的最大 token 
+  int   m_IsLogin;
 
   // 退出时使用
   pthread_mutex_t m_DestroyMutex;

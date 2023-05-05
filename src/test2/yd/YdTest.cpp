@@ -423,27 +423,55 @@ void CYdTestHandler::QryExchange()
 void CYdTestHandler::QryInvestorPosition()
 {
   YDExtendedApi* pTraderApi = (YDExtendedApi*)m_Arg;
+  
+  YDExtendedPositionFilter filter;
+  const YDExtendedPosition* positions[2];
+
   for(int i = 0; i < pTraderApi->getPrePositionCount(); i++) {
     const YDPrePosition *prePosition = pTraderApi->getPrePosition(i);
 
     if(prePosition){
-    YD_TEST_LOG("prePosition->AccountRef=[%d]\n"
-      "prePosition->InstrumentRef=[%d]\n"
-      "prePosition->PositionDirection=[%d]\n"
-      "prePosition->HedgeFlag=[%d]\n"
-      "prePosition->PrePosition=[%d]\n"
-      "prePosition->PreSettlementPrice=[%f]\n"
-      "prePosition->AverageOpenPrice=[%f]\n"
-      "prePosition->InstrumentID=[%s]\n"
-      , prePosition->AccountRef
-      , prePosition->InstrumentRef
-      , prePosition->PositionDirection
-      , prePosition->HedgeFlag
-      , prePosition->PrePosition
-      , prePosition->PreSettlementPrice
-      , prePosition->AverageOpenPrice
-      , prePosition->m_pInstrument->InstrumentID
-    );
+      YD_TEST_LOG("prePosition->AccountRef=[%d]\n"
+        "prePosition->InstrumentRef=[%d]\n"
+        "prePosition->PositionDirection=[%d]\n"
+        "prePosition->HedgeFlag=[%d]\n"
+        "prePosition->PrePosition=[%d]\n"
+        "prePosition->PreSettlementPrice=[%f]\n"
+        "prePosition->AverageOpenPrice=[%f]\n"
+        "prePosition->InstrumentID=[%s]\n"
+        , prePosition->AccountRef
+        , prePosition->InstrumentRef
+        , prePosition->PositionDirection
+        , prePosition->HedgeFlag
+        , prePosition->PrePosition
+        , prePosition->PreSettlementPrice
+        , prePosition->AverageOpenPrice
+        , prePosition->m_pInstrument->InstrumentID
+      );
+
+    }
+
+    memset(&filter, 0, sizeof(filter));
+    filter.PositionDate = -1;
+    filter.PositionDirection = -1;
+    filter.HedgeFlag = -1;
+    filter.pInstrument = NULL;
+    unsigned count = pTraderApi->findExtendedPositions(&filter, sizeof(positions) / sizeof(YDExtendedPosition*), positions);
+
+    for(int j = 0; j < (int)count; j++){
+      YD_TEST_LOG("positions[j]->getInstrument()->InstrumentID=[%s]\n"
+        "positions->PositionDate=[%d]\n"
+        "positions->PositionDirection=[%d]\n"
+        "positions->HedgeFlag=[%d]\n"
+        "positions->OpenFrozen=[%d]\n"
+        "positions->Position=[%d]\n"
+        , positions[j]->getInstrument()->InstrumentID
+        , positions[j]->PositionDate
+        , positions[j]->PositionDirection
+        , positions[j]->HedgeFlag
+        , positions[j]->OpenFrozen
+        , positions[j]->Position
+      );
     }
 
   }
