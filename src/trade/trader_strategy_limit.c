@@ -226,7 +226,8 @@ void trader_strategy_limit_on_order(trader_strategy_limit* self, trader_order* p
     TAILQ_INSERT_TAIL(&self->hPositionHead, pLimitPosition, next);
   }
 
-  if(TRADER_POSITION_CLOSE == pOrder->OffsetFlag){
+  if((TRADER_POSITION_CLOSE == pOrder->OffsetFlag)
+  ||(TRADER_POSITION_CLOSE_YESTERDAY == pOrder->OffsetFlag)){
     if(TRADER_ORDER_OS_BEGIN == pOrder->OrderStatus){
         pLimitPosition->YdFronze += pOrder->VolumeOriginal;
     }else if((TRADER_ORDER_OS_CANCELED == pOrder->OrderStatus)
