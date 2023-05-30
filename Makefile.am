@@ -2,7 +2,8 @@ AUTOMAKE_OPTIONS=foreign
 
 noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a libtraderutils.a
 
-noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so libctpminimduser.so libctpminitrader.so \
+noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so \
+				libctpminimduser.so libctpminitrader.so libctpminimduser15.so libctpminitrader15.so \
 				libfemasmduser.so libfemastrader.so libfemasmduser_af.so libfemastrader_af.so \
 				libefvimduser.so \
 				libydtrader.so \
@@ -10,12 +11,12 @@ noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66
 
 bin_PROGRAMS=\
 			traderMduserCtp traderStrategyCtp traderMduserCtp66 traderStrategyCtp66\
-			traderMduserCtpMini traderStrategyCtpMini \
+			traderMduserCtpMini traderStrategyCtpMini traderMduserCtpMini15 traderStrategyCtpMini15 \
 			traderMduserFemas traderStrategyFemas \
 			traderMduserFemasAF traderStrategyFemasAF \
 			traderMduserRem traderStrategyRem \
 			traderStrategyYd \
-			traderMduserEfviMini \
+			traderMduserEfviMini traderMduserEfviMini15\
 			traderMduserEfviCtp66 \
 			traderMduserEfviRem \
 			testMduserClient
@@ -74,6 +75,17 @@ libctpminitrader_so_SOURCES=src/api/trader_trader_api_ctp.cpp\
         src/api/CtpTraderHandler.cpp
 libctpminitrader_so_CPPFLAGS=-fPIC -DCTPMINI -Ictpmini -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
 libctpminitrader_so_LDFLAGS=-shared -fPIC
+
+# libctpminimduser15.so libctpminitrader15.so
+libctpminimduser15_so_SOURCES=src/api/trader_mduser_api_ctp.cpp\
+        src/api/CtpMduserHandler.cpp
+libctpminimduser15_so_CPPFLAGS=-fPIC -Ictpmini1.5.9 -Ilibevent -Ilibevent/compat/sys
+libctpminimduser15_so_LDFLAGS=-shared -fPIC
+
+libctpminitrader15_so_SOURCES=src/api/trader_trader_api_ctp.cpp\
+        src/api/CtpTraderHandler.cpp
+libctpminitrader15_so_CPPFLAGS=-fPIC -DCTPMINI -Ictpmini1.5.9 -Ilibevent -Ilibevent/compat/sys -Isrc/util -Isrc/log
+libctpminitrader15_so_LDFLAGS=-shared -fPIC
 
 # libfemasmduser.so libfemastrader.so
 libfemasmduser_so_SOURCES=src/api/trader_mduser_api_femas.cpp\
@@ -243,6 +255,46 @@ traderStrategyCtpMini_LDADD=\
         -L. -ltradercmn -ltraderapi\
         -Lctpmini -lctpminitrader -lthosttraderapi
 
+#traderMduserCtpMini15 traderStrategyCtpMini15
+traderMduserCtpMini15_SOURCES=src/svc/trader_mduser_boardcast.c \
+        src/svc/trader_mduser_cnn.c \
+        src/svc/trader_mduser_svr.c
+
+traderMduserCtpMini15_CFLAGS=-DCTP\
+        -Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+        -Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserCtpMini15_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+        -L. -ltradercmn -lmduserapi\
+        -Lctpmini1.5.9 -lctpminimduser15 -lthostmduserapi
+
+traderStrategyCtpMini15_SOURCES=\
+        src/log/cmn_log_catalog.c\
+        src/log/cmn_log_appender.c\
+        src/log/cmn_log_svr.c\
+        src/daemon/trader_daemon.c \
+        src/trade/trader_db.c \
+        src/trade/trader_mduser_client.c \
+        src/trade/trader_strategy_engine.c \
+        src/trade/trader_strategy_imp.c \
+        src/trade/trader_strategy_limit.c \
+        src/trade/trader_strategy_position_svr.c \
+        src/trade/trader_strategy.c \
+        src/trade/trader_svr.c \
+        src/client/client_aud_cnn.c \
+        src/client/client_aud_svr.c \
+        src/client/client_aud_pool.c
+
+traderStrategyCtpMini15_CFLAGS=-DCTP -Isrc/api \
+        -Isrc/util -Isrc/log -Isrc/cfg -Isrc/client -Isrc/trade\
+        -Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
+
+traderStrategyCtpMini15_LDADD=\
+        -lc -lstdc++ -lm -lpthread -lresolv -ldl\
+        -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
+        -L. -ltradercmn -ltraderapi\
+        -Lctpmini1.5.9 -lctpminitrader15 -lthosttraderapi
+
 # traderMduserFemas traderStrategyFemas 
 traderMduserFemas_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
@@ -393,6 +445,7 @@ traderStrategyYd_LDADD=\
 #traderMduserEfviRem
 #traderMduserEfviCtp66
 #traderMduserEfviMini
+#traderMduserEfviMini15
 
 traderMduserEfviRem_SOURCES=src/svc/trader_mduser_boardcast.c \
 	src/svc/trader_mduser_cnn.c \
@@ -432,6 +485,19 @@ traderMduserEfviMini_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
 	-Letherfabric -lciul1 \
     -Lctpmini -lctpminimduser -lthostmduserapi
+	
+traderMduserEfviMini15_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserEfviMini15_CFLAGS=-DEFVI -DCTP_BACKUP\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserEfviMini15_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
+	-Letherfabric -lciul1 \
+    -Lctpmini1.5.9 -lctpminimduser15 -lthostmduserapi
 
 # testMduserShm testMduserClient
 testMduserClient_SOURCES=\

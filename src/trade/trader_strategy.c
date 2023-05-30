@@ -2042,7 +2042,8 @@ int trader_strategy_is_auction_tick(trader_strategy* self)
       }
     }
     
-    if(0 == memcmp(t1->UpdateTime, "20:59:00", 8)){
+    if((0 == memcmp(t1->UpdateTime, "20:59:00", 8))
+    ||(0 == memcmp(t1->UpdateTime, "08:59:00", 8))){
       if(self->IsSHFE || self->T2IsSHFE){
         break;
       }
