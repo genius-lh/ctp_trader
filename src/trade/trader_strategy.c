@@ -136,14 +136,31 @@ int trader_strategy_init(trader_strategy* self)
 int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
 {
   
+  trader_tick* pTick = (trader_tick*)NULL;
+
   if(!strcmp(self->T1, tick_data->InstrumentID)){
-    memcpy(&self->oT1Tick, tick_data, sizeof(self->oT1Tick));
+    pTick = &self->oT1Tick;
   }else if(!strcmp(self->T2, tick_data->InstrumentID)){
-    memcpy(&self->oT2Tick, tick_data, sizeof(self->oT2Tick));
+    pTick = &self->oT2Tick;
   }else{
     // 非本策略关注合约，直接忽略
     //CMN_DEBUG("Not Focused[%s]!\n", tick_data->InstrumentID);
     return 0;
+  }
+  
+  strncpy(pTick->InstrumentID, tick_data->InstrumentID, sizeof(pTick->InstrumentID));
+  strncpy(pTick->TradingDay, tick_data->TradingDay, sizeof(pTick->TradingDay));
+  strncpy(pTick->UpdateTime, tick_data->UpdateTime, sizeof(pTick->UpdateTime));
+  pTick->UpdateMillisec = tick_data->UpdateMillisec;
+  pTick->BidPrice1 = tick_data->BidPrice1;
+  pTick->BidVolume1 = tick_data->BidVolume1;
+  pTick->AskPrice1 = tick_data->AskPrice1;
+  pTick->AskVolume1 = tick_data->AskVolume1;
+  if(tick_data->UpperLimitPrice > 0){
+    pTick->UpperLimitPrice = tick_data->UpperLimitPrice;
+  }
+  if(tick_data->LowerLimitPrice > 0){
+    pTick->LowerLimitPrice = tick_data->LowerLimitPrice;
   }
   
   if(self->used){

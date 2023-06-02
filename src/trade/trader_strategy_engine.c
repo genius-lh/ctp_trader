@@ -201,31 +201,17 @@ int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick
   int i = 0;
   trader_strategy* pStrategy;
   
-  trader_tick oTick;
+  trader_tick* pTick = tick_data;
   
-  strcpy(oTick.InstrumentID, tick_data->InstrumentID);
-  strcpy(oTick.TradingDay, tick_data->TradingDay);
-  strcpy(oTick.UpdateTime, tick_data->UpdateTime);
-  oTick.UpdateMillisec = tick_data->UpdateMillisec;
-  oTick.BidPrice1 = tick_data->BidPrice1;
-  oTick.BidVolume1 = tick_data->BidVolume1;
-  oTick.AskPrice1 = tick_data->AskPrice1;
-  oTick.AskVolume1 = tick_data->AskVolume1;
-  if(tick_data->UpperLimitPrice > 0){
-    oTick.UpperLimitPrice = tick_data->UpperLimitPrice;
-  }
-  if(tick_data->LowerLimitPrice > 0){
-    oTick.LowerLimitPrice = tick_data->LowerLimitPrice;
-  }
   //CMN_DEBUG("ÍÆËÍTickÊý¾Ý\n");
   //CMN_INFO("tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
 
   for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
     pStrategy = self->trader_strategys[i];
-    pStrategy->pMethod->xOnTick(pStrategy, &oTick);
+    pStrategy->pMethod->xOnTick(pStrategy, pTick);
   }
 
-  trader_strategy_engine_status_timer_tick(self, oTick.InstrumentID, oTick.UpdateTime, oTick.UpdateMillisec);
+  trader_strategy_engine_status_timer_tick(self, pTick->InstrumentID, pTick->UpdateTime, pTick->UpdateMillisec);
 
   return 0;
 }
@@ -617,7 +603,8 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
       }
     }
 
-    if(0 == memcmp(pUpdateTime, "20:59:00", 8)){
+    if((0 == memcmp(pUpdateTime, "20:59:00", 8))
+    ||(0 == memcmp(pUpdateTime, "08:59:00", 8))){
       if(0 == memcmp(instrument, "rb", 2)){
         UpdateSec = 59;
         UpdateMillisec = 490;
