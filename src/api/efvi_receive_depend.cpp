@@ -155,7 +155,7 @@ int wait_resources(struct resources* res)
 {
   static struct timeval timeout = {
     0,
-    100000
+    10000
   };
   int ret = ef_eventq_wait(&res->vi, res->dh, ef_eventq_current(&res->vi), &timeout);
 

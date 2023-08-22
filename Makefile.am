@@ -5,7 +5,7 @@ noinst_LIBRARIES=libtradercmn.a libmduserapi.a libtraderapi.a libtraderutils.a
 noinst_PROGRAMS=libctpmduser.so libctptrader.so libctpmduser66.so libctptrader66.so \
 				libctpminimduser.so libctpminitrader.so libctpminimduser15.so libctpminitrader15.so \
 				libfemasmduser.so libfemastrader.so libfemasmduser_af.so libfemastrader_af.so \
-				libefvimduser.so \
+				libefvimduser.so libudpmduser.so \
 				libydtrader.so \
 				libremmduser.so libremtrader.so
 
@@ -17,8 +17,8 @@ bin_PROGRAMS=\
 			traderMduserRem traderStrategyRem \
 			traderStrategyYd \
 			traderMduserEfviMini traderMduserEfviMini15\
-			traderMduserEfviCtp66 \
-			traderMduserEfviRem \
+			traderMduserEfviCtp66 traderMduserUdpCtp66\
+			traderMduserEfviRem traderMduserUdpFemasAF\
 			testMduserClient
 
 # static library
@@ -134,6 +134,14 @@ libefvimduser_so_SOURCES=src/api/efvi_receive_depend.cpp \
 		src/api/trader_mduser_api_ef_vi.cpp
 libefvimduser_so_CPPFLAGS=-fPIC -I. -Ietherfabric -Isrc/util -Ilibevent -Ilibevent/compat/sys
 libefvimduser_so_LDFLAGS=-shared -fPIC
+
+#libudpmduser.so
+libudpmduser_so_SOURCES= \
+		src/api/cffex_unmask.cpp \
+		src/api/trader_mduser_api_ef_vi_imp.cpp \
+		src/api/trader_mduser_api_udp.cpp
+libudpmduser_so_CPPFLAGS=-fPIC -I. -Isrc/util -Ilibevent -Ilibevent/compat/sys
+libudpmduser_so_LDFLAGS=-shared -fPIC
 
 # exec
 # traderMduserCtp traderStrategyCtp
@@ -498,6 +506,30 @@ traderMduserEfviMini15_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
 	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
 	-Letherfabric -lciul1 \
     -Lctpmini1.5.9 -lctpminimduser15 -lthostmduserapi
+
+traderMduserUdpCtp66_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserUdpCtp66_CFLAGS=-DUDP -DCTP_BACKUP\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserUdpCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -ludpmduser -ltraderutils -ltradercmn -lmduserapi \
+    -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
+
+traderMduserUdpFemasAF_SOURCES=src/svc/trader_mduser_boardcast.c \
+	src/svc/trader_mduser_cnn.c \
+	src/svc/trader_mduser_svr.c
+
+traderMduserUdpFemasAF_CFLAGS=-DUDP -DFEMAS_AF_BACKUP\
+	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
+	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
+
+traderMduserUdpFemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+	-L. -ludpmduser -ltraderutils -ltradercmn -lmduserapi \
+	-Lfemas20 -lfemasmduser_af -lUSTPmduserapiAF
 
 # testMduserShm testMduserClient
 testMduserClient_SOURCES=\

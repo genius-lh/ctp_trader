@@ -149,7 +149,10 @@ extern trader_mduser_api_method* trader_mduser_api_ef_vi_method_get();
   api_imp = trader_mduser_api_ef_vi_method_get();
 #endif
 
-
+#ifdef UDP
+extern trader_mduser_api_method* trader_mduser_api_udp_method_get();
+  api_imp = trader_mduser_api_udp_method_get();
+#endif
 
 #ifdef DLL_MODE
   api_imp = (trader_mduser_api_method*)trader_mduser_svr_main_load_func(self);
