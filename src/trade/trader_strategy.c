@@ -843,7 +843,7 @@ int trader_strategy_order_t1_open_cancel(trader_strategy* self, trader_order* or
     CMN_WARN("order_data->UserOrderLocalID=[%s]\n", order_data->UserOrderLocalID);
     return -1;
   }
-  
+
   int nReset = order_data->VolumeOriginal - order_data->VolumeTraded;
   // 更新可下单笔数
   if(TRADER_POSITION_LONG == pStrategyPlan->cLongShort){
@@ -855,7 +855,12 @@ int trader_strategy_order_t1_open_cancel(trader_strategy* self, trader_order* or
     self->nOrderSell -= nReset;
     CMN_DEBUG("self->nOrderSell=[%d]\n", self->nOrderSell);
   }
-  
+
+  // 限制T1部分成交情况下，重复下单T2
+  if(order_data->VolumeTraded < pStrategyPlan->nPlanVol){
+    pStrategyPlan->nPlanVol = order_data->VolumeTraded;
+  }
+
   return 0;
 }
 
@@ -882,6 +887,11 @@ int trader_strategy_order_t1_close_cancel(trader_strategy* self,  trader_order* 
     // 做空冻结
     self->nFronzeSell -= nReset;
     CMN_DEBUG("self->nFronzeSell=[%d]\n", self->nFronzeSell);
+  }
+  
+  // 限制T1部分成交情况下，重复下单T2
+  if(order_data->VolumeTraded < pStrategyPlan->nPlanVol){
+    pStrategyPlan->nPlanVol = order_data->VolumeTraded;
   }
 
   return 0;
