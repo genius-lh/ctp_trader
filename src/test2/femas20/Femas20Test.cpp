@@ -346,6 +346,24 @@ void CFemas20TestHandler::OnRspQryInstrument(CUstpFtdcRspInstrumentField *pRspIn
       pRspInfo->ErrorID,
       pRspInfo->ErrorMsg);
   }
+  if(pRspInstrument){
+
+    
+    do{
+      FILE* fp = fopen("1.csv", "a+");
+      if(!fp){
+        break;
+      }
+    
+      fprintf(fp, "pRspInstrument->ExchangeID=[%s]"
+        "pRspInstrument->InstrumentID=[%s]\n"
+        , pRspInstrument->ExchangeID
+        , pRspInstrument->InstrumentID
+      );
+      
+      fclose(fp);
+    }while(0);
+  }
   return ;
 }
 
