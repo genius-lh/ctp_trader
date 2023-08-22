@@ -51,7 +51,7 @@ void CYdTraderHandler::notifyAfterApiDestroy(void)
 
 void CYdTraderHandler::notifyEvent(int apiEvent)
 {
-  CMN_DEBUG("Enter\n");
+  CMN_ERROR("notifyEvent[%d]\n", apiEvent);
 }
 
 void CYdTraderHandler::notifyReadyForLogin(bool hasLoginFailed)
