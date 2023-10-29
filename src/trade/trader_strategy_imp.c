@@ -62,7 +62,7 @@ int trader_strategy_judge_t1_wait(trader_strategy* self,  trader_order* order_da
   
   // ÉÌÆ·²ßÂÔ
   t1wait = self->T1Wait;
-  if(t1wait <= 0){
+  if(t1wait < 0){
     return 1;
   }
   
