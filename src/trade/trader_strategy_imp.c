@@ -20,6 +20,7 @@ static double trader_strategy_t1_buy_price(trader_strategy* self, double diff);
 static double trader_strategy_t2_buy_price(trader_strategy* self);
 static double trader_strategy_t1_sell_price(trader_strategy* self, double diff);
 static double trader_strategy_t2_sell_price(trader_strategy* self);
+static double trader_strategy_t1_price_order(trader_strategy* self, char long_short, char open_close);
 
 int trader_strategy_double_to_int(double val)
 {
@@ -50,6 +51,11 @@ int trader_strategy_judge_t1_wait(trader_strategy* self,  trader_order* order_da
     return 1;
   }
 
+  // 商品策略
+  t1wait = self->T1Wait;
+  if(t1wait < 0){
+    return 1;
+  }
   
   trader_strategy_plan* pStrategyPlan = NULL;
   // 获取下单计划
@@ -60,45 +66,43 @@ int trader_strategy_judge_t1_wait(trader_strategy* self,  trader_order* order_da
     return 0;
   }
   
-  // 商品策略
-  t1wait = self->T1Wait;
-  if(t1wait < 0){
-    return 1;
-  }
-  
-  double t1Price = trader_strategy_t1_price(self, pStrategyPlan->cLongShort, pStrategyPlan->cOpenClose);
+  double t1Price = trader_strategy_t1_price_order(self, pStrategyPlan->cLongShort, pStrategyPlan->cOpenClose);
   double t2Price = trader_strategy_t2_price(self, pStrategyPlan->cLongShort, pStrategyPlan->cOpenClose);
+  int nRet = 0;
 
-  CMN_DEBUG("t1wait=[%d]\n"
-    "priceTick=[%lf]\n"
-    "t1Price=[%lf]\n"
-    "t2Price=[%lf]\n"
-    "t1PricePlan=[%lf]\n"
-    "t2PricePlan=[%lf]\n",
-    t1wait,
-    self->PriceTick,
-    t1Price,
-    t2Price,
-    pStrategyPlan->fT1Price,
-    pStrategyPlan->fT2Price);
+  do{
+    //1.  判断T2是否发生变化
+    diffPrice = trader_strategy_double_to_int((t2Price - pStrategyPlan->fT2Price) / self->T2PriceTick);
+    if(0 != diffPrice){
+      nRet = 1;
+      break;
+    }
+
+    //2.  判断T1是否发生变化
+    diffPrice = trader_strategy_double_to_int((t1Price - pStrategyPlan->fT1Price) / self->PriceTick);
+    if(diffPrice < 0){
+      diffPrice = -diffPrice;
+    }
+    
+    if(diffPrice > t1wait){
+      nRet = 1;
+      break;
+    }
+  }while(0);
   
-  //1.  判断T1是否发生变化
-  diffPrice = trader_strategy_double_to_int((t1Price - pStrategyPlan->fT1Price) / self->PriceTick);
-  if(diffPrice < 0){
-    diffPrice = -diffPrice;
-  }
-  
-  if(diffPrice > t1wait){
-    return 1;
-  }
-  
-  //2.  判断T2是否发生变化
-  diffPrice = trader_strategy_double_to_int((t2Price - pStrategyPlan->fT2Price) / self->T2PriceTick);
-  if(0 == diffPrice){
-    return 0;
-  }
-  
-  return 1;
+  CMN_INFO("result=[%d]"
+    "t1wait=[%d]"
+    "t1Price=[%lf]"
+    "t1PricePlan=[%lf]"
+    "t2Price=[%lf]"
+    "t2PricePlan=[%lf]\n"
+    , nRet
+    , t1wait
+    , t1Price
+    , pStrategyPlan->fT1Price
+    , t2Price
+    , pStrategyPlan->fT2Price);
+  return nRet;
 }
 
 int trader_strategy_judge_t2_wait(trader_strategy* self,  trader_order* order_data)
@@ -633,5 +637,28 @@ int trader_strategy_is_guzhi(trader_strategy* self)
 
   return 1;
 }
+
+double trader_strategy_t1_price_order(trader_strategy* self, char long_short, char open_close)
+{
+  char cLongShort = long_short;
+  char cOpenCLose = open_close;
+  
+  trader_tick* t1 = &self->oT1Tick;
+  
+  double t1set = t1->AskPrice1;
+
+  if(TRADER_POSITION_LONG == cLongShort){
+    if(TRADER_POSITION_OPEN == cOpenCLose){
+      t1set = t1->BidPrice1;
+    }
+  }else{
+    if(TRADER_POSITION_OPEN != cOpenCLose){
+      t1set = t1->BidPrice1;
+    }
+  }
+    
+  return t1set;
+}
+
 
 
