@@ -13,6 +13,8 @@
 #include <event2/event.h>
 #include <event2/buffer.h>
 
+#include "evmqueue.h"
+
 #include "hiredis.h"
 
 #include "glbProfile.h"
@@ -36,6 +38,9 @@ static trader_mduser_svr_method* trader_mduser_svr_method_get();
 //CALLBACK
 static void trader_mduser_svr_signal_cb(evutil_socket_t fd, short event, void *arg);
 static void trader_mduser_svr_tick_cb(void* arg, trader_mduser_evt* evt);
+
+static void trader_mduser_svr_mqueue_recv_cb(const char* data, int len, void* privdata);
+
 
 static int trader_mduser_svr_init_cnn(trader_mduser_svr* self);
 static int trader_mduser_svr_init_boardcast(trader_mduser_svr* self, char* ip, int port);
@@ -324,6 +329,12 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_DLLFILE", argv[1], self->backupDllFile);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_FUNCNAME", argv[1], self->backupFuncName);
 
+  
+  nRet = glbPflGetString("RUN_CONFIG", "MQUEUE_NAME", argv[1], self->mqueueName);
+  if(nRet < 0){
+    self->mqueueName[0] = '\0';
+  }
+
   // 各种初始化
   CMN_DEBUG("self->pBase\n");
   self->pBase = event_base_new();
@@ -370,6 +381,18 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   
   nRet = trader_mduser_svr_init_boardcast(self, pBoardcastAddr, nBoardcastPort);
   CMN_ASSERT(0 == nRet);
+
+  self->mqueueContext = NULL;
+  if(self->mqueueName[0]){
+    mqueue_async_context* c = mqueue_async_context_open(self->mqueueName, 1000, 512);
+    CMN_ASSERT(c);
+    self->mqueueContext = c;
+    
+    mqueue_async_context_libevent_attach(c, self->pBase);
+    
+    mqueue_async_context_set_recv_callback(c, trader_mduser_svr_mqueue_recv_cb, self);
+
+  }
   
   return 0;
 }
@@ -405,7 +428,14 @@ int trader_mduser_svr_run(trader_mduser_svr* self)
   self->pBoardcast->method->xExit(self->pBoardcast);
 
   redisFree(self->pRedisCtx);
-  
+
+  if(self->mqueueContext){
+    mqueue_async_context_close(self->mqueueContext);
+    
+    mqueue_async_context_free(self->mqueueContext);
+    
+    mqueue_context_unlink(self->mqueueName);
+  }
   return 0;
 }
 
@@ -446,6 +476,13 @@ void trader_mduser_svr_tick_cb(void* arg, trader_mduser_evt* evt)
 {
   trader_mduser_svr* self = (trader_mduser_svr*)arg;
   int nRet = self->pMethod->xProc(self, evt);
+}
+
+void trader_mduser_svr_mqueue_recv_cb(const char* data, int len, void* privdata)
+{
+  trader_mduser_svr* self = (trader_mduser_svr*)privdata;
+  trader_mduser_evt* evt = (trader_mduser_evt*)data;
+  self->pMethod->xProc(self, evt);
 }
 
 trader_mduser_svr* trader_mduser_svr_new()

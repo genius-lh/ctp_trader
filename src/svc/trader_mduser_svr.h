@@ -6,6 +6,8 @@
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 
+#include "evmqueue.h"
+
 #include "trader_data.h"
 
 #include "trader_mduser_cnn.h"
@@ -52,6 +54,9 @@ struct trader_mduser_svr_def {
 
   void* mainDllHandle;
   void* backupDllHandle;
+
+  char mqueueName[32];
+  mqueue_async_context* mqueueContext;
   
   trader_mduser_svr_method* pMethod;
 

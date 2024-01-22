@@ -25,6 +25,7 @@ bin_PROGRAMS=\
 libtradercmn_a_SOURCES=src/util/cmn_util.c \
 	src/util/cJSON.c \
 	src/util/dict.c \
+	src/util/evmqueue.c \
 	src/cfg/glbProfile.c \
 	src/cfg/cmn_cfg.c \
 	src/log/cmn_log_util.c \
@@ -232,7 +233,7 @@ traderMduserCtpMini_CFLAGS=-DCTP\
         -Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
         -Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserCtpMini_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserCtpMini_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
         -L. -ltradercmn -lmduserapi\
         -Lctpmini -lctpminimduser -lthostmduserapi
 
