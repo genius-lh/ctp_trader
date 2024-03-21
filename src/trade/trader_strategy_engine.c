@@ -40,8 +40,8 @@ static int trader_strategy_engine_save_trade(trader_strategy_engine* self, trade
 static int trader_strategy_engine_init_investor_position(trader_strategy_engine* self, investor_position* pInvestorPsition);
 
 static int trader_strategy_engine_timer_init(trader_strategy_engine* self, trader_strategy* strategy);
-static int trader_strategy_engine_timer_enable(trader_strategy_engine* self, trader_strategy* strategy, struct timeval* tv);
-static int trader_strategy_engine_timer_disable(trader_strategy_engine* self, trader_strategy* strategy);
+static int trader_strategy_engine_timer_enable(trader_strategy_engine* self, struct trader_strategy_def* strategy, struct timeval* tv);
+static int trader_strategy_engine_timer_disable(trader_strategy_engine* self, struct trader_strategy_def* strategy);
 
 static void trader_strategy_engine_timer_cb(evutil_socket_t fd, short event, void *arg);
 
@@ -704,13 +704,13 @@ int trader_strategy_engine_timer_init(trader_strategy_engine* self, trader_strat
   return 0;
 }
 
-int trader_strategy_engine_timer_enable(trader_strategy_engine* self, trader_strategy* strategy, struct timeval* tv)
+int trader_strategy_engine_timer_enable(trader_strategy_engine* self, struct trader_strategy_def* strategy, struct timeval* tv)
 {
   evtimer_add((struct event*)strategy->evTimer, tv);
   return 0;
 }
 
-int trader_strategy_engine_timer_disable(trader_strategy_engine* self, trader_strategy* strategy)
+int trader_strategy_engine_timer_disable(trader_strategy_engine* self, struct trader_strategy_def* strategy)
 {
   evtimer_del((struct event*)strategy->evTimer);
   return 0;

@@ -26,8 +26,10 @@ libtradercmn_a_SOURCES=src/util/cmn_util.c \
 	src/util/cJSON.c \
 	src/util/dict.c \
 	src/util/evmqueue.c \
+	src/util/trader_tick_dict.c \
 	src/cfg/glbProfile.c \
 	src/cfg/cmn_cfg.c \
+	src/svc/trader_mduser_shm.c \
 	src/log/cmn_log_util.c \
 	src/log/cmn_log.c
 libtradercmn_a_CFLAGS=-Ilibevent -Ilibevent/compat/sys \
@@ -154,7 +156,7 @@ traderMduserCtp_CFLAGS=-DCTP\
         -Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
         -Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserCtp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserCtp_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
         -L. -ltradercmn -lmduserapi\
         -Lctp6.3 -lctpmduser -lthostmduserapi_se
 
@@ -193,7 +195,7 @@ traderMduserCtp66_CFLAGS=-DCTP\
         -Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
         -Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
         -L. -ltradercmn -lmduserapi\
         -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
 
@@ -273,7 +275,7 @@ traderMduserCtpMini15_CFLAGS=-DCTP\
         -Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
         -Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserCtpMini15_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserCtpMini15_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
         -L. -ltradercmn -lmduserapi\
         -Lctpmini1.5.9 -lctpminimduser15 -lthostmduserapi
 
@@ -313,7 +315,7 @@ traderMduserFemas_CFLAGS=-DFEMAS\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserFemas_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserFemas_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -ltradercmn -lmduserapi\
 	-Lfemas -lfemasmduser -lUSTPmduserapi
 
@@ -353,7 +355,7 @@ traderMduserFemasAF_CFLAGS=-DFEMAS_AF\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserFemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserFemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -ltradercmn -lmduserapi\
 	-Lfemas20 -lfemasmduser_af -lUSTPmduserapiAF
 
@@ -477,7 +479,7 @@ traderMduserEfviCtp66_CFLAGS=-DEFVI -DCTP_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserEfviCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserEfviCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
 	-Letherfabric -lciul1 \
     -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
@@ -490,7 +492,7 @@ traderMduserEfviMini_CFLAGS=-DEFVI -DCTP_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserEfviMini_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserEfviMini_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
 	-Letherfabric -lciul1 \
     -Lctpmini -lctpminimduser -lthostmduserapi
@@ -503,7 +505,7 @@ traderMduserEfviMini15_CFLAGS=-DEFVI -DCTP_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserEfviMini15_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserEfviMini15_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
 	-Letherfabric -lciul1 \
     -Lctpmini1.5.9 -lctpminimduser15 -lthostmduserapi

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <unistd.h>
+#include <time.h>
 #include <sys/types.h> 
 
 #include "cmn_log.h"
@@ -177,7 +178,7 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   if(tick_data->LowerLimitPrice > 0){
     pTick->LowerLimitPrice = tick_data->LowerLimitPrice;
   }
-  memcpy(pTick->ReceiveTime, tick_data->ReceiveTime, sizeof(pTick->ReceiveTime));
+  memcpy(&pTick->ReceiveTime, &tick_data->ReceiveTime, sizeof(pTick->ReceiveTime));
 
   if(self->used){
     CMN_INFO("SID[%02d]tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", self->idx, tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
@@ -2004,7 +2005,7 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
 
   if(TRIGGER_TYPE_0 == self->TriggerType){
     do {
-      tv_diff = timeval_diff(t1->ReceiveTime, t2->ReceiveTime);
+      tv_diff = timeval_diff(&t1->ReceiveTime, &t2->ReceiveTime);
       if(tv_diff < 0){
         tv_diff = -tv_diff;
       }
@@ -2022,7 +2023,7 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
   }
 
   if(TRIGGER_TYPE_3 == self->TriggerType){
-    tv_diff = timeval_diff(t1->ReceiveTime, t2->ReceiveTime);
+    tv_diff = timeval_diff(&t1->ReceiveTime, &t2->ReceiveTime);
     if(tv_diff < 0){
       tv_diff = -tv_diff;
     }

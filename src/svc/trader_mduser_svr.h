@@ -10,6 +10,8 @@
 
 #include "trader_mduser_shm.h"
 
+#include "trader_tick_dict.h"
+
 #include "trader_data.h"
 
 #include "trader_mduser_cnn.h"

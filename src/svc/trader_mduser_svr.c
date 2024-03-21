@@ -20,6 +20,8 @@
 
 #include "cmn_log.h"
 
+#include "trader_tick_dict.h"
+
 #include "trader_mduser_api.h"
 #include "trader_mduser_cnn.h"
 #include "trader_mduser_boardcast.h"
@@ -241,7 +243,7 @@ int trader_mduser_svr_init_instruments(trader_mduser_svr* self)
 void* trader_mduser_svr_instrument_bsearch(trader_mduser_svr* self, char* key)
 {
   void* save_ptr;
-  int found = self->tickDict->pMethod->self->xFind(self->tickDict, key, &save_ptr);
+  int found = self->tickDict->pMethod->xFind(self->tickDict, key, &save_ptr);
   if(!found){
     return (void*)NULL;
   }

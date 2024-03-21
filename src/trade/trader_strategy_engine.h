@@ -115,8 +115,8 @@ struct trader_strategy_engine_method_def {
   int (*xOnErrRtnOrderInsert)(trader_strategy_engine* self, int error_id);
 
   // ¶¨Ê±Æ÷
-  int (*xStrategyTimerEnable)(trader_strategy_engine* self, trader_strategy* strategy, struct timeval* tv);
-  int (*xStrategyTimerDisable)(trader_strategy_engine* self, trader_strategy* strategy);
+  int (*xStrategyTimerEnable)(trader_strategy_engine* self, struct trader_strategy_def* strategy, struct timeval* tv);
+  int (*xStrategyTimerDisable)(trader_strategy_engine* self, struct trader_strategy_def* strategy);
   
 };
 
