@@ -57,7 +57,6 @@ struct trader_strategy_engine_def {
 
   // 计时器
   struct event* tickTimerEvent;
-  char currentTime[9];
   int statusFlag;
   int pendingMicroSec;
 
@@ -114,6 +113,11 @@ struct trader_strategy_engine_method_def {
 
   // 报单失败
   int (*xOnErrRtnOrderInsert)(trader_strategy_engine* self, int error_id);
+
+  // 定时器
+  int (*xStrategyTimerEnable)(trader_strategy_engine* self, trader_strategy* strategy, struct timeval* tv);
+  int (*xStrategyTimerDisable)(trader_strategy_engine* self, trader_strategy* strategy);
+  
 };
 
 extern trader_strategy_engine* trader_strategy_engine_new();

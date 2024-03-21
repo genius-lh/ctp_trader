@@ -16,17 +16,26 @@
 
 #include "trader_strategy.h"
 
+#define timeval_diff(tvp, uvp) \
+  ((tvp)->tv_sec - (uvp)->tv_sec) * 1000000 + ((tvp)->tv_usec - (uvp)->tv_usec)
+
 static int trader_strategy_init(trader_strategy* self);
 static int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data);
 static int trader_strategy_on_order(trader_strategy* self, trader_order* order_data);
 static int trader_strategy_on_trade(trader_strategy* self, trader_trade* trade_data);
-static int trader_strategy_on_status(trader_strategy* self, instrument_status* status_data);
 static int trader_strategy_on_timer_status(trader_strategy* self);
+static int trader_strategy_on_timer_tick(trader_strategy* self);
+static int trader_strategy_on_check_closing(trader_strategy* self, trader_tick* tick_data);
 
 static int trader_strategy_tick_not_finished(trader_strategy* self);
 static int trader_strategy_tick_finished(trader_strategy* self);
 static int trader_strategy_tick_open(trader_strategy* self);
 static int trader_strategy_tick_auto(trader_strategy* self, int ms);
+
+static int trader_strategy_on_strategy_update(trader_strategy* self);
+
+static int trader_strategy_judge_closing(trader_strategy* self, const char* update_time);
+
 
 // 重置仓位
 static int trader_strategy_reset_position(trader_strategy* self, char buy_sell, int volume);
@@ -66,12 +75,16 @@ static int trader_strategy_release_order(trader_strategy* self, char* user_order
 
 static int trader_strategy_print_tick(trader_strategy* self);
 
-static int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data);
 static int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data);
 
 static int trader_strategy_print_order_time(trader_strategy* self, trader_order* order_data);
 
 static int trader_strategy_is_auction_tick(trader_strategy* self);
+
+static int trader_strategy_timer_enable(trader_strategy* self);
+
+static int trader_strategy_timer_disable(trader_strategy* self);
+
 
 static trader_strategy_method* trader_strategy_method_get();
 
@@ -82,10 +95,11 @@ trader_strategy_method* trader_strategy_method_get()
     trader_strategy_on_tick,
     trader_strategy_on_order,
     trader_strategy_on_trade,
-    trader_strategy_on_status,
     trader_strategy_on_timer_status,
     trader_strategy_reset_position,
-    trader_strategy_query_position
+    trader_strategy_query_position,
+    trader_strategy_on_timer_tick,
+    trader_strategy_on_strategy_update
   };
 
   return &trader_strategy_method_st;
@@ -128,6 +142,8 @@ int trader_strategy_init(trader_strategy* self)
 
   strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_BUY, &self->pBuyPosition);  
   strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_SELL, &self->pSellPosition);
+
+  self->isGood = 1;
   
   return 0;
 }
@@ -135,7 +151,6 @@ int trader_strategy_init(trader_strategy* self)
 
 int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
 {
-  
   trader_tick* pTick = (trader_tick*)NULL;
 
   if(!strcmp(self->T1, tick_data->InstrumentID)){
@@ -162,15 +177,14 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   if(tick_data->LowerLimitPrice > 0){
     pTick->LowerLimitPrice = tick_data->LowerLimitPrice;
   }
-  
+  memcpy(pTick->ReceiveTime, tick_data->ReceiveTime, sizeof(pTick->ReceiveTime));
+
   if(self->used){
     CMN_INFO("SID[%02d]tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", self->idx, tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
   }
 
-  if((0 == self->oT1Tick.AskVolume1)
-  || (0 == self->oT1Tick.BidVolume1)
-  || (0 == self->oT2Tick.AskVolume1)
-  || (0 == self->oT2Tick.BidVolume1)){
+  if(((0 == self->oT1Tick.AskVolume1) && (0 == self->oT1Tick.BidVolume1))
+  || ((0 == self->oT2Tick.AskVolume1) && (0 == self->oT2Tick.BidVolume1))){
     // 行情不正常
     CMN_INFO("T1.InstrumentID=[%s]T2.InstrumentID=[%s]\n"
       "T1.AskVolume1=[%d]T1.BidVolume1=[%d]\n"
@@ -226,27 +240,25 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   }
 */
 
-  // 收盘判断
-  trader_strategy_check_closing(self, tick_data);
 
   // 策略执行判断  
   int ret = 0;
   ret = trader_strategy_tick_trigger(self, tick_data);
   if(!ret){
+    trader_strategy_timer_enable(self);
     return 0;
+  }else{
+    trader_strategy_timer_disable(self);
   }
-
-  // 开盘自动策略
-  trader_strategy_tick_auto(self, tick_data->UpdateMillisec);
-  
-  // 待成交队列处理
-  trader_strategy_tick_not_finished(self);
 
   // 是否是集合竞价
   ret = trader_strategy_is_auction_tick(self);
   if(ret){
     return 0;
   }
+
+  // 待成交队列处理
+  trader_strategy_tick_not_finished(self);
 
   // 成交队列处理
   trader_strategy_tick_finished(self);
@@ -346,90 +358,20 @@ int trader_strategy_on_trade(trader_strategy* self, trader_trade* trade_data)
   return 0;
 }
 
-int trader_strategy_on_status(trader_strategy* self, instrument_status* status_data)
-{  
-  if(INSTRUMENT_STATUS_CONTINOUS != status_data->InstrumentStatus){
-    return 0;
-  }
-
-  if(!self->used){
-    return 0;
-  }
-
-  int nT1Len = strnlen(self->T1, sizeof(self->T1));
-  int nT2Len = strnlen(self->T2, sizeof(self->T2));
-  int nIIDLen = strnlen(status_data->InstrumentID, sizeof(status_data->InstrumentID));
-
-  if((0 == nT1Len) || (0 == nT2Len)){
-    return 0;
-  }
-  
-  do{
-    if(nIIDLen < nT1Len){
-      nT1Len = nIIDLen;
-    }
-    
-    if(nIIDLen < nT2Len){
-      nT2Len = nIIDLen;
-    }
-
-    if(0 == memcmp(self->T1, status_data->InstrumentID, nT1Len)){
-      break;
-    }
-
-    if(0 == memcmp(self->T2, status_data->InstrumentID, nT2Len)){
-      break;
-    }
-    // 非本策略关注合约，直接忽略
-    //CMN_DEBUG("Not Focused[%s]!\n", tick_data->InstrumentID);
-    return 0;
-  }while(0);
-  
-  if((0 == self->oT1Tick.AskVolume1)
-  || (0 == self->oT1Tick.BidVolume1)
-  || (0 == self->oT2Tick.AskVolume1)
-  || (0 == self->oT2Tick.BidVolume1)){
-    // 行情不正常
-    CMN_INFO("T1.AskVolume1=[%d]T1.BidVolume1=[%d]T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
-      self->oT1Tick.AskVolume1,
-      self->oT1Tick.BidVolume1,
-      self->oT2Tick.AskVolume1,
-      self->oT2Tick.BidVolume1);
-    return 0;
-  }
-
-  //中午收盘判断
-  if((0 == memcmp(self->oT1Tick.UpdateTime, "11:29:59", 8))
-  ||(0 == memcmp(self->oT2Tick.UpdateTime, "11:29:59", 8))
-  ||(0 == memcmp(self->oT1Tick.UpdateTime, "11:30:00", 8))
-  ||(0 == memcmp(self->oT2Tick.UpdateTime, "11:30:00", 8))){
-    CMN_INFO("下午开盘\n");
-    return 0;
-  }
-  
-  CMN_INFO("status_data->InstrumentID[%s]\n", status_data->InstrumentID);
-  
-  // 成交队列处理
-  trader_strategy_tick_finished(self);
-
-  // 新建委托判断
-  trader_strategy_tick_open(self);
-  
-  return 0;
-}
-
 int trader_strategy_on_timer_status(trader_strategy* self)
 {
   if(!self->used){
     return 0;
   }
 
-  if((0 == self->oT1Tick.AskVolume1)
-  || (0 == self->oT1Tick.BidVolume1)
-  || (0 == self->oT2Tick.AskVolume1)
-  || (0 == self->oT2Tick.BidVolume1)){
+  if(((0 == self->oT1Tick.AskVolume1) && (0 == self->oT1Tick.BidVolume1))
+  || ((0 == self->oT2Tick.AskVolume1) && (0 == self->oT2Tick.BidVolume1))){
     // 行情不正常
-    CMN_INFO("T1.AskVolume1=[%d]T1.BidVolume1=[%d]T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
+    CMN_INFO("T1.InstrumentID=[%s]T2.InstrumentID=[%s]\n"
+      "T1.AskVolume1=[%d]T1.BidVolume1=[%d]\n"
+      "T2.AskVolume1=[%d]T2.BidVolume1=[%d]\n",
+      self->T1,
+      self->T2,
       self->oT1Tick.AskVolume1,
       self->oT1Tick.BidVolume1,
       self->oT2Tick.AskVolume1,
@@ -448,6 +390,51 @@ int trader_strategy_on_timer_status(trader_strategy* self)
   // 新建委托判断
   trader_strategy_tick_open(self);
 
+  return 0;
+}
+
+int trader_strategy_on_timer_tick(trader_strategy* self)
+{
+  int ret = 0;
+  
+  // 是否是集合竞价
+  ret = trader_strategy_is_auction_tick(self);
+  if(ret){
+    return 0;
+  }
+
+  // 待成交队列处理
+  trader_strategy_tick_not_finished(self);
+  
+  // 成交队列处理
+  trader_strategy_tick_finished(self);
+
+  // 新建委托判断
+  trader_strategy_tick_open(self);
+
+  return 0;
+}
+
+int trader_strategy_timer_enable(trader_strategy* self)
+{
+  trader_strategy_engine* engine = self->pEngine;
+
+  struct timeval to = {
+    0, self->TickGapMsec * 1000
+  };
+
+  // 下单
+  engine->pMethod->xStrategyTimerEnable(engine, self,  &to);
+  
+  return 0;
+}
+
+int trader_strategy_timer_disable(trader_strategy* self)
+{
+  trader_strategy_engine* engine = self->pEngine;
+
+  // 下单
+  engine->pMethod->xStrategyTimerDisable(engine, self);
   return 0;
 }
 
@@ -625,6 +612,18 @@ int trader_strategy_tick_auto(trader_strategy* self, int ms)
   return 0;
 }
 
+int trader_strategy_on_strategy_update(trader_strategy* self)
+{
+  if((0 == memcmp("IC", self->T1, 2))
+    ||(0 == memcmp("IF", self->T1, 2))
+    ||(0 == memcmp("IH", self->T1, 2))
+    ||(0 == memcmp("IM", self->T1, 2))){
+    self->isGood = 0;
+  }
+  // 触发撤单
+  trader_strategy_tick_not_finished(self);
+  return 0;
+}
 
 int trader_strategy_tick_not_finished(trader_strategy* self)
 {
@@ -1880,108 +1879,110 @@ int trader_strategy_print_tick(trader_strategy* self)
   return 0;
 }
 
-int trader_strategy_check_closing(trader_strategy* self, trader_tick* tick_data)
+int trader_strategy_judge_closing(trader_strategy* self, const char* update_time)
+{
+  const char* updateTime = update_time;
+  if(self->isGood){
+    if((0 == memcmp(updateTime, "10:14:57", 8))
+    ||(0 == memcmp(updateTime, "10:14:58", 8))
+    ||(0 == memcmp(updateTime, "10:14:59", 8))){
+      CMN_INFO("上午收盘\n");
+      return 1;
+    }
+  }
+  
+  //中午收盘判断
+  if((0 == memcmp(updateTime, "11:29:57", 8))
+  ||(0 == memcmp(updateTime, "11:29:58", 8))
+  ||(0 == memcmp(updateTime, "11:29:59", 8))){
+    CMN_INFO("中午收盘\n");
+    return 1;
+  }
+
+  // 下午收盘判断
+  if((0 == memcmp(updateTime, "14:59:57", 8))
+  ||(0 == memcmp(updateTime, "14:59:58", 8))
+  ||(0 == memcmp(updateTime, "14:59:59", 8))){
+    CMN_INFO("下午收盘\n");
+    return 1;
+  }
+
+  // 夜盘收盘判断
+  if(CLOSING_TIME_NONE == self->NightClosingTime){
+    return 0;
+  }
+
+  if(IS_CLOSING_23_00(self->NightClosingTime)){
+    if((0 == memcmp(updateTime, "22:59:57", 8))
+    ||(0 == memcmp(updateTime, "22:59:58", 8))
+    ||(0 == memcmp(updateTime, "22:59:59", 8))){
+      CMN_INFO("23点收盘\n");
+      return 1;
+    }
+  }
+
+  if(IS_CLOSING_23_30(self->NightClosingTime)){
+    if((0 == memcmp(updateTime, "23:29:57", 8))
+    ||(0 == memcmp(updateTime, "23:29:58", 8))
+    ||(0 == memcmp(updateTime, "23:29:59", 8))){
+      CMN_INFO("23点30分收盘\n");
+      return 1;
+    }
+  }
+
+  if(IS_CLOSING_01_00(self->NightClosingTime)){
+    if((0 == memcmp(updateTime, "00:59:57", 8))
+    ||(0 == memcmp(updateTime, "00:59:58", 8))
+    ||(0 == memcmp(updateTime, "00:59:59", 8))){
+      CMN_INFO("1点收盘\n");
+      return 1;
+    }
+  }
+
+  if(IS_CLOSING_02_00(self->NightClosingTime)){
+    if((0 == memcmp(updateTime, "01:59:57", 8))
+    ||(0 == memcmp(updateTime, "01:59:58", 8))
+    ||(0 == memcmp(updateTime, "01:59:59", 8))){
+      CMN_INFO("2点收盘\n");
+      return 1;
+    }
+  }
+
+  if(IS_CLOSING_02_30(self->NightClosingTime)){
+    if((0 == memcmp(updateTime, "02:29:57", 8))
+    ||(0 == memcmp(updateTime, "02:29:58", 8))
+    ||(0 == memcmp(updateTime, "02:29:59", 8))){
+      CMN_INFO("2点30分收盘\n");
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+int trader_strategy_on_check_closing(trader_strategy* self, trader_tick* tick_data)
 {
   if(!self->used){
     return 0;
   }
 
-  do{
-    //中午收盘判断
-    if((0 == memcmp(tick_data->UpdateTime, "11:29:57", 8))
-    ||(0 == memcmp(tick_data->UpdateTime, "11:29:58", 8))
-    ||(0 == memcmp(tick_data->UpdateTime, "11:29:59", 8))){
-      CMN_INFO("中午收盘\n");
-      self->used = 0;
-      break;
-    }
+  int needClosing = trader_strategy_judge_closing(self, tick_data->UpdateTime);
+  if(needClosing){
+    self->used = 0;
+  }
 
-    // 下午收盘判断
-    if(IS_CLOSING_15_00(self->NightClosingTime))
-    if((0 == memcmp(tick_data->UpdateTime, "14:59:57", 8))
-    ||(0 == memcmp(tick_data->UpdateTime, "14:59:58", 8))
-    ||(0 == memcmp(tick_data->UpdateTime, "14:59:59", 8))){
-      CMN_INFO("下午收盘\n");
-      self->used = 0;
-      break;
-    }
+  // 待成交队列处理
+  trader_strategy_tick_not_finished(self);
 
-    // 夜盘收盘判断
-    if(CLOSING_TIME_NONE == self->NightClosingTime){
-      break;
-    }
-
-    if(IS_CLOSING_23_00(self->NightClosingTime)){
-      if((0 == memcmp(tick_data->UpdateTime, "22:59:57", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "22:59:58", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "22:59:59", 8))){
-        CMN_INFO("23点收盘\n");
-        self->used = 0;
-        break;
-      }
-    }
-
-    if(IS_CLOSING_23_30(self->NightClosingTime)){
-      if((0 == memcmp(tick_data->UpdateTime, "23:29:57", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "23:29:58", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "23:29:59", 8))){
-        CMN_INFO("23点30分收盘\n");
-        self->used = 0;
-        break;
-      }
-    }
-
-    if(IS_CLOSING_01_00(self->NightClosingTime)){
-      if((0 == memcmp(tick_data->UpdateTime, "00:59:57", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "00:59:58", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "00:59:59", 8))){
-        CMN_INFO("1点收盘\n");
-        self->used = 0;
-        break;
-      }
-    }
-
-    if(IS_CLOSING_02_00(self->NightClosingTime)){
-      if((0 == memcmp(tick_data->UpdateTime, "01:59:57", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "01:59:58", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "01:59:59", 8))){
-        CMN_INFO("2点收盘\n");
-        self->used = 0;
-        break;
-      }
-    }
-
-    if(IS_CLOSING_02_30(self->NightClosingTime)){
-      if((0 == memcmp(tick_data->UpdateTime, "02:29:57", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "02:29:58", 8))
-      ||(0 == memcmp(tick_data->UpdateTime, "02:29:59", 8))){
-        CMN_INFO("2点30分收盘\n");
-        self->used = 0;
-        break;
-      }
-    }
-  }while(0);
-
-  return 0;
+  return 1;
 }
 
 int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
 {
+  trader_tick* t1 = &self->oT2Tick;
+  trader_tick* t2 = &self->oT2Tick;
+  long tv_diff;
 
-  if(TRIGGER_TYPE_0 == self->TriggerType){
-    self->TriggerType = 0;
-    if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
-    && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
-      if(0 == strcmp(self->T1, tick_data->InstrumentID)){
-        self->TriggerType = TRIGGER_TYPE_1;
-      }else{
-        self->TriggerType = TRIGGER_TYPE_2;
-      }
-      CMN_INFO("self->TriggerType=[%d]self->T1=[%s]self->T2=[%s]\n", self->TriggerType, self->T1, self->T2);
-      return 1;
-    }
-  }
-  
   if(TRIGGER_TYPE_1 == self->TriggerType){
     if(0 == strcmp(self->T1, tick_data->InstrumentID)){
       return 1;
@@ -1993,24 +1994,40 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
       return 1;
     }
   }
-  
+
   if(TRIGGER_TYPE_4 == self->TriggerType){
-    if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
-    && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
+    if((0 == strcmp(t1->UpdateTime, t2->UpdateTime))
+    && (t1->UpdateMillisec == t2->UpdateMillisec)){  
       return 1;
     }
   }
 
-  if(TRIGGER_TYPE_3 == self->TriggerType){
-    if((0 == memcmp(tick_data->UpdateTime, "09:00:00", 8))
-    ||(0 == memcmp(tick_data->UpdateTime, "10:15:00", 8))
-    ||(0 == memcmp(tick_data->UpdateTime, "13:00:00", 8))
-    ||(0 == memcmp(tick_data->UpdateTime, "13:30:00", 8))){
-      CMN_INFO("盘中重新开盘\n");
-      if((0 == strcmp(self->oT1Tick.UpdateTime, self->oT2Tick.UpdateTime))
-      && (self->oT1Tick.UpdateMillisec == self->oT2Tick.UpdateMillisec)){  
-        return 1;
+  if(TRIGGER_TYPE_0 == self->TriggerType){
+    do {
+      tv_diff = timeval_diff(t1->ReceiveTime, t2->ReceiveTime);
+      if(tv_diff < 0){
+        tv_diff = -tv_diff;
       }
+      if(tv_diff > (self->TickGapMsec * 1000)){
+        break;
+      }
+      if(0 == strcmp(self->T1, tick_data->InstrumentID)){
+        self->TriggerType = TRIGGER_TYPE_1;
+      }else{
+        self->TriggerType = TRIGGER_TYPE_2;
+      }
+      CMN_INFO("self->TriggerType=[%d]self->T1=[%s]self->T2=[%s]\n", self->TriggerType, self->T1, self->T2);
+      return 1;
+    }while(0);
+  }
+
+  if(TRIGGER_TYPE_3 == self->TriggerType){
+    tv_diff = timeval_diff(t1->ReceiveTime, t2->ReceiveTime);
+    if(tv_diff < 0){
+      tv_diff = -tv_diff;
+    }
+    if(tv_diff > (60 * 1000000)){
+      CMN_INFO("self->TriggerType=[%d]self->T1=[%s]self->T2=[%s]\n", self->TriggerType, self->T1, self->T2);
       return 0;
     }
     

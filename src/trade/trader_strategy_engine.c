@@ -39,6 +39,12 @@ static int trader_strategy_engine_save_trade(trader_strategy_engine* self, trade
 
 static int trader_strategy_engine_init_investor_position(trader_strategy_engine* self, investor_position* pInvestorPsition);
 
+static int trader_strategy_engine_timer_init(trader_strategy_engine* self, trader_strategy* strategy);
+static int trader_strategy_engine_timer_enable(trader_strategy_engine* self, trader_strategy* strategy, struct timeval* tv);
+static int trader_strategy_engine_timer_disable(trader_strategy_engine* self, trader_strategy* strategy);
+
+static void trader_strategy_engine_timer_cb(evutil_socket_t fd, short event, void *arg);
+
 static trader_strategy_engine_method* trader_strategy_engine_method_get();
 
 static void  trader_strategy_engine_timeout_cb(evutil_socket_t fd, short event, void *arg);
@@ -54,7 +60,6 @@ static void trader_strategy_engine_status_timer_event(trader_strategy_engine* se
 static void trader_strategy_engine_status_timer_err_order_insert(trader_strategy_engine* self);
 
 static int trader_strategy_engine_on_err_rtn_order_insert(trader_strategy_engine* self, int error_id);
-
 
 trader_strategy_engine_method* trader_strategy_engine_method_get()
 {
@@ -80,7 +85,9 @@ trader_strategy_engine_method* trader_strategy_engine_method_get()
     trader_strategy_engine_save_order,
     trader_strategy_engine_save_trade,
     trader_strategy_engine_init_investor_position,
-    trader_strategy_engine_on_err_rtn_order_insert
+    trader_strategy_engine_on_err_rtn_order_insert,
+    trader_strategy_engine_timer_enable,
+    trader_strategy_engine_timer_disable
   };
   return &trader_strategy_engine_method_st;
 }
@@ -97,6 +104,8 @@ int trader_strategy_engine_init(trader_strategy_engine* self)
     pTraderStrategy->TriggerType = 0;
     pTraderStrategy->pMethod->xInit(pTraderStrategy);
     self->trader_strategys[i] = pTraderStrategy;
+    // timer init
+    trader_strategy_engine_timer_init(self, pTraderStrategy);
   }
 
   // 获取当前时间
@@ -190,6 +199,7 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->nPositionBuy = pStrategy->pBuyPosition->Volume;
     pStrategy->nPositionSell = pStrategy->pSellPosition->Volume;
 
+    pStrategy->pMethod->xOnStrategyUpdate(pStrategy);
   }
   
   return 0;
@@ -302,8 +312,8 @@ int trader_strategy_engine_update_status(trader_strategy_engine* self, instrumen
   trader_strategy* pStrategy;
   
   for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
-    pStrategy = self->trader_strategys[i];
-    pStrategy->pMethod->xOnStatus(pStrategy, status_data);
+    // pStrategy = self->trader_strategys[i];
+    // pStrategy->pMethod->xOnStatus(pStrategy, status_data);
   }
 
   return 0;
@@ -559,6 +569,10 @@ void trader_strategy_engine_free(trader_strategy_engine* self)
   trader_strategy* pTraderStrategy;
   for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
     pTraderStrategy = self->trader_strategys[i];
+    
+    evtimer_del((struct event*)pTraderStrategy->evTimer);
+    event_free((struct event*)pTraderStrategy->evTimer);
+
     trader_strategy_free(pTraderStrategy);
   }
 
@@ -684,4 +698,28 @@ int trader_strategy_engine_on_err_rtn_order_insert(trader_strategy_engine* self,
   return 0;
 }
 
+int trader_strategy_engine_timer_init(trader_strategy_engine* self, trader_strategy* strategy)
+{
+  strategy->evTimer = (void*)evtimer_new(self->pBase, trader_strategy_engine_timer_cb, (void*)strategy);
+  return 0;
+}
+
+int trader_strategy_engine_timer_enable(trader_strategy_engine* self, trader_strategy* strategy, struct timeval* tv)
+{
+  evtimer_add((struct event*)strategy->evTimer, tv);
+  return 0;
+}
+
+int trader_strategy_engine_timer_disable(trader_strategy_engine* self, trader_strategy* strategy)
+{
+  evtimer_del((struct event*)strategy->evTimer);
+  return 0;
+}
+
+void  trader_strategy_engine_timer_cb(evutil_socket_t fd, short event, void *arg)
+{
+  trader_strategy* strategy = (trader_strategy*)arg;
+  strategy->pMethod->xOnTimerTick(strategy);
+  return ;
+}
 

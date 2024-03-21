@@ -110,8 +110,31 @@ int trader_strategy_judge_t2_wait(trader_strategy* self,  trader_order* order_da
   if(0 == self->T2Wait){
     return 1;
   }
+
+  if(0 == self->used){
+    CMN_DEBUG("策略关闭直接撤单\n");
+    return 1;
+  }
   
   CMN_DEBUG("sid[%02d]Enter!\n", self->idx);
+
+  int diffPrice;
+  trader_tick* t2 = &self->oT2Tick;
+  double t2Price = t2->AskPrice1;
+  char t2Direction = order_data->Direction;
+  if(TRADER_POSITION_BUY == t2Direction){
+    t2Price = t2->BidPrice1;
+    diffPrice = trader_strategy_double_to_int((t2Price - order_data->LimitPrice) / self->T2PriceTick);
+  }else{
+    diffPrice = trader_strategy_double_to_int((order_data->LimitPrice - t2Price) / self->T2PriceTick);
+  }
+
+  if(diffPrice < self->T2Wait){
+    
+    CMN_INFO("sid[%02d]T2Wait[%d][%d]!\n", self->idx, diffPrice, self->T2Wait);
+    return 0;
+  } 
+  
   return 1;
 }
 

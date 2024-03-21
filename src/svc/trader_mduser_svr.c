@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <dlfcn.h>
 
 #include <unistd.h>
 #include <signal.h>
@@ -46,13 +45,7 @@ static int trader_mduser_svr_init_cnn(trader_mduser_svr* self);
 static int trader_mduser_svr_init_boardcast(trader_mduser_svr* self, char* ip, int port);
 static int trader_mduser_svr_init_instruments(trader_mduser_svr* self);
 
-static int trader_mduser_svr_instrument_sort(trader_mduser_svr* self);
-
 static void* trader_mduser_svr_instrument_bsearch(trader_mduser_svr* self, char* inst);
-
-static void* trader_mduser_svr_main_load_func(trader_mduser_svr* self);
-
-static void* trader_mduser_svr_backup_load_func(trader_mduser_svr* self);
 
 trader_mduser_svr_method* trader_mduser_svr_method_get()
 {
@@ -159,10 +152,6 @@ extern trader_mduser_api_method* trader_mduser_api_udp_method_get();
   api_imp = trader_mduser_api_udp_method_get();
 #endif
 
-#ifdef DLL_MODE
-  api_imp = (trader_mduser_api_method*)trader_mduser_svr_main_load_func(self);
-#endif
-
   self->pCnnMain->pMethod->xInit(self->pCnnMain, self->pBase,
     self->mainBrokerId, self->mainUser, self->mainPasswd, self->mainAddr, self->mainWorkspace,
     trader_mduser_svr_tick_cb, self,
@@ -186,10 +175,6 @@ extern trader_mduser_api_method* trader_mduser_api_rem_method_get();
 #ifdef FEMAS_AF_BACKUP
 extern trader_mduser_api_method* trader_mduser_api_femas_af_method_get();
   api_imp = trader_mduser_api_femas_af_method_get();
-#endif
-
-#ifdef DLL_MODE
-  api_imp = (trader_mduser_api_method*)trader_mduser_svr_backup_load_func(self);
 #endif
 
   self->pCnnBackup->pMethod->xInit(self->pCnnBackup, self->pBase,
@@ -218,25 +203,32 @@ int trader_mduser_svr_init_instruments(trader_mduser_svr* self)
 {
   int nRet = -1;
   int i;
-  self->instruments = (trader_instrument_id_type*)NULL;
+  trader_tick* tick = (trader_tick*)NULL;
   self->ticks = (trader_tick*)NULL;
+  self->tickDict = (trader_tick_dict*)NULL;
   self->instrumentNumber = 0;
+  self->instruments = (trader_instrument_id_type*)NULL;
   
   redisReply* reply = (redisReply*)redisCommand(self->pRedisCtx, "SMEMBERS %s", self->redisInstrumentKey);
   redisReply* r;
   do {
     if(REDIS_REPLY_ARRAY == reply->type){
+
+      
       nRet = 0;
       self->instrumentNumber = reply->elements;
+      self->shmHdr = trader_mduser_shm_header_init(self->redisInstrumentKey, sizeof(trader_tick), (self->instrumentNumber / 8 + 1) * 8);
+      self->ticks = trader_mduser_shm_header_calloc(self->shmHdr, self->instrumentNumber);
+      self->tickDict = trader_tick_dict_new();
       self->instruments = (trader_instrument_id_type*)malloc(self->instrumentNumber * sizeof(trader_instrument_id_type));
-      self->ticks = (trader_tick*)malloc(self->instrumentNumber * sizeof(trader_tick));
       for(i = 0; i < self->instrumentNumber; i++){
         r = reply->element[i];
+        tick = &self->ticks[i];
+        memset(tick, 0, sizeof(trader_tick));
+        strncpy(tick->InstrumentID, r->str, sizeof(tick->InstrumentID));
+        self->tickDict->pMethod->xAdd(self->tickDict, tick->InstrumentID, (void*)tick);
         strncpy(self->instruments[i], r->str, sizeof(trader_instrument_id_type));
-        memset(&self->ticks[i], 0, sizeof(trader_tick));
-        strncpy(self->ticks[i].InstrumentID, r->str, sizeof(trader_instrument_id_type));
       }
-      trader_mduser_svr_instrument_sort(self);
       break;
     }
   }while(0);
@@ -245,50 +237,16 @@ int trader_mduser_svr_init_instruments(trader_mduser_svr* self)
   return nRet;
 }
 
-int trader_mduser_svr_instrument_sort(trader_mduser_svr* self)
-{
-  int i;
-  int j;
-  int c;
-
-  trader_instrument_id_type tmp; 
-
-  for(i = 0; i < self->instrumentNumber; i++){
-    for(j = i; j < self->instrumentNumber; j++){
-      c = strcmp(self->ticks[i].InstrumentID, self->ticks[j].InstrumentID);
-      if(c > 0){
-        strcpy(tmp, self->ticks[i].InstrumentID);
-        strcpy(self->ticks[i].InstrumentID, self->ticks[j].InstrumentID);
-        strcpy(self->ticks[j].InstrumentID, tmp);
-      }
-    }
-  }
-  return 0;
-}
 
 void* trader_mduser_svr_instrument_bsearch(trader_mduser_svr* self, char* key)
 {
-  int h;
-  int l;
-  int m;
-  int c;
-  h = self->instrumentNumber - 1;
-  l = 0;
-  m = self->instrumentNumber / 2;
-
-  while (l <= h) {
-    m = (l + h) / 2;
-
-    c = strcmp(self->ticks[m].InstrumentID, key);
-    if(0 == c){
-      return (void*)&self->ticks[m];
-    }else if(c > 0) {
-      h = m - 1;
-    }else{
-      l = m + 1;
-    }
+  void* save_ptr;
+  int found = self->tickDict->pMethod->self->xFind(self->tickDict, key, &save_ptr);
+  if(!found){
+    return (void*)NULL;
   }
-  return (void*)NULL;
+  
+  return save_ptr;
 }
 
 int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
@@ -318,17 +276,12 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_PASSWD", argv[1], self->mainPasswd);
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_ADDR", argv[1], self->mainAddr);
   nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_WORKSPACE", argv[1], self->mainWorkspace);
-  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_DLLFILE", argv[1], self->mainDllFile);
-  nRet = glbPflGetString("MDUSER_MAIN", "MDUSER_FUNCNAME", argv[1], self->mainFuncName);
   
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_BROKER_ID", argv[1], self->backupBrokerId);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_USER", argv[1], self->backupUser);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_PASSWD", argv[1], self->backupPasswd);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_ADDR", argv[1], self->backupAddr);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_WORKSPACE", argv[1], self->backupWorkspace);
-  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_DLLFILE", argv[1], self->backupDllFile);
-  nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_FUNCNAME", argv[1], self->backupFuncName);
-
   
   nRet = glbPflGetString("RUN_CONFIG", "MQUEUE_NAME", argv[1], self->mqueueName);
   if(nRet < 0){
@@ -499,10 +452,14 @@ void trader_mduser_svr_free(trader_mduser_svr* self)
       free(self->instruments);
     }
     
-    if(self->ticks){
-      free(self->ticks);
+    if(self->shmHdr){
+      trader_mduser_shm_header_dt(self->shmHdr);
     }
     
+    if(self->tickDict){
+      trader_tick_dict_free(self->tickDict);
+    }
+
     if(self->pCnnMain){
       trader_mduser_cnn_free(self->pCnnMain);
     }
@@ -526,65 +483,13 @@ void trader_mduser_svr_free(trader_mduser_svr* self)
     if(self->pBase) {
       event_base_free(self->pBase);
     }    
-    
-    if(self->mainDllHandle){
-      dlclose(self->mainDllHandle);
-      self->mainDllHandle = NULL;
-    }
-
-    if(self->backupDllHandle){
-      dlclose(self->backupDllHandle);
-      self->backupDllHandle = NULL;
-    }
      
     free(self);
   }
 
 }
 
-void* trader_mduser_svr_main_load_func(trader_mduser_svr* self)
-{
-  void* handle = dlopen(self->mainDllFile, RTLD_LAZY);
-  if(!handle){
-    printf("dlopen errno=%s\n", dlerror());
-    CMN_ERROR("dlopen errno=[%d]strerror=[%s]\n", errno, strerror(errno));
-    return NULL;
-  }
 
-  self->mainDllHandle = handle;
-  
-  void* method = dlsym(handle, self->mainFuncName);
-  if(!method){
-    printf("dlopen errno=%s\n", dlerror());
-    CMN_ERROR("dlsym errno=[%d]strerror=[%s]\n", errno, strerror(errno));
-    return NULL;
-  }
-
-  return method;
-}
-
-void* trader_mduser_svr_backup_load_func(trader_mduser_svr* self)
-{
-  void* handle;
-
-  if(0 == strncmp(self->mainDllFile, self->backupDllFile, sizeof(self->mainDllFile))){
-    handle = self->mainDllHandle;
-  }else{
-    handle = dlopen(self->mainDllFile, RTLD_LAZY);
-  }
-  if(!handle){
-    CMN_ERROR("dlopen errno=[%d]strerror=[%s]\n", errno, strerror(errno));
-    return NULL;
-  }
-  
-  void* method = dlsym(handle, self->backupFuncName);
-  if(!method){
-    CMN_ERROR("dlsym errno=[%d]strerror=[%s]\n", errno, strerror(errno));
-    return NULL;
-  }
-
-  return method;
-}
 
 
 int main(int argc, char* argv[])

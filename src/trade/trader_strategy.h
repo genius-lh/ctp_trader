@@ -129,6 +129,7 @@ struct trader_strategy_def{
   int NightClosingTime;
   
   int TriggerType;
+  long TickGapMsec;
 
   // T1 行情
   trader_tick oT1Tick;
@@ -172,6 +173,8 @@ struct trader_strategy_def{
   int nFailedSellClose;
   trade_position* pSellPosition;
 
+  void* evTimer;
+  int isGood;
   
   struct trader_strategy_engine_def* pEngine;
   trader_strategy_method* pMethod;
@@ -183,12 +186,15 @@ struct trader_strategy_method_def{
   int (*xOnTick)(trader_strategy* self, trader_tick* tick_data);
   int (*xOnOrder)(trader_strategy* self, trader_order* order_data);
   int (*xOnTrade)(trader_strategy* self, trader_trade* trade_data);
-  int (*xOnStatus)(trader_strategy* self, instrument_status* status_data);
   int (*xOnTimerStatus)(trader_strategy* self);
   // 重置仓位
   int (*xResetPosition)(trader_strategy* self, char buy_sell, int volume);
   // 查询仓位
   int (*xQueryPosition)(trader_strategy* self, char buy_sell, trade_position* p_position);
+  // 定时器
+  int (*xOnTimerTick)(trader_strategy* self);
+  // 策略更新
+  int (*xOnStrategyUpdate)(trader_strategy* self);
 };
 
 extern trader_strategy* trader_strategy_new();

@@ -105,7 +105,6 @@ struct resources
   int (*read)(void* , const char* , int );
   void* arg;
 
-  void* dump_instance;
 };
 
 

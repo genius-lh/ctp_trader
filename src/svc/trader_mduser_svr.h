@@ -8,6 +8,8 @@
 
 #include "evmqueue.h"
 
+#include "trader_mduser_shm.h"
+
 #include "trader_data.h"
 
 #include "trader_mduser_cnn.h"
@@ -39,24 +41,21 @@ struct trader_mduser_svr_def {
   char mainPasswd[16];
   char mainAddr[64];
   char mainWorkspace[64];
-  char mainDllFile[64];
-  char mainFuncName[64];
 
   char backupBrokerId[8];
   char backupUser[16];
   char backupPasswd[16];
   char backupAddr[64];
   char backupWorkspace[64];
-  char backupDllFile[64];
-  char backupFuncName[64];
 
   char redisInstrumentKey[32];
 
-  void* mainDllHandle;
-  void* backupDllHandle;
-
   char mqueueName[32];
   mqueue_async_context* mqueueContext;
+
+  trader_mduser_shm_header* shmHdr;
+
+  trader_tick_dict* tickDict;
   
   trader_mduser_svr_method* pMethod;
 

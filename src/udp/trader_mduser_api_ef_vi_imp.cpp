@@ -51,7 +51,7 @@ typedef struct __attribute__((__packed__))
 
 extern int md_package_size_dzfut();
 extern int md_package_id_dzfut();
-extern int md_package_fill_dzfut(trader_tick* tick, void* obj);
+extern int md_package_fill_dzfut(void* tick, void* obj);
 
 typedef struct __attribute__((__packed__)) efh3_2_fut_lev1
 {
@@ -77,7 +77,7 @@ typedef struct __attribute__((__packed__)) efh3_2_fut_lev1
 
 extern int md_package_size_efh32_l1();
 extern int md_package_id_efh32_l1();
-extern int md_package_fill_efh32_l1(trader_tick* tick, void* obj);
+extern int md_package_fill_efh32_l1(void* tick, void* obj);
 
 
 typedef struct __attribute__((__packed__)) cffex_l2
@@ -120,7 +120,7 @@ typedef struct __attribute__((__packed__)) cffex_l2_data
 
 extern int md_package_size_cffex_l2();
 extern int md_package_id_cffex_l2();
-extern int md_package_fill_cffex_l2(trader_tick* tick, void* obj);
+extern int md_package_fill_cffex_l2(void* tick, void* obj);
 
 typedef struct __attribute__((__packed__)) efh3_0_fut_lev1
 {
@@ -147,7 +147,7 @@ typedef struct __attribute__((__packed__)) efh3_0_fut_lev1
 
 extern int md_package_size_efh30_l1();
 extern int md_package_id_efh30_l1();
-extern int md_package_fill_efh30_l1(trader_tick* tick, void* obj);
+extern int md_package_fill_efh30_l1(void* tick, void* obj);
 
 typedef struct __attribute__((__packed__)) xqn_fut_lev1
 {
@@ -168,7 +168,7 @@ typedef struct __attribute__((__packed__)) xqn_fut_lev1
 
 extern int md_package_size_xqn_l1();
 extern int md_package_id_xqn_l1();
-extern int md_package_fill_xqn_l1(trader_tick* tick, void* obj);
+extern int md_package_fill_xqn_l1(void* tick, void* obj);
 
 
 #ifdef __cplusplus
@@ -185,25 +185,27 @@ int md_package_id_dzfut()
   return (int)offsetof(dzqh_fut_md_t, InstrumentID);
 }
 
-int md_package_fill_dzfut(trader_tick* tick, void* obj)
+int md_package_fill_dzfut(void* tick, void* obj)
 {
   dzqh_fut_md_t* pMarketData = (dzqh_fut_md_t*)obj;
+  trader_tick* pTick = (trader_tick*)tick;
   struct tm now;
   time_t current = (time_t)pMarketData->UpdateTime;
   localtime_r(&current, &now);    
 
-  strcpy(tick->InstrumentID, (char*)pMarketData->InstrumentID);
-  snprintf(tick->TradingDay, sizeof(tick->TradingDay), "%04d%02d%02d", now.tm_year+1900, now.tm_mon+1, now.tm_mday);
-  snprintf(tick->UpdateTime, sizeof(tick->UpdateTime), "%02d:%02d:%02d", now.tm_hour, now.tm_min, now.tm_sec);
-  tick->UpdateMillisec = pMarketData->UpdateMillisec;
-  tick->BidPrice1 = pMarketData->BidPrice1;
-  tick->BidVolume1 = pMarketData->BidVolume1;
-  tick->AskPrice1 = pMarketData->AskPrice1;
-  tick->AskVolume1 = pMarketData->AskVolume1;
-  tick->UpperLimitPrice = 0;
-  tick->LowerLimitPrice = 0;
-  tick->LastPrice = pMarketData->LastPrice;
-  tick->Reserved = (long)pMarketData->ChangeNo;
+  strcpy(pTick->InstrumentID, (char*)pMarketData->InstrumentID);
+  snprintf(pTick->TradingDay, sizeof(pTick->TradingDay), "%04d%02d%02d", now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+  snprintf(pTick->UpdateTime, sizeof(pTick->UpdateTime), "%02d:%02d:%02d", now.tm_hour, now.tm_min, now.tm_sec);
+  pTick->UpdateMillisec = pMarketData->UpdateMillisec;
+  pTick->BidPrice1 = pMarketData->BidPrice1;
+  pTick->BidVolume1 = pMarketData->BidVolume1;
+  pTick->AskPrice1 = pMarketData->AskPrice1;
+  pTick->AskVolume1 = pMarketData->AskVolume1;
+  pTick->UpperLimitPrice = 0;
+  pTick->LowerLimitPrice = 0;
+  pTick->LastPrice = pMarketData->LastPrice;
+  gettimeofday(&tick->ReceiveTime, NULL);
+  pTick->Reserved = (long)pMarketData->ChangeNo;
   return 0;
 }
 
@@ -217,25 +219,27 @@ int md_package_id_efh32_l1()
   return (int)offsetof(efh3_2_fut_lev1_t, m_symbol);
 }
 
-int md_package_fill_efh32_l1(trader_tick* tick, void* obj)
+int md_package_fill_efh32_l1(void* tick, void* obj)
 {
   efh3_2_fut_lev1_t* pMarketData = (efh3_2_fut_lev1_t*)obj;
-  strcpy(tick->InstrumentID, pMarketData->m_symbol);
-  strcpy(tick->TradingDay, "20230101");
-  snprintf(tick->UpdateTime, sizeof(tick->UpdateTime), "%02d:%02d:%02d",
+  trader_tick* pTick = (trader_tick*)tick;
+  strcpy(pTick->InstrumentID, pMarketData->m_symbol);
+  strcpy(pTick->TradingDay, "20230101");
+  snprintf(pTick->UpdateTime, sizeof(pTick->UpdateTime), "%02d:%02d:%02d",
     (int)pMarketData->m_update_time_h,
     (int)pMarketData->m_update_time_m,
     (int)pMarketData->m_update_time_s
   );
-  tick->UpdateMillisec = pMarketData->m_millisecond;
-  tick->BidPrice1 = pMarketData->m_bid_px;
-  tick->BidVolume1 = pMarketData->m_bid_share;
-  tick->AskPrice1 = pMarketData->m_ask_px;
-  tick->AskVolume1 = pMarketData->m_ask_share;
-  tick->UpperLimitPrice = 0;
-  tick->LowerLimitPrice = 0;
-  tick->LastPrice = pMarketData->m_last_px;
-  tick->Reserved = pMarketData->m_sequence;
+  pTick->UpdateMillisec = pMarketData->m_millisecond;
+  pTick->BidPrice1 = pMarketData->m_bid_px;
+  pTick->BidVolume1 = pMarketData->m_bid_share;
+  pTick->AskPrice1 = pMarketData->m_ask_px;
+  pTick->AskVolume1 = pMarketData->m_ask_share;
+  pTick->UpperLimitPrice = 0;
+  pTick->LowerLimitPrice = 0;
+  pTick->LastPrice = pMarketData->m_last_px;
+  gettimeofday(&tick->ReceiveTime, NULL);
+  pTick->Reserved = pMarketData->m_sequence;
   return 0;
 }
 
@@ -249,21 +253,23 @@ int md_package_id_efh30_l1()
   return (int)offsetof(efh3_0_fut_lev1_t, m_symbol);
 }
 
-int md_package_fill_efh30_l1(trader_tick* tick, void* obj)
+int md_package_fill_efh30_l1(void* tick, void* obj)
 {
   efh3_0_fut_lev1_t* pMarketData = (efh3_0_fut_lev1_t*)obj;
-  strncpy(tick->InstrumentID, pMarketData->m_symbol, sizeof(tick->InstrumentID));
-  strncpy(tick->TradingDay, "20230101", sizeof(tick->TradingDay));
-  strncpy(tick->UpdateTime, pMarketData->m_update_time, sizeof(tick->UpdateTime));
-  tick->UpdateMillisec = pMarketData->m_millisecond;
-  tick->BidPrice1 = pMarketData->m_bid_px;
-  tick->BidVolume1 = pMarketData->m_bid_share;
-  tick->AskPrice1 = pMarketData->m_ask_px;
-  tick->AskVolume1 = pMarketData->m_ask_share;
-  tick->UpperLimitPrice = 0;
-  tick->LowerLimitPrice = 0;
-  tick->LastPrice = pMarketData->m_last_px;
-  tick->Reserved = pMarketData->m_sequence;
+  trader_tick* pTick = (trader_tick*)tick;
+  strncpy(pTick->InstrumentID, pMarketData->m_symbol, sizeof(pTick->InstrumentID));
+  strncpy(pTick->TradingDay, "20230101", sizeof(pTick->TradingDay));
+  strncpy(pTick->UpdateTime, pMarketData->m_update_time, sizeof(pTick->UpdateTime));
+  pTick->UpdateMillisec = pMarketData->m_millisecond;
+  pTick->BidPrice1 = pMarketData->m_bid_px;
+  pTick->BidVolume1 = pMarketData->m_bid_share;
+  pTick->AskPrice1 = pMarketData->m_ask_px;
+  pTick->AskVolume1 = pMarketData->m_ask_share;
+  pTick->UpperLimitPrice = 0;
+  pTick->LowerLimitPrice = 0;
+  pTick->LastPrice = pMarketData->m_last_px;
+  gettimeofday(&tick->ReceiveTime, NULL);
+  pTick->Reserved = pMarketData->m_sequence;
   return 0;
 }
 
@@ -278,21 +284,24 @@ int md_package_id_xqn_l1()
 
 }
 
-int md_package_fill_xqn_l1(trader_tick* tick, void* obj)
+int md_package_fill_xqn_l1(void* tick, void* obj)
 {
   xqn_fut_lev1_t* pMarketData = (xqn_fut_lev1_t*)obj;
-  strncpy(tick->InstrumentID, pMarketData->Instrument, sizeof(tick->InstrumentID));
-  strncpy(tick->TradingDay, "20230101", sizeof(tick->TradingDay));
-  strncpy(tick->UpdateTime, pMarketData->UpdateTime, sizeof(tick->UpdateTime));
-  tick->UpdateMillisec = pMarketData->UpdateMillisec;
-  tick->BidPrice1 = pMarketData->BidPrice;
-  tick->BidVolume1 = pMarketData->BidVolume;
-  tick->AskPrice1 = pMarketData->AskPrice;
-  tick->AskVolume1 = pMarketData->AskVolume;
-  tick->UpperLimitPrice = 0;
-  tick->LowerLimitPrice = 0;
-  tick->LastPrice = pMarketData->LastPrice;
-  tick->Reserved = 0;
+  trader_tick* pTick = (trader_tick*)tick;
+  strncpy(pTick->InstrumentID, pMarketData->Instrument, sizeof(pTick->InstrumentID));
+  strncpy(pTick->TradingDay, "20230101", sizeof(pTick->TradingDay));
+  strncpy(pTick->UpdateTime, pMarketData->UpdateTime, sizeof(pTick->UpdateTime));
+  pTick->UpdateMillisec = pMarketData->UpdateMillisec;
+  pTick->BidPrice1 = pMarketData->BidPrice;
+  pTick->BidVolume1 = pMarketData->BidVolume;
+  pTick->AskPrice1 = pMarketData->AskPrice;
+  pTick->AskVolume1 = pMarketData->AskVolume;
+  pTick->UpperLimitPrice = 0;
+  pTick->LowerLimitPrice = 0;
+  pTick->LastPrice = pMarketData->LastPrice;
+  gettimeofday(&tick->ReceiveTime, NULL);
+  pTick->Reserved = 0;
+  return 0;
 }
 
 extern int cffex_l2_state_load();
@@ -332,9 +341,10 @@ int md_package_id_cffex_l2()
   return (int)offsetof(cffex_l2_t, InstrumentID);
 }
 
-int md_package_fill_cffex_l2(trader_tick* tick, void* obj)
+int md_package_fill_cffex_l2(void* tick, void* obj)
 {
   cffex_l2_t* pMarketData = (cffex_l2_t*)obj;
+  trader_tick* pTick = (trader_tick*)tick;
   
   cffex_l2_state_init((void*)&pMarketData->OpenPrice, (void*)&pMarketData->Val2433[0]);
 
@@ -348,18 +358,19 @@ int md_package_fill_cffex_l2(trader_tick* tick, void* obj)
   cffex_l2_data_t* price = (cffex_l2_data_t*)pMarketData->Val2434;
   cffex_l2_data_t* price2 = (cffex_l2_data_t*)pMarketData->Val2433;
   
-  strncpy(tick->InstrumentID, (char*)pMarketData->InstrumentID, sizeof(tick->InstrumentID));
-  strncpy(tick->TradingDay, cffex_l2_state_date(), sizeof(tick->TradingDay));
-  strncpy(tick->UpdateTime, (char*)pMarketData->UpdateTime, sizeof(tick->UpdateTime));
-  tick->UpdateMillisec = conv_int(pMarketData->UpdateMillisec);
-  tick->BidPrice1 = conv_double(price->BidPrice1);
-  tick->BidVolume1 = conv_int(price->BidVolume1);
-  tick->AskPrice1 = conv_double(price->AskPrice1);
-  tick->AskVolume1 = conv_int(price->AskVolume1);
-  tick->UpperLimitPrice = conv_double(pMarketData->UpperLimitPrice);
-  tick->LowerLimitPrice = conv_double(pMarketData->LowerLimitPrice);
-  tick->LastPrice = conv_double(price2->BidPrice1);
-  tick->Reserved = 0;
+  strncpy(pTick->InstrumentID, (char*)pMarketData->InstrumentID, sizeof(pTick->InstrumentID));
+  strncpy(pTick->TradingDay, cffex_l2_state_date(), sizeof(pTick->TradingDay));
+  strncpy(pTick->UpdateTime, (char*)pMarketData->UpdateTime, sizeof(pTick->UpdateTime));
+  pTick->UpdateMillisec = conv_int(pMarketData->UpdateMillisec);
+  pTick->BidPrice1 = conv_double(price->BidPrice1);
+  pTick->BidVolume1 = conv_int(price->BidVolume1);
+  pTick->AskPrice1 = conv_double(price->AskPrice1);
+  pTick->AskVolume1 = conv_int(price->AskVolume1);
+  pTick->UpperLimitPrice = conv_double(pMarketData->UpperLimitPrice);
+  pTick->LowerLimitPrice = conv_double(pMarketData->LowerLimitPrice);
+  pTick->LastPrice = conv_double(price2->BidPrice1);
+  gettimeofday(&tick->ReceiveTime, NULL);
+  pTick->Reserved = 0;
   
   return 0;
 }

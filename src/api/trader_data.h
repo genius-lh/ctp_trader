@@ -69,6 +69,8 @@ struct trader_tick_def {
 	double	LowerLimitPrice;
 	///最新价
 	double	LastPrice;
+  ///到达时间
+  struct timeval ReceiveTime;
   ///保留字段
   long Reserved;
 };

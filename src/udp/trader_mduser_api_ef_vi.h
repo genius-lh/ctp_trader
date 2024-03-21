@@ -5,13 +5,11 @@
 extern "C" {
 #endif
 
-#include "trader_data.h"
-
 typedef struct trader_mduser_api_ef_vi_ops_def trader_mduser_api_ef_vi_ops;
 struct trader_mduser_api_ef_vi_ops_def{
   int m_md_size;
   int m_md_id_pos;
-  int (*md_fill)(trader_tick* tick, void* obj);
+  int (*md_fill)(void* tick, void* obj);
 };
 
 extern void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type);

@@ -1,5 +1,4 @@
 #include "efvi_receive_depend.h"
-#include "trader_ipdata_dump.h"
 
 static int sl_parse(ef_filter_spec* fs, const char* ip,  unsigned short port);
 static struct pkt_buf* pkt_buf_from_id(struct resources* res, int pkt_buf_i);
@@ -77,7 +76,6 @@ bool init_resources(struct resources* res, const char* eth_name, const char* ip,
   res->normal_count = 0;
   res->discard_count = 0;
   res->multi_count = 0;
-  res->dump_instance = (void*)NULL;
 
 /*
   trader_ipdata_dump* dump_instance = trader_ipdata_dump_new();
@@ -109,7 +107,6 @@ bool init_resources(struct resources* res, const char* eth_name, const char* ip,
 
 int poll_resources(struct resources* res)
 {
-  trader_ipdata_dump* dump_instance = (trader_ipdata_dump*)res->dump_instance;
   ef_event evs[32];
   //ef_request_id ids[EF_VI_RECEIVE_BATCH];
   int i, n_ev;
@@ -144,9 +141,6 @@ int poll_resources(struct resources* res)
     refill_rx_ring(res);   
   }else{
     // Ð´Èë´ÅÅÌ
-    if(dump_instance){
-      dump_instance->method->xFlush(dump_instance);
-    }
   }
   return n_ev;
 }
@@ -243,12 +237,6 @@ void handle_rx(struct resources* res, int pkt_buf_i, int len)
 	const char*	ptr_udp		= ptr + net_header_len;
 	int	remain_len			= udp_len;
   int read_len;
-
-  // Ð´Èë´ÅÅÌ
-  trader_ipdata_dump* dump_instance = (trader_ipdata_dump*)res->dump_instance;
-  if(dump_instance){
-    dump_instance->method->xAdd(dump_instance, ptr_udp);
-  }
   
   if(res->read){
   	for (; remain_len > 0;)

@@ -139,6 +139,8 @@ void trader_mduser_api_on_rtn_depth_market_data(trader_mduser_api* self, trader_
   oEvent.Type = MDUSERONRTNDEPTHMARKETDATA;
   oEvent.ErrorCd = 0;
   oEvent.ErrorMsg[0] = '\0';
+  
+  gettimeofday(&tick->ReceiveTime, NULL);
   memcpy(&oEvent.Tick, tick, sizeof(trader_tick));
 
   cmn_util_evbuffer_send(self->fd, (unsigned char*)&oEvent, sizeof(oEvent));
