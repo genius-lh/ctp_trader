@@ -393,7 +393,7 @@ traderMduserRem_CFLAGS=-DREM\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserRem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserRem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -lremmduser -ltradercmn -lmduserapi\
 	-Lrem -lremmduser -lEESQuoteApi
 
@@ -464,7 +464,7 @@ traderMduserEfviRem_CFLAGS=-DEFVI -DREM_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserEfviRem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserEfviRem_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -lefvimduser -ltraderutils -ltradercmn -lmduserapi \
 	-Letherfabric -lciul1 \
 	-Lrem -lremmduser -lEESQuoteApi
