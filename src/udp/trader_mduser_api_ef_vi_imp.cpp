@@ -204,7 +204,7 @@ int md_package_fill_dzfut(void* tick, void* obj)
   pTick->UpperLimitPrice = 0;
   pTick->LowerLimitPrice = 0;
   pTick->LastPrice = pMarketData->LastPrice;
-  gettimeofday(&tick->ReceiveTime, NULL);
+  gettimeofday(&pTick->ReceiveTime, NULL);
   pTick->Reserved = (long)pMarketData->ChangeNo;
   return 0;
 }
@@ -238,7 +238,7 @@ int md_package_fill_efh32_l1(void* tick, void* obj)
   pTick->UpperLimitPrice = 0;
   pTick->LowerLimitPrice = 0;
   pTick->LastPrice = pMarketData->m_last_px;
-  gettimeofday(&tick->ReceiveTime, NULL);
+  gettimeofday(&pTick->ReceiveTime, NULL);
   pTick->Reserved = pMarketData->m_sequence;
   return 0;
 }
@@ -268,7 +268,7 @@ int md_package_fill_efh30_l1(void* tick, void* obj)
   pTick->UpperLimitPrice = 0;
   pTick->LowerLimitPrice = 0;
   pTick->LastPrice = pMarketData->m_last_px;
-  gettimeofday(&tick->ReceiveTime, NULL);
+  gettimeofday(&pTick->ReceiveTime, NULL);
   pTick->Reserved = pMarketData->m_sequence;
   return 0;
 }
@@ -299,7 +299,7 @@ int md_package_fill_xqn_l1(void* tick, void* obj)
   pTick->UpperLimitPrice = 0;
   pTick->LowerLimitPrice = 0;
   pTick->LastPrice = pMarketData->LastPrice;
-  gettimeofday(&tick->ReceiveTime, NULL);
+  gettimeofday(&pTick->ReceiveTime, NULL);
   pTick->Reserved = 0;
   return 0;
 }
@@ -369,7 +369,7 @@ int md_package_fill_cffex_l2(void* tick, void* obj)
   pTick->UpperLimitPrice = conv_double(pMarketData->UpperLimitPrice);
   pTick->LowerLimitPrice = conv_double(pMarketData->LowerLimitPrice);
   pTick->LastPrice = conv_double(price2->BidPrice1);
-  gettimeofday(&tick->ReceiveTime, NULL);
+  gettimeofday(&pTick->ReceiveTime, NULL);
   pTick->Reserved = 0;
   
   return 0;

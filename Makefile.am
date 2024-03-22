@@ -131,19 +131,19 @@ libydtrader_so_CPPFLAGS=-std=c++11 -fPIC -Iyd -Ilibevent -Ilibevent/compat/sys -
 libydtrader_so_LDFLAGS=-shared -fPIC
 
 #libefvimduser.so
-libefvimduser_so_SOURCES=src/api/efvi_receive_depend.cpp \
-		src/api/cffex_unmask.cpp \
-		src/api/trader_mduser_api_ef_vi_imp.cpp \
+libefvimduser_so_SOURCES=src/efvi/efvi_receive_depend.cpp \
+		src/udp/cffex_unmask.cpp \
+		src/udp/trader_mduser_api_ef_vi_imp.cpp \
 		src/api/trader_mduser_api_ef_vi.cpp
-libefvimduser_so_CPPFLAGS=-fPIC -I. -Ietherfabric -Isrc/util -Ilibevent -Ilibevent/compat/sys
+libefvimduser_so_CPPFLAGS=-fPIC -I. -Ietherfabric -Isrc/util -Isrc/api -Isrc/udp -Isrc/efvi -Ilibevent -Ilibevent/compat/sys
 libefvimduser_so_LDFLAGS=-shared -fPIC
 
 #libudpmduser.so
 libudpmduser_so_SOURCES= \
-		src/api/cffex_unmask.cpp \
-		src/api/trader_mduser_api_ef_vi_imp.cpp \
+		src/udp/cffex_unmask.cpp \
+		src/udp/trader_mduser_api_ef_vi_imp.cpp \
 		src/api/trader_mduser_api_udp.cpp
-libudpmduser_so_CPPFLAGS=-fPIC -I. -Isrc/util -Ilibevent -Ilibevent/compat/sys
+libudpmduser_so_CPPFLAGS=-fPIC -I. -Isrc/util -Isrc/api -Isrc/udp -Ilibevent -Ilibevent/compat/sys
 libudpmduser_so_LDFLAGS=-shared -fPIC
 
 # exec
@@ -221,7 +221,7 @@ traderStrategyCtp66_CFLAGS=-DCTP -Isrc/api \
         -Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
 traderStrategyCtp66_LDADD=\
-        -lc -lstdc++ -lm -lpthread -lresolv -ldl\
+        -lc -lstdc++ -lm -lpthread -lresolv -ldl -lrt\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
         -Lctp6.6 -lctptrader66 -lthosttraderapi_se
@@ -261,7 +261,7 @@ traderStrategyCtpMini_CFLAGS=-DCTP -Isrc/api \
         -Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
 traderStrategyCtpMini_LDADD=\
-        -lc -lstdc++ -lm -lpthread -lresolv -ldl\
+        -lc -lstdc++ -lm -lpthread -lresolv -ldl -lrt\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
         -Lctpmini -lctpminitrader -lthosttraderapi
@@ -301,7 +301,7 @@ traderStrategyCtpMini15_CFLAGS=-DCTP -Isrc/api \
         -Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
 traderStrategyCtpMini15_LDADD=\
-        -lc -lstdc++ -lm -lpthread -lresolv -ldl\
+        -lc -lstdc++ -lm -lpthread -lresolv -ldl -lrt\
         -Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
         -L. -ltradercmn -ltraderapi\
         -Lctpmini1.5.9 -lctpminitrader15 -lthosttraderapi
@@ -341,7 +341,7 @@ traderStrategyFemas_CFLAGS=-DFEMAS -Isrc/api \
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
 traderStrategyFemas_LDADD=\
-	-lc -lstdc++ -lm -lpthread -lresolv -ldl\
+	-lc -lstdc++ -lm -lpthread -lresolv -ldl -lrt\
 	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
 	-L. -ltradercmn -ltraderapi\
 	-Lfemas -lfemastrader -lUSTPtraderapi
@@ -421,7 +421,7 @@ traderStrategyRem_CFLAGS=-DREM -Isrc/api \
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
 traderStrategyRem_LDADD=\
-	-lc -lstdc++ -lm -lpthread -lresolv -ldl\
+	-lc -lstdc++ -lm -lpthread -lresolv -ldl -lrt\
 	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
 	-L. -ltradercmn -ltraderapi\
 	-Lrem -lremtrader -lEESTraderApi
@@ -448,7 +448,7 @@ traderStrategyYd_CFLAGS=-DYD -Isrc/api \
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys -Isqlite3
 
 traderStrategyYd_LDADD=\
-	-lc -lstdc++ -lm -lpthread -lresolv -ldl\
+	-lc -lstdc++ -lm -lpthread -lresolv -ldl -lrt\
 	-Llibevent -Lhiredis -lhiredis -levent_core -Lsqlite3 -lsqlite3\
 	-L. -ltradercmn -ltraderapi\
 	-Lyd -lydtrader -lyd
@@ -518,7 +518,7 @@ traderMduserUdpCtp66_CFLAGS=-DUDP -DCTP_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserUdpCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserUdpCtp66_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -ludpmduser -ltraderutils -ltradercmn -lmduserapi \
     -Lctp6.6 -lctpmduser66 -lthostmduserapi_se
 
@@ -530,7 +530,7 @@ traderMduserUdpFemasAF_CFLAGS=-DUDP -DFEMAS_AF_BACKUP\
 	-Isrc/svc -Isrc/api -Isrc/util -Isrc/cfg -Isrc/log\
 	-Ihiredis -Ilibevent -Ilibevent/compat/sys 
 
-traderMduserUdpFemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl \
+traderMduserUdpFemasAF_LDADD=-Llibevent -Lhiredis -lhiredis -levent_core -ldl -lrt\
 	-L. -ludpmduser -ltraderutils -ltradercmn -lmduserapi \
 	-Lfemas20 -lfemasmduser_af -lUSTPmduserapiAF
 

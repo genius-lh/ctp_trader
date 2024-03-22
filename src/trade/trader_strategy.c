@@ -257,6 +257,8 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   if(ret){
     return 0;
   }
+  
+  trader_strategy_on_check_closing(self, tick_data);
 
   // 待成交队列处理
   trader_strategy_tick_not_finished(self);
@@ -1971,9 +1973,6 @@ int trader_strategy_on_check_closing(trader_strategy* self, trader_tick* tick_da
   if(needClosing){
     self->used = 0;
   }
-
-  // 待成交队列处理
-  trader_strategy_tick_not_finished(self);
 
   return 1;
 }
