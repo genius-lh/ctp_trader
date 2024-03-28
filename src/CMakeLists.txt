@@ -21,6 +21,10 @@ if(NOT DEFINED ENV{HIREDIS_HOME})
 message(SEND_ERROR "not set ENV HIREDIS_HOME")
 endif()
 
+if(NOT DEFINED ENV{SQLITE3_HOME})
+message(SEND_ERROR "not set ENV SQLITE3_HOME")
+endif()
+
 if(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_BUILD_TYPE DEBUG)
 endif()
@@ -42,3 +46,12 @@ add_subdirectory(udp)
 add_subdirectory(efvi)
 
 add_subdirectory(proxy)
+
+add_subdirectory(api)
+
+add_subdirectory(trade)
+
+add_subdirectory(client)
+
+add_subdirectory(daemon)
+

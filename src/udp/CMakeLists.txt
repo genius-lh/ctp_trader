@@ -13,5 +13,5 @@ ${CMAKE_CURRENT_SOURCE_DIR}/../cfg
 ${CMAKE_CURRENT_SOURCE_DIR}/../util
 ${CMAKE_CURRENT_SOURCE_DIR}/../api
 )
-target_link_libraries(mduserUdpStruct traderutils tradercfg traderlogclt)
+target_link_libraries(mduserUdpStruct traderCmnUtils traderCmnLog traderCmnLog)
 

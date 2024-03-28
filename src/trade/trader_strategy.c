@@ -144,6 +144,7 @@ int trader_strategy_init(trader_strategy* self)
   strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_BUY, &self->pBuyPosition);  
   strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_SELL, &self->pSellPosition);
 
+  self->TickGapMsec = 10;
   self->isGood = 1;
   
   return 0;
