@@ -213,39 +213,40 @@ extern int md_package_fill_dzqh_zbp05(void* tick, void* obj);
 
 typedef struct __attribute__((__packed__)) 
 {
-	unsigned char 	Flag;					//协议标志
-	char 			TypeID;					//协议版本
-	unsigned short  Length;					//包长度
-	int 			PacketNo;				//全0
-	unsigned int	ChangeNo;				//增量编号
-	short			InstrumentNo;			//合约编码
-	char			InstrumentID[10];		//合约
-	unsigned int	UpdateTime;				//最后更新时间(秒)
-	unsigned short	UpdateMillisec;			//最后更新时间(毫秒)
-	int				Volume;
-	int				OpenInterest;
-	int				BidVolume1;
-	int				BidVolume2;
-	int				BidVolume3;
-	int				BidVolume4;
-	int				BidVolume5;
-	int				AskVolume1;
-	int				AskVolume2;
-	int				AskVolume3;
-	int				AskVolume4;
-	int				AskVolume5;
-	double			LastPrice;
-	double			BidPrice1;
-	double			BidPrice2;
-	double			BidPrice3;
-	double			BidPrice4;
-	double			BidPrice5;
-	double			AskPrice1;
-	double			AskPrice2;
-	double			AskPrice3;
-	double			AskPrice4;
-	double			AskPrice5;
-	double			Turnover;
+	unsigned char   Flag;                                   //协议标志
+	char                    TypeID;                                 //协议版本
+	unsigned short  Length;                                 //包长度
+	char                    InstrumentID[15];               //合约
+	char                    UpdateTime[9];                  //最后更新时间(秒)
+	unsigned int    UpdateMillisec;                 //最后更新时间(毫秒)
+	double                  LastPrice;
+	int                             Volume;
+	double                  Turnover;
+	double                  OpenInterest;
+	double                  BidPrice1;
+	int                             BidVolume1;
+	double                  AskPrice1;
+	int                             AskVolume1;
+	double                  BidPrice2;
+	int                             BidVolume2;
+	double                  BidPrice3;
+	int                             BidVolume3;
+	double                  AskPrice2;
+	int                             AskVolume2;
+	double                  AskPrice3;
+	int                             AskVolume3;
+	double                  BidPrice4;
+	int                             BidVolume4;
+	double                  BidPrice5;
+	int                             BidVolume5;
+	double                  AskPrice4;
+	int                             AskVolume4;
+	double                  AskPrice5;
+	int                             AskVolume5;
+	double                  RiseLimit;
+	double                  FallLimit;
+	double                  HighPrice;
+	double                  LowPrice;
 }dzqh_zbp06_md_t;
 
 extern int md_package_size_dzqh_zbp06();
@@ -381,7 +382,7 @@ int md_package_fill_xqn_l1(void* tick, void* obj)
   pTick->LowerLimitPrice = 0;
   pTick->LastPrice = pMarketData->LastPrice;
   gettimeofday(&pTick->ReceiveTime, NULL);
-  pTick->Reserved = 0;
+  pTick->Reserved = 1;
   return 0;
 }
 
@@ -451,7 +452,7 @@ int md_package_fill_cffex_l2(void* tick, void* obj)
   pTick->LowerLimitPrice = conv_double(pMarketData->LowerLimitPrice);
   pTick->LastPrice = conv_double(price2->BidPrice1);
   gettimeofday(&pTick->ReceiveTime, NULL);
-  pTick->Reserved = 0;
+  pTick->Reserved = 1;
   
   return 0;
 }
@@ -504,13 +505,10 @@ int md_package_fill_dzqh_zbp06(void* tick, void* obj)
 {
   dzqh_zbp06_md_t* pMarketData = (dzqh_zbp06_md_t*)obj;
   trader_tick* pTick = (trader_tick*)tick;
-  struct tm now;
-  time_t current = (time_t)pMarketData->UpdateTime;
-  localtime_r(&current, &now);    
 
   strcpy(pTick->InstrumentID, (char*)pMarketData->InstrumentID);
-  snprintf(pTick->TradingDay, sizeof(pTick->TradingDay), "%04d%02d%02d", now.tm_year+1900, now.tm_mon+1, now.tm_mday);
-  snprintf(pTick->UpdateTime, sizeof(pTick->UpdateTime), "%02d:%02d:%02d", now.tm_hour, now.tm_min, now.tm_sec);
+  strncpy(pTick->TradingDay, "20230101", sizeof(pTick->TradingDay));
+  strncpy(pTick->UpdateTime, (char*)pMarketData->UpdateTime, sizeof(pTick->UpdateTime));
   pTick->UpdateMillisec = pMarketData->UpdateMillisec;
   pTick->BidPrice1 = pMarketData->BidPrice1;
   pTick->BidVolume1 = pMarketData->BidVolume1;
@@ -520,7 +518,7 @@ int md_package_fill_dzqh_zbp06(void* tick, void* obj)
   pTick->LowerLimitPrice = 0;
   pTick->LastPrice = pMarketData->LastPrice;
   gettimeofday(&pTick->ReceiveTime, NULL);
-  pTick->Reserved = (long)pMarketData->ChangeNo;
+  pTick->Reserved = 1;
   return 0;
 }
 
