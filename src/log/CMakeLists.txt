@@ -7,8 +7,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cmn_log.c
 add_library(traderCmnLog STATIC ${CMN_LOG_SOURCES})
 
 target_include_directories(traderCmnLog PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../cfg
-${CMAKE_CURRENT_SOURCE_DIR}/../util
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
 )
 
 set(LOG_SVR_SOURCES
@@ -21,6 +21,6 @@ add_library(traderLogSvr STATIC ${LOG_SVR_SOURCES})
 
 target_include_directories(traderLogSvr PUBLIC
 $ENV{LIBEVENT_HOME}/include
-${CMAKE_CURRENT_SOURCE_DIR}/../cfg
-${CMAKE_CURRENT_SOURCE_DIR}/../util
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
 )

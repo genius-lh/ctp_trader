@@ -4,11 +4,13 @@ ${CMAKE_CURRENT_SOURCE_DIR}/trader_daemon.c
 ${CMAKE_CURRENT_SOURCE_DIR}/trader_svr.c
 )
 
-add_executable(traderStrategyCtp ${TRADER_DAEMON_SOURCES})
-target_compile_definitions(traderStrategyCtp PUBLIC CTP)
-target_include_directories(traderStrategyCtp PUBLIC
+add_executable(traderStrategyCtpMini ${TRADER_DAEMON_SOURCES})
+target_compile_definitions(traderStrategyCtpMini PUBLIC CTP)
+target_link_directories(traderStrategyCtpMini PUBLIC
+$ENV{SQLITE3_HOME}/lib
+${EXTERN_API_PATH}/ctpmini
 )
-target_link_libraries(traderStrategyCtp 
+target_link_libraries(traderStrategyCtpMini 
 traderClientAud
 traderStrategy
 traderLogSvr
@@ -16,7 +18,7 @@ traderCmnUtils
 traderCmnCfg
 traderCmnLog
 traderapi
-ctptrader66
+ctpminitrader
 pthread
 resolv
 rt
@@ -24,12 +26,31 @@ dl
 event
 hiredis
 sqlite3
-thosttraderapi_se
-)
-target_link_directories(traderStrategyCtp PUBLIC
-$ENV{HIREDIS_HOME}
-$ENV{SQLITE3_HOME}/lib
-${CMAKE_CURRENT_SOURCE_DIR}/../../ctp6.6
+thosttraderapi
 )
 
+add_executable(traderStrategyRem ${TRADER_DAEMON_SOURCES})
+target_compile_definitions(traderStrategyRem PUBLIC REM)
+target_link_directories(traderStrategyRem PUBLIC
+$ENV{SQLITE3_HOME}/lib
+${EXTERN_API_PATH}/rem
+)
+target_link_libraries(traderStrategyRem 
+traderClientAud
+traderStrategy
+traderLogSvr
+traderCmnUtils
+traderCmnCfg
+traderCmnLog
+traderapi
+remtrader
+pthread
+resolv
+rt
+dl
+event
+hiredis
+sqlite3
+EESTraderApi
+)
 

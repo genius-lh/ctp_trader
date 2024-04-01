@@ -29,11 +29,19 @@ if(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_BUILD_TYPE DEBUG)
 endif()
 
+include_directories(
+$ENV{HIREDIS_HOME}
+$ENV{LIBEVENT_HOME}/include
+)
+
 link_directories(
 $ENV{HIREDIS_HOME}
 $ENV{LIBEVENT_HOME}/lib
+$ENV{SQLITE3_HOME}/lib
 ${CMAKE_CURRENT_BINARY_DIR}/lib
 )
+
+set(EXTERN_API_PATH ${PROJECT_SOURCE_DIR}/..)
 
 add_subdirectory(util)
 
@@ -54,4 +62,6 @@ add_subdirectory(trade)
 add_subdirectory(client)
 
 add_subdirectory(daemon)
+
+add_subdirectory(svc)
 

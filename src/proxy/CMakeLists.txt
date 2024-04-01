@@ -23,64 +23,64 @@ add_library(mduserProxyUtil SHARED ${MDUSER_PROXY_UTILS_SOURCES})
 target_include_directories(mduserProxyUtil PUBLIC
 $ENV{HIREDIS_HOME}
 $ENV{LIBEVENT_HOME}/include
-${CMAKE_CURRENT_SOURCE_DIR}/../log
-${CMAKE_CURRENT_SOURCE_DIR}/../cfg
-${CMAKE_CURRENT_SOURCE_DIR}/../util
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
 )
 target_link_libraries(mduserProxyUtil traderCmnUtils traderCmnCfg traderCmnLog)
 
 add_executable(mduserProxyCtp ${MDUSER_PROXY_CTP_SOURCES})
 target_include_directories(mduserProxyCtp PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../ctp6.6
+${EXTERN_API_PATH}/ctp6.6
 )
 target_link_libraries(mduserProxyCtp mduserProxyUtil pthread rt event hiredis thostmduserapi_se)
 target_link_directories(mduserProxyCtp PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../ctp6.6
+${EXTERN_API_PATH}/ctp6.6
 )
 
 add_executable(mduserProxyEfvi ${MDUSER_PROXY_EFVI_SOURCES})
 target_include_directories(mduserProxyEfvi PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../udp
-${CMAKE_CURRENT_SOURCE_DIR}/../efvi
+${PROJECT_SOURCE_DIR}/udp
+${PROJECT_SOURCE_DIR}/efvi
 )
 target_link_libraries(mduserProxyEfvi mduserProxyUtil mduserUdpStruct mduserEfviReceive pthread rt event hiredis)
 
 add_executable(mduserProxyRem ${MDUSER_PROXY_REM_SOURCES})
 target_include_directories(mduserProxyRem PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../rem
+${EXTERN_API_PATH}/rem
 )
 target_link_libraries(mduserProxyRem mduserProxyUtil pthread rt event hiredis EESQuoteApi)
 target_link_directories(mduserProxyRem PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../rem
+${EXTERN_API_PATH}/rem
 )
 
 add_executable(mduserProxyCtpSop ${MDUSER_PROXY_CTP_SOURCES})
 target_compile_definitions(mduserProxyCtpSop PUBLIC CTP_SOPT)
 target_include_directories(mduserProxyCtpSop PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../ctpsop
+${EXTERN_API_PATH}/ctpsop
 )
 target_link_libraries(mduserProxyCtpSop mduserProxyUtil pthread rt event hiredis soptthostmduserapi_se)
 target_link_directories(mduserProxyCtpSop PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../ctpsop
+${EXTERN_API_PATH}/ctpsop
 )
 
 add_executable(mduserProxyCtpMini ${MDUSER_PROXY_CTP_SOURCES})
 target_include_directories(mduserProxyCtpMini PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../ctpmini
+${EXTERN_API_PATH}/ctpmini
 )
 target_link_libraries(mduserProxyCtpMini mduserProxyUtil pthread rt event hiredis thostmduserapi)
 target_link_directories(mduserProxyCtpMini PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../ctpmini
+${EXTERN_API_PATH}/ctpmini
 )
 
 add_executable(mduserProxyExanic ${MDUSER_PROXY_EXANIC_SOURCES})
 target_include_directories(mduserProxyExanic PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../udp
-${CMAKE_CURRENT_SOURCE_DIR}/../../exanic
+${PROJECT_SOURCE_DIR}/udp
+${EXTERN_API_PATH}/exanic
 )
 target_link_libraries(mduserProxyExanic mduserProxyUtil mduserUdpStruct exanic pthread rt event hiredis)
 target_link_directories(mduserProxyExanic PUBLIC
-${CMAKE_CURRENT_SOURCE_DIR}/../../exanic
+${EXTERN_API_PATH}/exanic
 )
 
 

@@ -13,10 +13,8 @@ add_library(traderStrategy STATIC ${TRADER_STRATEGY_SOURCES})
 
 target_include_directories(traderStrategy PUBLIC
 $ENV{SQLITE3_HOME}/include
-$ENV{LIBEVENT_HOME}/include
-$ENV{HIREDIS_HOME}
-${CMAKE_CURRENT_SOURCE_DIR}/../cfg
-${CMAKE_CURRENT_SOURCE_DIR}/../util
-${CMAKE_CURRENT_SOURCE_DIR}/../log
-${CMAKE_CURRENT_SOURCE_DIR}/../api
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/api
 )
