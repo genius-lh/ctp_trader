@@ -54,7 +54,7 @@ static void* trader_mduser_proxy_exanic_thread(void* arg)
 TraderMduserProxyExanicHandler::TraderMduserProxyExanicHandler(TraderMduserProxyUtil* util)
   :pProxyUtil(util)
 {
-
+  init();
 }
 
 TraderMduserProxyExanicHandler::~TraderMduserProxyExanicHandler()

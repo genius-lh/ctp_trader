@@ -45,6 +45,13 @@ ${PROJECT_SOURCE_DIR}/efvi
 )
 target_link_libraries(mduserProxyEfvi mduserProxyUtil mduserUdpStruct mduserEfviReceive pthread rt event hiredis)
 
+add_executable(mduserProxyEfvi2 ${MDUSER_PROXY_EFVI_SOURCES})
+target_include_directories(mduserProxyEfvi2 PUBLIC
+${PROJECT_SOURCE_DIR}/udp
+${PROJECT_SOURCE_DIR}/efvi
+)
+target_link_libraries(mduserProxyEfvi2 mduserProxyUtil mduserUdpStruct mduserEfviReceive2 pthread rt event hiredis)
+
 add_executable(mduserProxyRem ${MDUSER_PROXY_REM_SOURCES})
 target_include_directories(mduserProxyRem PUBLIC
 ${EXTERN_API_PATH}/rem

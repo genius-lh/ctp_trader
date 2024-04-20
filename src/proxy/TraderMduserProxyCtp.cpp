@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 TraderMduserProxyCtpHandler::TraderMduserProxyCtpHandler(TraderMduserProxyUtil* util)
   :pProxyUtil(util)
 {
-
+  init();
 }
 
 TraderMduserProxyCtpHandler::~TraderMduserProxyCtpHandler()

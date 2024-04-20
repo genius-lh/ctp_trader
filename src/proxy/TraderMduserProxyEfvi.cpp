@@ -59,7 +59,7 @@ int trader_mduser_proxy_ef_vi_read(void* arg, const char* data, int size)
 TraderMduserProxyEfviHandler::TraderMduserProxyEfviHandler(TraderMduserProxyUtil* util)
   :pProxyUtil(util)
 {
-
+  init();
 }
 
 TraderMduserProxyEfviHandler::~TraderMduserProxyEfviHandler()
