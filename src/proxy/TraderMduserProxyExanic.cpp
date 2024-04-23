@@ -170,7 +170,10 @@ int TraderMduserProxyExanicHandler::OnRecvMessage(char* data, int size)
   
   m_Ops.md_fill(pTick, data);
   
-  pProxyUtil->sendData((void*)&oEvent, sizeof(oEvent));
+  int ret = pProxyUtil->sendData((void*)&oEvent, sizeof(oEvent));
+  if(ret < 0){
+    fprintf(stderr, "pProxyUtil->sendData: %d\n", ret);
+  }
   return md_size;
 }
 

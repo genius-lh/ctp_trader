@@ -339,7 +339,7 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
 
   self->mqueueContext = NULL;
   if(self->mqueueName[0]){
-    mqueue_async_context* c = mqueue_async_context_open(self->mqueueName, 1000, 512);
+    mqueue_async_context* c = mqueue_async_context_open(self->mqueueName, 2000, 512);
     CMN_ASSERT(c);
     self->mqueueContext = c;
     

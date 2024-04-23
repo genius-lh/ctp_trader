@@ -52,8 +52,8 @@ static void* trader_mduser_proxy_ef_vi_thread(void* arg)
 int trader_mduser_proxy_ef_vi_read(void* arg, const char* data, int size)
 {
   TraderMduserProxyEfviHandler* self = (TraderMduserProxyEfviHandler*)arg;
-  self->OnRecvMessage(data, size);
-  return 0;
+  int ret = self->OnRecvMessage(data, size);
+  return ret;
 }
 
 TraderMduserProxyEfviHandler::TraderMduserProxyEfviHandler(TraderMduserProxyUtil* util)
