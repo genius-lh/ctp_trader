@@ -902,19 +902,33 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     }
     break;
   case TRADERONRTNORDER:
-    CMN_INFO("订单变化!\n");
-    CMN_INFO("pOrder->ExchangeID[%s]\n", pOrder->ExchangeID);
-    CMN_INFO("pOrder->OrderSysID[%s]\n", pOrder->OrderSysID);
-    CMN_INFO("pOrder->InstrumentID[%s]\n", pOrder->InstrumentID);
-    CMN_INFO("pOrder->UserOrderLocalID[%s]\n", pOrder->UserOrderLocalID);
-    CMN_INFO("pOrder->Direction[%c]\n", pOrder->Direction);
-    CMN_INFO("pOrder->OffsetFlag[%c]\n", pOrder->OffsetFlag);
-    CMN_INFO("pOrder->HedgeFlag[%c]\n", pOrder->HedgeFlag);
-    CMN_INFO("pOrder->LimitPrice[%lf]\n", pOrder->LimitPrice);
-    CMN_INFO("pOrder->VolumeOriginal[%d]\n", pOrder->VolumeOriginal);
-    CMN_INFO("pOrder->VolumeTraded[%d]\n", pOrder->VolumeTraded);
-    CMN_INFO("pOrder->OrderStatus[%c]\n", pOrder->OrderStatus);
-    CMN_INFO("pOrder->InsertTime[%s]\n", pOrder->InsertTime);
+    CMN_INFO("报单回报!\n"
+      "pOrder->ExchangeID[%s]\n"
+      "pOrder->OrderSysID[%s]\n"
+      "pOrder->InstrumentID[%s]\n"
+      "pOrder->UserOrderLocalID[%s]\n"
+      "pOrder->Direction[%c]\n"
+      "pOrder->OffsetFlag[%c]\n"
+      "pOrder->HedgeFlag[%c]\n"
+      "pOrder->LimitPrice[%lf]\n"
+      "pOrder->VolumeOriginal[%d]\n"
+      "pOrder->VolumeTraded[%d]\n"
+      "pOrder->OrderStatus[%c]\n"
+      "pOrder->InsertTime[%s]\n"
+      , pOrder->ExchangeID
+      , pOrder->OrderSysID
+      , pOrder->InstrumentID
+      , pOrder->UserOrderLocalID
+      , pOrder->Direction
+      , pOrder->OffsetFlag
+      , pOrder->HedgeFlag
+      , pOrder->LimitPrice
+      , pOrder->VolumeOriginal
+      , pOrder->VolumeTraded
+      , pOrder->OrderStatus
+      , pOrder->InsertTime
+    );
+    
 
     // 更新撤单笔数
     if(TRADER_ORDER_OS_CANCELED == pOrder->OrderStatus){
@@ -925,16 +939,26 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     break;
   case TRADERONRTNTRADE:
     
-    CMN_INFO("成交回报!\n");
-    CMN_INFO("InstrumentID[%s]\n", pTrade->InstrumentID);
-    CMN_INFO("UserOrderLocalID[%s]\n", pTrade->UserOrderLocalID);
-    CMN_INFO("TradingDay[%s]\n", pTrade->TradingDay);
-    CMN_INFO("TradeTime[%s]\n", pTrade->TradeTime);
-    CMN_INFO("Direction[%c]\n", pTrade->Direction);
-    CMN_INFO("OffsetFlag[%c]\n", pTrade->OffsetFlag);
-    CMN_INFO("TradePrice[%lf]\n", pTrade->TradePrice);
-    CMN_INFO("TradeVolume[%d]\n", pTrade->TradeVolume);
-    CMN_INFO("TradeID[%s]\n", pTrade->TradeID);
+    CMN_INFO("成交回报!\n"
+      "InstrumentID[%s]\n"
+      "UserOrderLocalID[%s]\n"
+      "TradingDay[%s]\n"
+      "TradeTime[%s]\n"
+      "Direction[%c]\n"
+      "OffsetFlag[%c]\n"
+      "TradePrice[%lf]\n"
+      "TradeVolume[%d]\n"
+      "TradeID[%s]\n"
+      , pTrade->InstrumentID
+      , pTrade->UserOrderLocalID
+      , pTrade->TradingDay
+      , pTrade->TradeTime
+      , pTrade->Direction
+      , pTrade->OffsetFlag
+      , pTrade->TradePrice
+      , pTrade->TradeVolume
+      , pTrade->TradeID
+    );
 
     self->pStrategyEngine->pMethod->xUpdateTrade(self->pStrategyEngine, pTrade);
     break;

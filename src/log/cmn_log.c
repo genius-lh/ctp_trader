@@ -146,9 +146,12 @@ cmn_log_clt* cmn_log_clt_get()
 void cmn_log( cmn_log_clt* self, int aiLevel, const cmn_log_location_info* location, const char *aFormat, ...)
 {
   char buf[2000];
-  char sTime[14+1] = {0};
   va_list arglist;
   char buf1[2000];
+  
+  if(aiLevel > self->iSysPriority){
+    return ;
+  }
 
   va_start(arglist,aFormat);
   vsprintf(buf1,aFormat, arglist);

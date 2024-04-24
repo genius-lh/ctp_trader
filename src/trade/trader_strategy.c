@@ -1868,17 +1868,34 @@ int trader_strategy_print_tick(trader_strategy* self)
 {
   trader_tick* t1 = &self->oT1Tick;
   trader_tick* t2 = &self->oT2Tick;
-  CMN_INFO("InstrumentID[%s]\n", t1->InstrumentID);
-  CMN_INFO("BidPrice1[%lf]\n", t1->BidPrice1);
-  CMN_INFO("BidVolume1[%d]\n", t1->BidVolume1);
-  CMN_INFO("AskPrice1[%lf]\n", t1->AskPrice1);
-  CMN_INFO("AskVolume1[%d]\n", t1->AskVolume1);
-
-  CMN_INFO("InstrumentID[%s]\n", t2->InstrumentID);
-  CMN_INFO("BidPrice1[%lf]\n", t2->BidPrice1);
-  CMN_INFO("BidVolume1[%d]\n", t2->BidVolume1);
-  CMN_INFO("AskPrice1[%lf]\n", t2->AskPrice1);
-  CMN_INFO("AskVolume1[%d]\n", t2->AskVolume1);
+  CMN_INFO("Tick:\n"
+    "InstrumentID[%s]\n"
+    "BidPrice1[%lf]\n"
+    "BidVolume1[%d]\n"
+    "AskPrice1[%lf]\n"
+    "AskVolume1[%d]\n"
+    "ReceiveTime[%02ld.%06ld]\n"
+    "InstrumentID[%s]\n"
+    "BidPrice1[%lf]\n"
+    "BidVolume1[%d]\n"
+    "AskPrice1[%lf]\n"
+    "AskVolume1[%d]\n"
+    "ReceiveTime[%02ld.%06ld]\n"
+    , t1->InstrumentID
+    , t1->BidPrice1
+    , t1->BidVolume1
+    , t1->AskPrice1
+    , t1->AskVolume1
+    , t1->ReceiveTime.tv_sec % 60
+    , t1->ReceiveTime.tv_usec
+    , t2->InstrumentID
+    , t2->BidPrice1
+    , t2->BidVolume1
+    , t2->AskPrice1
+    , t2->AskVolume1
+    , t2->ReceiveTime.tv_sec % 60
+    , t2->ReceiveTime.tv_usec
+  );
 
   return 0;
 }
