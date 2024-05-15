@@ -31,6 +31,32 @@ event_core hiredis
 pthread rt event dl
 )
 
+add_executable(traderMduserCtp ${MDUSER_SVR_SOURCES})
+
+target_compile_definitions(traderMduserCtp PUBLIC CTP)
+
+target_include_directories(traderMduserCtp PUBLIC
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
+${PROJECT_SOURCE_DIR}/api
+${EXTERN_API_PATH}/ctp6.6
+)
+
+target_link_directories(traderMduserCtp PUBLIC
+${EXTERN_API_PATH}/ctp6.6
+)
+
+target_link_libraries(traderMduserCtp
+traderCmnUtils
+traderCmnLog
+traderCmnCfg
+mduserapi
+ctpmduser thostmduserapi_se
+event_core hiredis
+pthread rt event dl
+)
+
 add_executable(traderMduserRem ${MDUSER_SVR_SOURCES})
 
 target_compile_definitions(traderMduserRem PUBLIC REM)

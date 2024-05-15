@@ -19,6 +19,7 @@
 #include "glbProfile.h"
 
 #include "cmn_log.h"
+#include "cmn_util.h"
 
 #include "trader_tick_dict.h"
 
@@ -285,10 +286,17 @@ int trader_mduser_svr_init(trader_mduser_svr* self, int argc, char* argv[])
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_ADDR", argv[1], self->backupAddr);
   nRet = glbPflGetString("MDUSER_BACKUP", "MDUSER_WORKSPACE", argv[1], self->backupWorkspace);
   
+  nRet = glbPflGetString("RUN_CONFIG", "CPU_ID", argv[1], self->mqueueName);
+  if(nRet >= 0){
+    cmn_util_bind_cpu(atoi(self->mqueueName));
+    self->mqueueName[0] = '\0';
+  }
+
   nRet = glbPflGetString("RUN_CONFIG", "MQUEUE_NAME", argv[1], self->mqueueName);
   if(nRet < 0){
     self->mqueueName[0] = '\0';
   }
+
 
   // 各种初始化
   CMN_DEBUG("self->pBase\n");

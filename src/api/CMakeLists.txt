@@ -48,6 +48,18 @@ ${PROJECT_SOURCE_DIR}/cfg
 ${PROJECT_SOURCE_DIR}/util
 )
 
+add_library(ctpmduser SHARED ${MDUSER_API_CTP_SOURCES})
+
+target_compile_definitions(ctpmduser PUBLIC CTP)
+
+target_include_directories(ctpmduser PUBLIC
+${EXTERN_API_PATH}/ctp6.6
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
+)
+
+
 set(TRADER_API_REM_SOURCES
 ${CMAKE_CURRENT_SOURCE_DIR}/trader_trader_api_rem.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/RemTraderHandler.cpp
