@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <float.h>
 #include <limits.h>
+#include <pthread.h>
 
 #include "efvi_receive_depend.h"
 
@@ -83,6 +84,8 @@ void TraderMduserProxyEfviHandler::loop()
 void TraderMduserProxyEfviHandler::work()
 {
   int ev = 0;
+  
+	bind_cpu(m_CpuId, pthread_self());
 
   while(m_LoopFlag){
     ev = poll_resources(&m_Res);
@@ -98,11 +101,16 @@ void TraderMduserProxyEfviHandler::work()
 
 void TraderMduserProxyEfviHandler::init()
 {
+  char tmp[8];
+  
   // ¶ÁÈ¡²ÎÊý
   pProxyUtil->getCfgString("MDUSER_EFVI", "MDUSER_REMOTE_IP", m_RemoteIp, sizeof(m_RemoteIp));
   pProxyUtil->getCfgString("MDUSER_EFVI", "MDUSER_REMOTE_PORT", m_RemotePort, sizeof(m_RemotePort));
   pProxyUtil->getCfgString("MDUSER_EFVI", "MDUSER_ETH_NAME", m_EthName, sizeof(m_EthName));
   pProxyUtil->getCfgString("MDUSER_EFVI", "MDUSER_DATA_TYPE", m_DataType, sizeof(m_DataType));
+  pProxyUtil->getCfgString("MDUSER_EFVI", "CPU_ID", tmp, sizeof(tmp));
+  m_CpuId = atoi(tmp);
+  
   m_ThreadId = 0;
 
   trader_mduser_api_ef_vi_ops_init(&m_Ops, atoi(m_DataType));

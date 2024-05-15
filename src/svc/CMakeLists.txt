@@ -7,7 +7,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/trader_mduser_svr.c
 
 add_executable(traderMduserCtpMini ${MDUSER_SVR_SOURCES})
 
-target_compile_definitions(traderMduserCtpMini PUBLIC CTPMINI)
+target_compile_definitions(traderMduserCtpMini PUBLIC CTP)
 
 target_include_directories(traderMduserCtpMini PUBLIC
 ${PROJECT_SOURCE_DIR}/log

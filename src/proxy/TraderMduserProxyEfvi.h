@@ -21,6 +21,7 @@ private:
   char m_RemotePort[8];
   char m_EthName[32];
   char m_DataType[8];
+  int m_CpuId;
 
   int m_LoopFlag;
   pthread_t m_ThreadId;
