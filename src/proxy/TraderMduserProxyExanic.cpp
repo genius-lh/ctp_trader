@@ -10,6 +10,8 @@
 #include <exanic/fifo_rx.h>
 #include <time.h>
 
+#include "cmn_util.h"
+
 #include "TraderMduserProxyUtil.h"
 #include "TraderMduserProxyExanic.h"
 
@@ -52,7 +54,8 @@ static void* trader_mduser_proxy_exanic_thread(void* arg)
 
 
 TraderMduserProxyExanicHandler::TraderMduserProxyExanicHandler(TraderMduserProxyUtil* util)
-  :pProxyUtil(util)
+  :m_CpuId(-1)
+  , pProxyUtil(util)
 {
   init();
 }
@@ -97,6 +100,8 @@ void TraderMduserProxyExanicHandler::work()
   char buf[2048];
   exanic_cycles32_t timestamp;
   
+	cmn_util_bind_cpu(m_CpuId);
+  
   while (m_LoopFlag)
   {
     ssize_t sz = exanic_receive_frame(rx, buf, sizeof(buf), &timestamp);
@@ -114,9 +119,13 @@ void TraderMduserProxyExanicHandler::work()
 
 void TraderMduserProxyExanicHandler::init()
 {
+  char tmp[8];
+
   // ¶ÁÈ¡²ÎÊý
   pProxyUtil->getCfgString("MDUSER_EXANIC", "MDUSER_ETH_NAME", m_EthName, sizeof(m_EthName));
   pProxyUtil->getCfgString("MDUSER_EXANIC", "MDUSER_DATA_TYPE", m_DataType, sizeof(m_DataType));
+  pProxyUtil->getCfgString("MDUSER_EXANIC", "CPU_ID", tmp, sizeof(tmp));
+  m_CpuId = atoi(tmp);
   m_ThreadId = 0;
 
   trader_mduser_api_ef_vi_ops_init(&m_Ops, atoi(m_DataType));

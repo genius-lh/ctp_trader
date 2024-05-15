@@ -2,6 +2,10 @@
 #ifndef _CMN_UTIL_H_
 #define _CMN_UTIL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 #include <event2/listener.h>
@@ -51,7 +55,11 @@ struct cmn_util_map_method_def {
 extern cmn_util_map* cmn_util_map_new();
 extern void cmn_util_map_free(cmn_util_map* self);
 
+extern int cmn_util_bind_cpu(int cpu_id);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_CMN_UTIL_H_
 

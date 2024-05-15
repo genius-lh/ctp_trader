@@ -5,7 +5,8 @@
 #include <unistd.h>
 #include <float.h>
 #include <limits.h>
-#include <pthread.h>
+
+#include "cmn_util.h"
 
 #include "efvi_receive_depend.h"
 
@@ -58,7 +59,8 @@ int trader_mduser_proxy_ef_vi_read(void* arg, const char* data, int size)
 }
 
 TraderMduserProxyEfviHandler::TraderMduserProxyEfviHandler(TraderMduserProxyUtil* util)
-  :pProxyUtil(util)
+  :m_CpuId(-1)
+  , pProxyUtil(util)
 {
   init();
 }
@@ -85,7 +87,7 @@ void TraderMduserProxyEfviHandler::work()
 {
   int ev = 0;
   
-	bind_cpu(m_CpuId, pthread_self());
+	cmn_util_bind_cpu(m_CpuId);
 
   while(m_LoopFlag){
     ev = poll_resources(&m_Res);

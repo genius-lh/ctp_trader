@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdint.h>
+
 
 #include <time.h>
 #include <sys/time.h>
@@ -252,6 +254,49 @@ typedef struct __attribute__((__packed__))
 extern int md_package_size_dzqh_zbp06();
 extern int md_package_id_dzqh_zbp06();
 extern int md_package_fill_dzqh_zbp06(void* tick, void* obj);
+
+typedef struct __attribute__((__packed__)) 
+{
+	char msgId;               //消息ID	
+	char instrumentID[15];    //合约代码
+
+	double   bidPrice1;       //申买价一 
+	int32_t  bidVolume1;      //申买量一
+	double  bidPrice2;       //申买价二 
+	int32_t  bidVolume2;      //申买量二
+	double  bidPrice3;       //申买价三 
+	int32_t  bidVolume3;      //申买量三
+	double  bidPrice4;       //申买价四 
+	int32_t  bidVolume4;      //申买量四
+	double  bidPrice5;       //申买价五 
+	int32_t  bidVolume5;      //申买量五
+
+	double  askPrice1;       //申卖价一 
+	int32_t  askVolume1;      //申卖量一
+	double  askPrice2;       //申卖价二 
+	int32_t  askVolume2;      //申卖量二
+	double  askPrice3;       //申卖价三 
+	int32_t  askVolume3;      //申卖量三
+	double  askPrice4;       //申卖价四 
+	int32_t  askVolume4;      //申卖量四
+	double  askPrice5;       //申卖价五
+	int32_t  askVolume5;      //申卖量五
+
+	int32_t openInterest;     //持仓量
+	int32_t volume;           //合约数量
+	double turnover;         //成交额 
+	double lastPrice;        //最新价
+
+	double  priceTick;         //最小变动价格(如：bidPrice1*priceTick=真实的申买价)
+
+	uint32_t snapTime;        //当前主题行情快照的秒级时间(自1970年1月1日零时)
+	uint32_t snapMilisec;     //当前主题行情快照的毫秒级时间
+}hxqh_l1_md_t;
+
+extern int md_package_size_hxqh_l1();
+extern int md_package_id_hxqh_l1();
+extern int md_package_fill_hxqh_l1(void* tick, void* obj);
+
 
 #ifdef __cplusplus
 }
@@ -522,6 +567,42 @@ int md_package_fill_dzqh_zbp06(void* tick, void* obj)
   return 0;
 }
 
+int md_package_size_hxqh_l1()
+{
+  return (int)sizeof(hxqh_l1_md_t);
+}
+
+int md_package_id_hxqh_l1()
+{
+  return (int)offsetof(hxqh_l1_md_t, instrumentID);
+}
+
+int md_package_fill_hxqh_l1(void* tick, void* obj)
+{
+  hxqh_l1_md_t* pMarketData = (hxqh_l1_md_t*)obj;
+  trader_tick* pTick = (trader_tick*)tick;
+  
+  struct tm now;
+  time_t current = (time_t)pMarketData->snapTime;
+  localtime_r(&current, &now);    
+
+  strncpy(pTick->InstrumentID, (char*)pMarketData->instrumentID, sizeof(pTick->InstrumentID));
+  snprintf(pTick->TradingDay, sizeof(pTick->TradingDay), "%04d%02d%02d", now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+  snprintf(pTick->UpdateTime, sizeof(pTick->UpdateTime), "%02d:%02d:%02d", now.tm_hour, now.tm_min, now.tm_sec);
+  pTick->UpdateMillisec = pMarketData->snapMilisec;
+  pTick->BidPrice1 = pMarketData->bidPrice1;
+  pTick->BidVolume1 = pMarketData->bidVolume1;
+  pTick->AskPrice1 = pMarketData->askPrice1;
+  pTick->AskVolume1 = pMarketData->askVolume1;
+  pTick->UpperLimitPrice = 0;
+  pTick->LowerLimitPrice = 0;
+  pTick->LastPrice = pMarketData->lastPrice;
+  gettimeofday(&pTick->ReceiveTime, NULL);
+  pTick->Reserved = 1;
+  return 0;
+}
+
+
 void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type)
 {
   if(0 == type){
@@ -552,6 +633,10 @@ void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type
     ops->m_md_size = md_package_size_dzqh_zbp06();
     ops->m_md_id_pos = md_package_id_dzqh_zbp06();
     ops->md_fill = md_package_fill_dzqh_zbp06;
+  }else if(7 == type){
+    ops->m_md_size = md_package_size_hxqh_l1();
+    ops->m_md_id_pos = md_package_id_hxqh_l1();
+    ops->md_fill = md_package_fill_hxqh_l1;
   }else{
     exit(-1);
   }

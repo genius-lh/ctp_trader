@@ -24,6 +24,7 @@ private:
 
   int m_LoopFlag;
   pthread_t m_ThreadId;
+  int m_CpuId;
   trader_mduser_api_ef_vi_ops m_Ops;
 
 public:

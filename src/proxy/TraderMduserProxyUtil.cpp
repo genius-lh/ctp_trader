@@ -97,9 +97,6 @@ int TraderMduserProxyUtil::init()
   ret = getCfgString("RUN_CONFIG", "REDIS_INST_KEY", sContractKey, sizeof(sContractKey));
   CMN_ASSERT(ret >= 0);
 
-  ret = getCfgString("RUN_CONFIG", "MQ_NAME", sMqName, sizeof(sMqName));
-  CMN_ASSERT(ret >= 0);
-
   // 连接redis
   // todo
   CMN_DEBUG("self->pRedisCtx\n");
@@ -131,8 +128,40 @@ int TraderMduserProxyUtil::init()
   freeReplyObject(reply);
   redisFree(pRedisCtx);
 
+  ret = getCfgString("RUN_CONFIG", "MQ_NAME", sMqName, sizeof(sMqName));
+  CMN_ASSERT(ret >= 0);
+
   ret = mqueue_client_context_init(&m_mqClientCtx, sMqName);
   CMN_ASSERT(ret >= 0);
+
+  i = 0;
+  do{
+    m_client[i].used = 0;
+    ret = getCfgString("RUN_CONFIG", "MQ_NAME1", sMqName, sizeof(sMqName));
+    if(ret < 0){
+      break;
+    }
+    ret = mqueue_client_context_init(&m_client[i].m_mqClientCtx, sMqName);
+    if(ret < 0){
+      break;
+    }
+    m_client[i].used = 1;
+  }while(0);
+  i++;
+  
+  do{
+    m_client[i].used = 0;
+    ret = getCfgString("RUN_CONFIG", "MQ_NAME2", sMqName, sizeof(sMqName));
+    if(ret < 0){
+      break;
+    }
+    ret = mqueue_client_context_init(&m_client[i].m_mqClientCtx, sMqName);
+    if(ret < 0){
+      break;
+    }
+    m_client[i].used = 1;
+  }while(0);
+  i++;
 
   return 0;
 }
@@ -140,6 +169,7 @@ int TraderMduserProxyUtil::init()
 // 主循环
 void TraderMduserProxyUtil::loop()
 {
+  int i;
   int ret;
   ret = event_add(m_pSigIntEvt, NULL);
   CMN_ASSERT(ret >= 0);
@@ -149,7 +179,13 @@ void TraderMduserProxyUtil::loop()
 
   ret = event_base_dispatch(m_pBase);
 
-	mqueue_client_context_close(&m_mqClientCtx);
+  mqueue_client_context_close(&m_mqClientCtx);
+  for(i = 0; i < BACKUP_MQ_COUNT; i++){
+    if(!m_client[i].used){
+      continue;
+    }
+  	mqueue_client_context_close(&m_client[i].m_mqClientCtx);
+  }
 
   return;
 }
@@ -211,6 +247,14 @@ int TraderMduserProxyUtil::sendData(void* data, int size)
 {
   int ret;
   ret = mqueue_client_context_send(&m_mqClientCtx, (char*)data, size);
+
+  int i;
+  for(i = 0; i < BACKUP_MQ_COUNT; i++){
+    if(!m_client[i].used){
+      continue;
+    }
+  	mqueue_client_context_send(&m_client[i].m_mqClientCtx, (char*)data, size);
+  }
   return ret;
 }
   

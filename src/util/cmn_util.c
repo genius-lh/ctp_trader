@@ -285,8 +285,32 @@ void cmn_util_map_free(cmn_util_map* self)
 
 }
 
+#include <pthread.h>
+int cmn_util_bind_cpu(int cpu_id)
+{
+	cpu_set_t	cpu_info;
+	int	cpu = (int)sysconf(_SC_NPROCESSORS_ONLN);
+  pthread_t thd_id = pthread_self();
+  
+  if(cpu_id < 0){
+    return -1;
+  }
 
+	if( cpu <= cpu_id )
+	{
+		return -1;
+	}
 
+	CPU_ZERO(&cpu_info);
+	CPU_SET(cpu_id,&cpu_info);
 
+	if( pthread_setaffinity_np( thd_id, sizeof(cpu_set_t), &cpu_info ) != 0 )
+	{
+		return -1;
+	}
+
+	return 0;
+
+}
 
 

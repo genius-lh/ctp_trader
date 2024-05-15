@@ -11,6 +11,7 @@
 
 typedef char contract_id_t[32];
 
+#define BACKUP_MQ_COUNT 2
 
 class TraderMduserProxyUtil 
 {
@@ -39,7 +40,11 @@ private:
   int m_contractNum;
   contract_id_t* m_contracts;
   trader_tick_dict* m_contractDict;
-	mqueue_client_context m_mqClientCtx;
+  mqueue_client_context m_mqClientCtx;
+  struct{
+    int used;
+	  mqueue_client_context m_mqClientCtx;
+  } m_client[BACKUP_MQ_COUNT];
   
   struct event_base* m_pBase;
   struct event* m_pSigIntEvt;
