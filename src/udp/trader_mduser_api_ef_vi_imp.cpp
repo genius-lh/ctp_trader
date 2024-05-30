@@ -297,6 +297,45 @@ extern int md_package_size_hxqh_l1();
 extern int md_package_id_hxqh_l1();
 extern int md_package_fill_hxqh_l1(void* tick, void* obj);
 
+typedef struct __attribute__((__packed__)) 
+{
+    int packetLen;//报文长度
+    unsigned char versionNo;//版本序号
+    int       updateTime;//修改时间
+    char   exchangeID[3];//交易所
+    char   instrumentID[30];//合约代码
+    bool   stopFlag;//停牌标识
+    char   statusLatestPrice;//
+    double latestPrice;//最新价
+    char   statusMatchAmount;//
+    int    matchAmount;//成交量
+    char   statusPositionAmount;//
+    int    positionAmount;//持仓量
+    char   statusHighestPrice;//
+    double highestPrice;//最高价    
+    char   statusLowestPrice;//
+    double lowestPrice;//最低价
+    char   statusBuyPrice1;//
+    double buyPrice1;//申买价1
+    char   statusSellPrice1;//
+    double sellPrice1;//申卖价1
+    char   statusBuyAmount1;//
+    int    buyAmount1;//申买量1
+    char   statusSellAmount1;//
+    int    sellAmount1;//申卖量1
+    char   statusMatchMoney;//
+    double macthMoney;//成交金额
+    char   statusOpenPrice;//
+    double openPrice;//开盘价
+    char   statusAvgPrice;//
+    double avgPrice;//当日均价
+}dzxqn_l1_md_t;
+
+extern int md_package_size_dzxqn_l1();
+extern int md_package_id_dzxqn_l1();
+extern int md_package_fill_dzxqn_l1(void* tick, void* obj);
+
+
 
 #ifdef __cplusplus
 }
@@ -602,6 +641,40 @@ int md_package_fill_hxqh_l1(void* tick, void* obj)
   return 0;
 }
 
+int md_package_size_dzxqn_l1()
+{
+  return (int)sizeof(dzxqn_l1_md_t);
+}
+
+int md_package_id_dzxqn_l1()
+{
+  return (int)offsetof(dzxqn_l1_md_t, instrumentID);
+
+}
+
+int md_package_fill_dzxqn_l1(void* tick, void* obj)
+{
+  char tmp[10];
+  dzxqn_l1_md_t* pMarketData = (dzxqn_l1_md_t*)obj;
+  trader_tick* pTick = (trader_tick*)tick;
+  strncpy(pTick->InstrumentID, pMarketData->instrumentID, sizeof(pTick->InstrumentID));
+  strncpy(pTick->TradingDay, "20240101", sizeof(pTick->TradingDay));
+  snprintf(tmp, sizeof(tmp), "%09d", pMarketData->updateTime);
+  snprintf(pTick->UpdateTime, sizeof(pTick->UpdateTime), "%c%c:%c%c:%c%c", tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5]);
+  pTick->UpdateMillisec = pMarketData->updateTime % 1000;
+  pTick->BidPrice1 = pMarketData->buyPrice1;
+  pTick->BidVolume1 = pMarketData->buyAmount1;
+  pTick->AskPrice1 = pMarketData->sellPrice1;
+  pTick->AskVolume1 = pMarketData->sellAmount1;
+  pTick->UpperLimitPrice = 0;
+  pTick->LowerLimitPrice = 0;
+  pTick->LastPrice = pMarketData->latestPrice;
+  gettimeofday(&pTick->ReceiveTime, NULL);
+  pTick->Reserved = 1;
+  return 0;
+}
+
+
 
 void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type)
 {
@@ -637,6 +710,10 @@ void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type
     ops->m_md_size = md_package_size_hxqh_l1();
     ops->m_md_id_pos = md_package_id_hxqh_l1();
     ops->md_fill = md_package_fill_hxqh_l1;
+  }else if(8 == type){
+    ops->m_md_size = md_package_size_dzxqn_l1();
+    ops->m_md_id_pos = md_package_id_dzxqn_l1();
+    ops->md_fill = md_package_fill_dzxqn_l1;
   }else{
     exit(-1);
   }
