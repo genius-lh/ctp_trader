@@ -16,6 +16,8 @@ add_subdirectory(femas20)
 
 add_subdirectory(rem)
 
+add_subdirectory(rem5)
+
 add_subdirectory(femas)
 
 add_subdirectory(femas304)
@@ -25,3 +27,5 @@ add_subdirectory(femas305)
 add_subdirectory(femas302)
 
 add_subdirectory(yd)
+
+add_subdirectory(hxts)

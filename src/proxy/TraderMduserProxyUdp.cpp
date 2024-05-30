@@ -145,9 +145,10 @@ int main(int argc, char* argv[])
 
 
 TraderMduserProxyUdpHandler::TraderMduserProxyUdpHandler(TraderMduserProxyUtil* util)
-  :pProxyUtil(util)
+  :m_CpuId(-1)
+  , pProxyUtil(util)
 {
-
+  init();
 }
 
 TraderMduserProxyUdpHandler::~TraderMduserProxyUdpHandler()
@@ -190,12 +191,17 @@ void TraderMduserProxyUdpHandler::work()
 
 void TraderMduserProxyUdpHandler::init()
 {
+  char tmp[8];
   // ¶ÁÈ¡²ÎÊý
   pProxyUtil->getCfgString("MDUSER_UDP", "MDUSER_REMOTE_IP", m_RemoteIp, sizeof(m_RemoteIp));
   pProxyUtil->getCfgString("MDUSER_UDP", "MDUSER_REMOTE_PORT", m_RemotePort, sizeof(m_RemotePort));
   pProxyUtil->getCfgString("MDUSER_UDP", "MDUSER_LOCAL_IP", m_LocalIp, sizeof(m_LocalIp));
   pProxyUtil->getCfgString("MDUSER_UDP", "MDUSER_DATA_TYPE", m_DataType, sizeof(m_DataType));
+  pProxyUtil->getCfgString("MDUSER_UDP", "CPU_ID", tmp, sizeof(tmp));
+  m_CpuId = atoi(tmp);
   m_ThreadId = 0;
+
+  trader_mduser_api_ef_vi_ops_init(&m_Ops, atoi(m_DataType));
 
   return;
 }

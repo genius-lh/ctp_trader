@@ -54,3 +54,28 @@ sqlite3
 EESTraderApi
 )
 
+add_executable(traderStrategyRemEf ${TRADER_DAEMON_SOURCES})
+target_compile_definitions(traderStrategyRemEf PUBLIC REM)
+target_link_directories(traderStrategyRemEf PUBLIC
+$ENV{SQLITE3_HOME}/lib
+${EXTERN_API_PATH}/rem5
+)
+target_link_libraries(traderStrategyRemEf 
+traderClientAud
+traderStrategy
+traderLogSvr
+traderCmnUtils
+traderCmnCfg
+traderCmnLog
+traderapi
+remeftrader
+pthread
+resolv
+rt
+dl
+event
+hiredis
+sqlite3
+EESTraderApi_ef
+)
+

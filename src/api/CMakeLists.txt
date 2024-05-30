@@ -88,3 +88,12 @@ ${PROJECT_SOURCE_DIR}/cfg
 ${PROJECT_SOURCE_DIR}/util
 )
 
+add_library(remeftrader SHARED ${TRADER_API_REM_SOURCES})
+
+target_include_directories(remeftrader PUBLIC
+${EXTERN_API_PATH}/rem5
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
+)
+
