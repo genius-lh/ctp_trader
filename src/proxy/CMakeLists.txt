@@ -19,6 +19,11 @@ set(MDUSER_PROXY_EXANIC_SOURCES
 ${CMAKE_CURRENT_SOURCE_DIR}/TraderMduserProxyExanic.cpp
 )
 
+set(MDUSER_PROXY_UDP_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/TraderMduserProxyUdp.cpp
+)
+
+
 add_library(mduserProxyUtil SHARED ${MDUSER_PROXY_UTILS_SOURCES})
 target_include_directories(mduserProxyUtil PUBLIC
 $ENV{HIREDIS_HOME}
@@ -82,5 +87,11 @@ target_link_libraries(mduserProxyExanic mduserProxyUtil mduserUdpStruct exanic p
 target_link_directories(mduserProxyExanic PUBLIC
 ${EXTERN_API_PATH}/exanic
 )
+
+add_executable(mduserProxyUdp ${MDUSER_PROXY_UDP_SOURCES})
+target_include_directories(mduserProxyUdp PUBLIC
+${PROJECT_SOURCE_DIR}/udp
+)
+target_link_libraries(mduserProxyUdp mduserProxyUtil mduserUdpStruct pthread rt event hiredis)
 
 

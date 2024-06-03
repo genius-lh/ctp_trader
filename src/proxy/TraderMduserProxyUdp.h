@@ -14,8 +14,6 @@ public:
   TraderMduserProxyUdpHandler(TraderMduserProxyUtil* util);
   virtual ~TraderMduserProxyUdpHandler();
 
-  static void* udp_thread(void* arg);
-
 private:
   char m_RemoteIp[32];
   char m_RemotePort[8];
@@ -32,7 +30,7 @@ public:
 
   void work();
 
-  void OnRecvMessage(char* data, int len);
+  int OnRecvMessage(char* data, int size);
   
 private:
   void init();

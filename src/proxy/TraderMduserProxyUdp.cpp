@@ -6,6 +6,14 @@
 #include <float.h>
 #include <limits.h>
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <arpa/inet.h>
+
+#include "cmn_util.h"
+
+#include "trader_mduser_api_ef_vi.h"
+
 #include "TraderMduserProxyUtil.h"
 #include "TraderMduserProxyUdp.h"
 
@@ -19,6 +27,8 @@ static int udp_sock_init(int* pfd, const char* remote_ip, int remote_port, const
 static int udp_sock_recv(int fd, void* arg);
 
 static int udp_sock_close(int fd);
+
+static void* trader_mduser_proxy_udp_thread(void* arg);
 
 
 int udp_sock_init(int* pfd, const char* remote_ip, int remote_port, const char* local_ip)
@@ -118,6 +128,15 @@ int udp_sock_close(int fd)
 }
 
 
+static void* trader_mduser_proxy_udp_thread(void* arg)
+{
+  TraderMduserProxyUdpHandler* self = (TraderMduserProxyUdpHandler*)arg;
+  self->work();
+  return (void*)NULL;
+}
+
+
+
 int main(int argc, char* argv[])
 {
   int ret;
@@ -156,13 +175,6 @@ TraderMduserProxyUdpHandler::~TraderMduserProxyUdpHandler()
 
 }
 
-static void* TraderMduserProxyUdpHandler::udp_thread(void* arg)
-{
-  TraderMduserProxyUdpHandler* self = (TraderMduserProxyUdpHandler*)arg;
-  self->work();
-  return (void*)NULL;
-}
-
 void TraderMduserProxyUdpHandler::loop()
 {
 
@@ -178,15 +190,58 @@ void TraderMduserProxyUdpHandler::loop()
 
 void TraderMduserProxyUdpHandler::work()
 {
+  int sock;
+  int max_sock;
+  int ret;
+
+	int n_rcved = -1;
+
+	fd_set readSet, writeSet, errorSet;
+	struct timeval tval;
+
   //创建线路
-  
+  ret = udp_sock_init(&sock, m_RemoteIp, atoi(m_RemotePort), m_LocalIp);
+  if(ret < 0){
+    return;
+  }
+
+  max_sock = sock + 1;
+
+  // 绑核
+	cmn_util_bind_cpu(m_CpuId);
 
   // 主循环
+  while (m_LoopFlag)
+  {
+    FD_ZERO( &readSet);
+    FD_ZERO( &writeSet);
+    FD_ZERO( &errorSet);
 
+    FD_SET(sock, &readSet);
+    FD_SET(sock, &errorSet);
+    
+    tval.tv_usec = 100 * 1000; //100 ms
+    tval.tv_sec = 0;
 
-  // 退出处理
+    n_rcved = select(max_sock, &readSet, &writeSet, &errorSet, &tval);
+
+    if(n_rcved < 1) { // timeout
+      continue;
+    }
+    
+    if(!FD_ISSET(sock, &readSet)){
+      continue;
+    }
+
+    udp_sock_recv(sock, this);
+
+  }
   
-
+  // 退出处理
+  if(sock > 0){
+    udp_sock_close(sock);
+  }
+  return;
 }
 
 void TraderMduserProxyUdpHandler::init()
@@ -210,7 +265,7 @@ void TraderMduserProxyUdpHandler::start()
 {
 
   m_LoopFlag = 1;
-	pthread_create(&m_ThreadId, NULL, udp_thread, (void*)this);
+	pthread_create(&m_ThreadId, NULL, trader_mduser_proxy_udp_thread, (void*)this);
 
   return ;  
 }
@@ -228,31 +283,32 @@ void TraderMduserProxyUdpHandler::stop()
 }
 
 ///深度行情通知
-void TraderMduserProxyUdpHandler::OnRecvMessage(char* data, int len)
+int TraderMduserProxyUdpHandler::OnRecvMessage(char* data, int size)
 {
-  // 转发行情
   trader_mduser_evt oEvent;
   trader_tick* pTick = &oEvent.Tick;
+
+  const char* InstrumentID = data + m_Ops.m_md_id_pos;
+
+  int md_size = m_Ops.m_md_size;
+  if(md_size > size){    
+    return md_size;
+  }
   
+  int found = pProxyUtil->findContractById(InstrumentID);
+  if(!found){
+    return md_size;
+  }
+
+  // 转发行情
   oEvent.Type = MDUSERONRTNDEPTHMARKETDATA;
   oEvent.ErrorCd = 0;
   oEvent.ErrorMsg[0] = '\0';
   
-  strncpy(pTick->InstrumentID, pDepthQuoteData->InstrumentID, sizeof(pTick->InstrumentID));
-  strncpy(pTick->TradingDay, pDepthQuoteData->TradingDay, sizeof(pTick->TradingDay));
-  strncpy(pTick->UpdateTime, pDepthQuoteData->UpdateTime, sizeof(pTick->UpdateTime));
-  pTick->UpdateMillisec = pDepthQuoteData->UpdateMillisec;
-  pTick->BidPrice1 = pDepthQuoteData->BidPrice1;
-  pTick->BidVolume1 = pDepthQuoteData->BidVolume1;
-  pTick->AskPrice1 = pDepthQuoteData->AskPrice1;
-  pTick->AskVolume1 = pDepthQuoteData->AskVolume1;
-  pTick->UpperLimitPrice = pDepthQuoteData->UpperLimitPrice;
-  pTick->LowerLimitPrice = pDepthQuoteData->LowerLimitPrice;
-  pTick->LastPrice = pDepthQuoteData->LastPrice;
-  pTick->Reserved = 0;
+  m_Ops.md_fill(pTick, data);
   
   pProxyUtil->sendData((void*)&oEvent, sizeof(oEvent));
-  return ;
+  return md_size;
 }
 
 
