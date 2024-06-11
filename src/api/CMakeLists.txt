@@ -97,3 +97,17 @@ ${PROJECT_SOURCE_DIR}/cfg
 ${PROJECT_SOURCE_DIR}/util
 )
 
+set(TRADER_API_HXTS_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/trader_trader_api_hxts.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/HxtsTraderHandler.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/comm_imp.cpp
+)
+
+add_library(hxtstrader SHARED ${TRADER_API_HXTS_SOURCES})
+
+target_include_directories(hxtstrader PUBLIC
+${EXTERN_API_PATH}/hxts
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
+)

@@ -181,6 +181,11 @@ int trader_svr_init(trader_svr* self, evutil_socket_t sock)
       self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_yd_method_get());
 #endif
 
+#ifdef HXTS
+extern trader_trader_api_method* trader_trader_api_hxts_method_get();
+  self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_hxts_method_get());
+#endif
+
 
   self->pCtpTraderApi->pMethod->xSetFrontAddr(self->pCtpTraderApi, self->TrFrontAdd);
   self->pCtpTraderApi->pMethod->xSetAppID(self->pCtpTraderApi, self->appId);
@@ -1664,6 +1669,24 @@ int trader_svr_api_load_param(trader_svr* self, char* user_id)
     }
       
 #endif
+
+#ifdef HXTS
+      // ¸ù¾ÝAccountID²éÑ¯ClientID
+      char sQueryCmd[64];
+      char sResult[64];
+      int nRet = 0;
+      snprintf(sQueryCmd, sizeof(sQueryCmd), "HXTS_USER_PARAM_%s", self->UserId);
+      nRet = trader_svr_redis_get_param(self, sQueryCmd, sResult, sizeof(sResult));
+      if(!nRet){
+        CMN_DEBUG("%s[%s]\n", sQueryCmd, sResult);
+        self->pCtpTraderApi->pMethod->xSetParam(self->pCtpTraderApi, "USER_PARAM", sResult);
+      }else{
+        CMN_INFO("redis failed![%s]\n", sQueryCmd);
+        return -1;
+      }
+        
+#endif
+
 
   
   return 0;

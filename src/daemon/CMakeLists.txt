@@ -79,3 +79,30 @@ sqlite3
 EESTraderApi_ef
 )
 
+add_executable(traderStrategyHxts ${TRADER_DAEMON_SOURCES})
+target_compile_definitions(traderStrategyHxts PUBLIC HXTS)
+target_link_directories(traderStrategyHxts PUBLIC
+$ENV{SQLITE3_HOME}/lib
+${EXTERN_API_PATH}/hxts
+)
+target_link_libraries(traderStrategyHxts 
+traderClientAud
+traderStrategy
+traderLogSvr
+traderCmnUtils
+traderCmnCfg
+traderCmnLog
+traderapi
+hxtstrader
+pthread
+resolv
+rt
+dl
+event
+hiredis
+sqlite3
+hxtsapi
+ssl
+crypto
+)
+
