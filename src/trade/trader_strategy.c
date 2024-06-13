@@ -2103,6 +2103,13 @@ int trader_strategy_is_auction_tick(trader_strategy* self)
         break;
       }
     }
+
+    if(0 == memcmp(t1->UpdateTime, "08:59:00", 8)){
+      if((0 == memcmp(t1->InstrumentID, "si", 2))
+      ||(0 == memcmp(t1->InstrumentID, "lc", 2))){
+        break;
+      }
+    }
     
     if((0 == memcmp(t1->UpdateTime, "20:59:00", 8))
     ||(0 == memcmp(t1->UpdateTime, "08:59:00", 8))){
