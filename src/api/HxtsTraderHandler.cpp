@@ -378,6 +378,10 @@ void CHxtsTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, 
   // 买卖
   traderOrder->Direction = buy_sell;
   // 开平
+  // 平昨特殊处理
+  if(TRADER_POSITION_CLOSE == open_close){
+    open_close = TRADER_POSITION_CLOSE_YESTERDAY;
+  }
   traderOrder->OffsetFlag = open_close;
   ///投机套保标志
   traderOrder->HedgeFlag = '0';
