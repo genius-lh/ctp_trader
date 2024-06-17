@@ -275,6 +275,7 @@ void CHxtsTraderHandler::OnQryPos(rsp_pos_field_s* pos_field, bool is_last)
   memset(&traderPosition, 0, sizeof(traderPosition));
   if(!pos_field){
     trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, 0, NULL, is_last);
+    m_TraderApi->SetRecvNodeCount(0);
     return;
   }
   strcpy(traderPosition.InstrumentID, pos_field->ins);

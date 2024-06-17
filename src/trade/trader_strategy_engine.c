@@ -304,12 +304,13 @@ int trader_strategy_engine_update_order(trader_strategy_engine* self, trader_ord
 
   CMN_DEBUG("ÍÆËÍpOrderÊı¾İ\n");
   pStrategy->pMethod->xOnOrder(pStrategy, pOrder);
+  return 0;
 }
 
 int trader_strategy_engine_update_status(trader_strategy_engine* self, instrument_status* status_data)
 {
   int i = 0;
-  trader_strategy* pStrategy;
+  //trader_strategy* pStrategy;
   
   for(i = 0; i < TRADER_STRATEGY_ENGINE_SIZE; i++){
     // pStrategy = self->trader_strategys[i];
@@ -409,7 +410,7 @@ int trader_strategy_engine_local_user_id_set(trader_strategy_engine* self, long 
 
 int trader_strategy_engine_gen_local_id(trader_strategy_engine* self, char type, char* local_id)
 {
-  sprintf(local_id, "%07d%c", self->nSequence, type);
+  sprintf(local_id, "%07ld%c", self->nSequence, type);
   self->nSequence++;
   return 0;
 }
@@ -622,6 +623,15 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
       if(0 == memcmp(instrument, "rb", 2)){
         UpdateSec = 59;
         UpdateMillisec = 490;
+        break;
+      }
+    }
+
+    
+    if(0 == memcmp(pUpdateTime, "08:59:00", 8)){
+      if(0 == memcmp(instrument, "lc", 2)){
+        UpdateSec = 59;
+        UpdateMillisec = 990;
         break;
       }
     }
