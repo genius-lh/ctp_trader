@@ -100,6 +100,7 @@ void trader_trader_api_hxts_start(trader_trader_api* self)
   self->timeCondition = '0';
   self->hedgeFlag = '0';
 
+  char ethName[128];
   char remoteTradeIp[128];
   char remoteTradeUDPPort[128];
   char localTradeIp[128];
@@ -112,6 +113,10 @@ void trader_trader_api_hxts_start(trader_trader_api* self)
     strncpy(sAddress, self->pAddress, sizeof(sAddress));
     
     pIter = strtok_r(sAddress, "|", &pSavePtr);
+    CMN_ASSERT (pIter);
+    strncpy(ethName, pIter, sizeof(ethName));
+    
+    pIter = strtok_r(NULL, "|", &pSavePtr);
     CMN_ASSERT (pIter);
     strncpy(remoteTradeIp, pIter, sizeof(remoteTradeIp));
         
@@ -133,7 +138,7 @@ void trader_trader_api_hxts_start(trader_trader_api* self)
 	pTraderApi->RegisterSpi(pTraderHandler);
 	pTraderApi->SetRecvNodeCount(1024*100);
 
-  pthread_t tid = pTraderApi->Init(NULL, remoteTradeIp, atoi(remoteTradeUDPPort), localTradeIp, atoi(localTradeUDPPort));
+  pthread_t tid = pTraderApi->Init(ethName, remoteTradeIp, atoi(remoteTradeUDPPort), localTradeIp, atoi(localTradeUDPPort));
 
   pImp->workTreadId = tid;
 

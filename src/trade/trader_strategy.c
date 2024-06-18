@@ -144,7 +144,7 @@ int trader_strategy_init(trader_strategy* self)
   strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_BUY, &self->pBuyPosition);  
   strategyPosition->pMethod->xGetPosition(strategyPosition, self->idx, TRADER_POSITION_SELL, &self->pSellPosition);
 
-  self->TickGapMsec = 10;
+  self->TickGapMsec = 2;
   self->isGood = 1;
   
   return 0;
@@ -245,6 +245,12 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
 
   // 策略执行判断  
   int ret = 0;
+  // 是否是集合竞价
+  ret = trader_strategy_is_auction_tick(self);
+  if(ret){
+    return 0;
+  }
+  
   ret = trader_strategy_tick_trigger(self, tick_data);
   if(!ret){
     trader_strategy_timer_enable(self);
@@ -253,12 +259,6 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
     trader_strategy_timer_disable(self);
   }
 
-  // 是否是集合竞价
-  ret = trader_strategy_is_auction_tick(self);
-  if(ret){
-    return 0;
-  }
-  
   trader_strategy_on_check_closing(self, tick_data);
 
   // 待成交队列处理

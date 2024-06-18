@@ -102,6 +102,7 @@ event
 hiredis
 sqlite3
 hxtsapi
+onload_zf
 ssl
 crypto
 )

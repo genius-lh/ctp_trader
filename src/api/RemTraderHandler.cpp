@@ -729,6 +729,7 @@ void CRemTraderHandler::OnSymbolStatusReport(EES_SymbolStatus* pSymbolStatus)
   );
 
   // 过滤期权合约
+  /*
   if(0 == memcmp(pSymbolStatus->m_Symbol, "IO", 2)){
     return ;
   }
@@ -743,7 +744,8 @@ void CRemTraderHandler::OnSymbolStatusReport(EES_SymbolStatus* pSymbolStatus)
   oInstrumentStatus.InstrumentStatus = pSymbolStatus->m_InstrumentStatus;
   
   trader_trader_api_on_rtn_instrument_status(self, &oInstrumentStatus);
-
+  */
+  return;
 }
 
 const char* CRemTraderHandler::GetAccountId()
