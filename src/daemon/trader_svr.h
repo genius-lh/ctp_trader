@@ -24,6 +24,8 @@
 
 #include "queue.h"
 
+#include "evmqueue.h"
+
 typedef struct trader_contract_def trader_contract;
 struct trader_contract_def {
   TAILQ_ENTRY(trader_contract_def) next;
@@ -125,7 +127,10 @@ struct trader_svr_def {
   //  «∑Ò≤È—Ø
   char TradingDay[9];
   int bQueried;
-  
+
+  char mqueueName[32];
+  mqueue_async_context* mqueueContext;
+
   trader_svr_method* pMethod;
 };
 

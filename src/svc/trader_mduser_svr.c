@@ -220,8 +220,9 @@ int trader_mduser_svr_init_instruments(trader_mduser_svr* self)
       
       nRet = 0;
       self->instrumentNumber = reply->elements;
-      self->shmHdr = trader_mduser_shm_header_init(self->redisInstrumentKey, sizeof(trader_tick), (self->instrumentNumber / 8 + 1) * 8);
-      self->ticks = trader_mduser_shm_header_calloc(self->shmHdr, self->instrumentNumber);
+      //self->shmHdr = trader_mduser_shm_header_init(self->redisInstrumentKey, sizeof(trader_tick), (self->instrumentNumber / 8 + 1) * 8);
+      //self->ticks = trader_mduser_shm_header_calloc(self->shmHdr, self->instrumentNumber);
+      self->ticks = (trader_tick*)malloc(self->instrumentNumber * sizeof(trader_tick));
       self->tickDict = trader_tick_dict_new();
       self->instruments = (trader_instrument_id_type*)malloc(self->instrumentNumber * sizeof(trader_instrument_id_type));
       for(i = 0; i < self->instrumentNumber; i++){
@@ -462,8 +463,8 @@ void trader_mduser_svr_free(trader_mduser_svr* self)
       free(self->instruments);
     }
     
-    if(self->shmHdr){
-      trader_mduser_shm_header_dt(self->shmHdr);
+    if(self->ticks){
+      free(self->ticks);
     }
     
     if(self->tickDict){

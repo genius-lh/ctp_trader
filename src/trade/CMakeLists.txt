@@ -6,6 +6,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/trader_strategy_engine.c
 ${CMAKE_CURRENT_SOURCE_DIR}/trader_strategy_imp.c
 ${CMAKE_CURRENT_SOURCE_DIR}/trader_strategy_limit.c
 ${CMAKE_CURRENT_SOURCE_DIR}/trader_strategy_position_svr.c
+${CMAKE_CURRENT_SOURCE_DIR}/trader_strategy_processor.c
 ${CMAKE_CURRENT_SOURCE_DIR}/trader_strategy.c
 )
 
