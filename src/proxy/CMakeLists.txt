@@ -23,6 +23,10 @@ set(MDUSER_PROXY_UDP_SOURCES
 ${CMAKE_CURRENT_SOURCE_DIR}/TraderMduserProxyUdp.cpp
 )
 
+set(MDUSER_PROXY_DZM2_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/TraderMduserProxyM2.cpp
+)
+
 
 add_library(mduserProxyUtil SHARED ${MDUSER_PROXY_UTILS_SOURCES})
 target_include_directories(mduserProxyUtil PUBLIC
@@ -94,4 +98,12 @@ ${PROJECT_SOURCE_DIR}/udp
 )
 target_link_libraries(mduserProxyUdp mduserProxyUtil mduserUdpStruct pthread rt event hiredis)
 
+add_executable(mduserProxyDzM2 ${MDUSER_PROXY_DZM2_SOURCES})
+target_include_directories(mduserProxyDzM2 PUBLIC
+${EXTERN_API_PATH}/dzm2
+)
+target_link_libraries(mduserProxyDzM2 mduserProxyUtil pthread rt event hiredis M2Api)
+target_link_directories(mduserProxyDzM2 PUBLIC
+${EXTERN_API_PATH}/dzm2
+)
 
