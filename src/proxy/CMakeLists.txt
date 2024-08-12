@@ -107,3 +107,14 @@ target_link_directories(mduserProxyDzM2 PUBLIC
 ${EXTERN_API_PATH}/dzm2
 )
 
+add_executable(mduserProxyExanicDaLian ${CMAKE_CURRENT_SOURCE_DIR}/TraderMduserProxyExanicDaLian.cpp)
+target_include_directories(mduserProxyExanicDaLian PUBLIC
+${PROJECT_SOURCE_DIR}/udp
+${EXTERN_API_PATH}/exanic
+)
+target_link_libraries(mduserProxyExanicDaLian mduserProxyUtil mduserUdpStruct exanic pthread rt event hiredis)
+target_link_directories(mduserProxyExanicDaLian PUBLIC
+${EXTERN_API_PATH}/exanic
+)
+
+
