@@ -631,7 +631,7 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
 
     if((0 == memcmp(pUpdateTime, "20:59:00", 8))
     ||(0 == memcmp(pUpdateTime, "08:59:00", 8))){
-      if(0 == memcmp(instrument, "rb", 2)){
+      if(0 == memcmp(instrument, "ag", 2)){
         UpdateSec = 59;
         UpdateMillisec = 490;
         break;
@@ -643,6 +643,15 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
       if(0 == memcmp(instrument, "lc", 2)){
         UpdateSec = 59;
         UpdateMillisec = 990;
+        break;
+      }
+    }
+    
+    if((0 == memcmp(pUpdateTime, "20:59:00", 8))
+    ||(0 == memcmp(pUpdateTime, "08:59:00", 8))){
+      if(0 == memcmp(instrument, "eb", 2)){
+        UpdateSec = 59;
+        UpdateMillisec = 840;
         break;
       }
     }

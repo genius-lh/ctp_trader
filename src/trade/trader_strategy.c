@@ -253,10 +253,7 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
   
   ret = trader_strategy_tick_trigger(self, tick_data);
   if(!ret){
-    trader_strategy_timer_enable(self);
     return 0;
-  }else{
-    trader_strategy_timer_disable(self);
   }
 
   trader_strategy_on_check_closing(self, tick_data);
@@ -2104,18 +2101,9 @@ int trader_strategy_is_auction_tick(trader_strategy* self)
       }
     }
 
-    if(0 == memcmp(t1->UpdateTime, "08:59:00", 8)){
-      if((0 == memcmp(t1->InstrumentID, "si", 2))
-      ||(0 == memcmp(t1->InstrumentID, "lc", 2))){
-        break;
-      }
-    }
-    
     if((0 == memcmp(t1->UpdateTime, "20:59:00", 8))
     ||(0 == memcmp(t1->UpdateTime, "08:59:00", 8))){
-      if(self->IsSHFE || self->T2IsSHFE){
-        break;
-      }
+      break;
     }
 
     return 0;
