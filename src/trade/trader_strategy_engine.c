@@ -12,8 +12,6 @@
 
 #include "trader_strategy_engine.h"
 
-#include "trader_strategy_processor.h"
-
 static int trader_strategy_engine_init(trader_strategy_engine* self);
 static int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct trader_cmd_update_req_def* strategy_data);
 static int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick* tick_data);
@@ -114,9 +112,6 @@ int trader_strategy_engine_init(trader_strategy_engine* self)
   // 计算下一个时间节点
   trader_strategy_engine_status_timer_init(self);
 
-  // 新处理器初始化
-  self->pProcessor->method->xInit(self->pProcessor, (void*)self->pBase);
-
   return 0;
 }
 
@@ -205,8 +200,6 @@ int trader_strategy_engine_update_strategy(trader_strategy_engine* self, struct 
     pStrategy->nPositionSell = pStrategy->pSellPosition->Volume;
 
     pStrategy->pMethod->xOnStrategyUpdate(pStrategy);
-
-    self->pProcessor->method->xUpdateStrategy(self->pProcessor, pStrategy);    
   }
   
   return 0;
@@ -219,8 +212,6 @@ int trader_strategy_engine_update_tick(trader_strategy_engine* self, trader_tick
   trader_strategy* pStrategy;
   
   trader_tick* pTick = tick_data;
-
-  self->pProcessor->method->xUpdateTick(self->pProcessor, pTick);
   
   //CMN_DEBUG("推送Tick数据\n");
   //CMN_INFO("tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);
@@ -563,8 +554,6 @@ trader_strategy_engine* trader_strategy_engine_new()
   
   self->pTraderStrategyLimit = trader_strategy_limit_new();
 
-  self->pProcessor = trader_strategy_processor_new();
-
   self->pMethod = trader_strategy_engine_method_get();
 
   return self;
@@ -646,7 +635,7 @@ void trader_strategy_engine_status_timer_tick(trader_strategy_engine* self, char
         break;
       }
     }
-    
+
     if((0 == memcmp(pUpdateTime, "20:59:00", 8))
     ||(0 == memcmp(pUpdateTime, "08:59:00", 8))){
       if(0 == memcmp(instrument, "eb", 2)){

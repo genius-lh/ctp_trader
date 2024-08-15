@@ -164,7 +164,7 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
     //CMN_DEBUG("Not Focused[%s]!\n", tick_data->InstrumentID);
     return 0;
   }
-  
+/*
   strncpy(pTick->InstrumentID, tick_data->InstrumentID, sizeof(pTick->InstrumentID));
   strncpy(pTick->TradingDay, tick_data->TradingDay, sizeof(pTick->TradingDay));
   strncpy(pTick->UpdateTime, tick_data->UpdateTime, sizeof(pTick->UpdateTime));
@@ -180,6 +180,8 @@ int trader_strategy_on_tick(trader_strategy* self, trader_tick* tick_data)
     pTick->LowerLimitPrice = tick_data->LowerLimitPrice;
   }
   memcpy(&pTick->ReceiveTime, &tick_data->ReceiveTime, sizeof(pTick->ReceiveTime));
+*/
+  memcpy(pTick, tick_data, sizeof(trader_tick));
 
   if(self->used){
     CMN_INFO("SID[%02d]tick[%s]UpdateTime[%s]UpdateMillisec[%d]\n", self->idx, tick_data->InstrumentID, tick_data->UpdateTime, tick_data->UpdateMillisec);

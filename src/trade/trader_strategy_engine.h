@@ -11,8 +11,6 @@
 #include "trader_strategy_limit.h"
 #include "trader_strategy_position_svr.h"
 
-#include "trader_strategy_processor.h"
-
 #include <event2/util.h>
 #include <event2/event.h>
 
@@ -64,9 +62,6 @@ struct trader_strategy_engine_def {
 
   // 腿二追单限制
   int t2CancelLimit;
-
-  // 新处理器
-  trader_strategy_processor* pProcessor;
 
   // 外部接口
   trader_strategy_engine_method* pMethod;

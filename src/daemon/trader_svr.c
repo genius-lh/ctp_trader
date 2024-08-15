@@ -59,8 +59,6 @@ static void trader_svr_client_write_cb(struct bufferevent *bev, void *arg);
 static void trader_svr_client_evt_cb(struct bufferevent *bev, short event, void *arg);
 static void trader_svr_signal_cb(evutil_socket_t fd, short event, void *arg);
 static void trader_svr_mduser_connect_cb(evutil_socket_t fd, short event, void *arg);
-static void trader_svr_mduser_mqueue_recv_cb(const char* data, int len, void* privdata);
-
 
 static int trader_svr_proc_client_logout(trader_svr* self);
 static int trader_svr_proc_client_login(trader_svr* self, trader_msg_req_struct* req);
@@ -232,20 +230,6 @@ extern trader_trader_api_method* trader_trader_api_hxts_method_get();
     self
     );
 
-  
-  CMN_DEBUG("self->mqueueContext\n");
-  self->mqueueContext = NULL;
-  if(self->mqueueName[0]){
-    mqueue_async_context* c = mqueue_async_context_open(self->mqueueName, 2000, 512);
-    CMN_ASSERT(c);
-    self->mqueueContext = c;
-    
-    mqueue_async_context_libevent_attach(c, self->pBase);
-    
-    mqueue_async_context_set_recv_callback(c, trader_svr_mduser_mqueue_recv_cb, self);
-
-  }
-
   CMN_DEBUG("self->pTraderDB\n");
   self->pTraderDB = trader_db_new(TRADER_DB_NAME);
 
@@ -276,11 +260,11 @@ int trader_svr_run(trader_svr* self)
 {
   CMN_DEBUG("Enter!\n");
 
-  //self->pMduserClt->method->xConnect(self->pMduserClt);
+  self->pMduserClt->method->xConnect(self->pMduserClt);
 
   int nRet = event_base_dispatch(self->pBase);
   
-  //self->pMduserClt->method->xExit(self->pMduserClt);
+  self->pMduserClt->method->xExit(self->pMduserClt);
 
   return nRet;
 
@@ -380,22 +364,6 @@ int trader_svr_param_ini(trader_svr* self, char* cfg_file)
   
   nRet = glbPflGetString("MDUSER", "BOARDCAST_ADDR", cfg_file, self->boardcastAddr);
   nRet = glbPflGetInt("MDUSER", "BOARDCAST_PORT", cfg_file, &self->boardcastPort);
-
-  int connNum = 0;
-  do{
-    self->mqueueName[0] = '\0';
-    nRet = glbPflGetInt("CLIENT", "CONN_NUM", cfg_file, &connNum);
-    if(nRet < 0){
-      break;
-    }
-    if(1 != connNum){
-      break;
-    }
-    nRet = glbPflGetString("MDUSER", "MQUEUE_NAME", cfg_file, self->mqueueName);
-    if(nRet < 0){
-      self->mqueueName[0] = '\0';
-    }
-  }while(0);
   
   char sTimeCondition[2];
   nRet = glbPflGetString("TRADER", "TIME_CONDITION", cfg_file, sTimeCondition);
@@ -1428,14 +1396,6 @@ void trader_svr_mduser_connect_cb(evutil_socket_t fd, short event, void *arg)
   trader_svr* self = (trader_svr*)arg;
   self->pMduserClt->method->xConnect(self->pMduserClt);
   event_del(self->pConnectTimer);
-}
-
-void trader_svr_mduser_mqueue_recv_cb(const char* data, int len, void* privdata)
-{
-  trader_svr* self = (trader_svr*)privdata;
-  trader_mduser_evt* evt = (trader_mduser_evt*)data;
-  trader_tick* tick_data = &evt->Tick;
-  self->pStrategyEngine->pMethod->xUpdateTick(self->pStrategyEngine, tick_data);
 }
 
 
