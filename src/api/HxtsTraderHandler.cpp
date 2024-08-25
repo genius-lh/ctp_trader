@@ -89,7 +89,7 @@ void CHxtsTraderHandler::OnHxRspOrderInsert(hx_rsp_order_field_s* hx_rsp_order_i
     return;
   }
   
-  CMN_DEBUG(
+  CMN_ERROR(
     "error_msg->errorID=[%d]\n"
     "error_msg->errorMsg=[%s]\n"
     , error_msg->errorID
@@ -116,14 +116,6 @@ void CHxtsTraderHandler::OnExgRspOrderInsert(rsp_order_field_s* rsp_order_insert
     CMN_ERROR("NULL == error_msg\n");
     return;
   }
-
-  CMN_DEBUG(
-    "error_msg->errorID=[%d]\n"
-    "error_msg->errorMsg=[%s]\n"
-    , error_msg->errorID
-    , error_msg->errorMsg
-  );
-
   
   if(!rsp_order_insert_field){
     CMN_ERROR("NULL == hx_rsp_order_insert_field\n");
@@ -140,6 +132,12 @@ void CHxtsTraderHandler::OnExgRspOrderInsert(rsp_order_field_s* rsp_order_insert
   if(!error_msg->errorID){
     traderOrder->OrderStatus = TRADER_ORDER_OS_NOTRADEQUEUEING;
   }else{
+    CMN_ERROR(
+      "error_msg->errorID=[%d]\n"
+      "error_msg->errorMsg=[%s]\n"
+      , error_msg->errorID
+      , error_msg->errorMsg
+    );
     traderOrder->OrderStatus = TRADER_ORDER_OS_CANCELED;
     trader_trader_api_on_err_rtn_order_insert(self, error_msg->errorID, error_msg->errorMsg);
   }

@@ -111,3 +111,19 @@ ${PROJECT_SOURCE_DIR}/log
 ${PROJECT_SOURCE_DIR}/cfg
 ${PROJECT_SOURCE_DIR}/util
 )
+
+set(TRADER_API_YD_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/trader_trader_api_yd.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/YdTraderHandler.cpp
+)
+
+add_library(ydtrader SHARED ${TRADER_API_YD_SOURCES})
+
+target_compile_options(ydtrader PUBLIC -std=c++11)
+
+target_include_directories(ydtrader PUBLIC
+${EXTERN_API_PATH}/yd
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
+)

@@ -107,3 +107,27 @@ ssl
 crypto
 )
 
+add_executable(traderStrategyYd ${TRADER_DAEMON_SOURCES})
+target_compile_definitions(traderStrategyYd PUBLIC YD)
+target_link_directories(traderStrategyYd PUBLIC
+$ENV{SQLITE3_HOME}/lib
+${EXTERN_API_PATH}/yd
+)
+target_link_libraries(traderStrategyYd 
+traderClientAud
+traderStrategy
+traderLogSvr
+traderCmnUtils
+traderCmnCfg
+traderCmnLog
+traderapi
+ydtrader
+pthread
+resolv
+rt
+dl
+event
+hiredis
+sqlite3
+yd
+)
