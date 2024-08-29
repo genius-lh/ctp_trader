@@ -207,6 +207,48 @@ typedef struct __attribute__((__packed__))
 	double			AskPrice4;
 	double			AskPrice5;
 	double			Turnover;
+}dzqh_zbp04_md_t;
+
+extern int md_package_size_dzqh_zbp04();
+extern int md_package_id_dzqh_zbp04();
+extern int md_package_fill_dzqh_zbp04(void* tick, void* obj);
+
+
+typedef struct __attribute__((__packed__)) 
+{
+	unsigned char 	Flag;					//协议标志
+	char 			TypeID;					//协议版本
+	unsigned short  Length;					//包长度
+	int 			PacketNo;				//全0
+	unsigned int	ChangeNo;				//增量编号
+	short			InstrumentNo;			//合约编码
+	char			InstrumentID[18];		//合约
+	unsigned int	UpdateTime;				//最后更新时间(秒)
+	unsigned short	UpdateMillisec;			//最后更新时间(毫秒)
+	int				Volume;
+	int				OpenInterest;
+	int				BidVolume1;
+	int				BidVolume2;
+	int				BidVolume3;
+	int				BidVolume4;
+	int				BidVolume5;
+	int				AskVolume1;
+	int				AskVolume2;
+	int				AskVolume3;
+	int				AskVolume4;
+	int				AskVolume5;
+	double			LastPrice;
+	double			BidPrice1;
+	double			BidPrice2;
+	double			BidPrice3;
+	double			BidPrice4;
+	double			BidPrice5;
+	double			AskPrice1;
+	double			AskPrice2;
+	double			AskPrice3;
+	double			AskPrice4;
+	double			AskPrice5;
+	double			Turnover;
 }dzqh_zbp05_md_t;
 
 extern int md_package_size_dzqh_zbp05();
@@ -541,6 +583,41 @@ int md_package_fill_cffex_l2(void* tick, void* obj)
   return 0;
 }
 
+int md_package_size_dzqh_zbp04()
+{
+  return (int)sizeof(dzqh_zbp04_md_t);
+}
+
+int md_package_id_dzqh_zbp04()
+{
+  return (int)offsetof(dzqh_zbp04_md_t, InstrumentID);
+}
+
+int md_package_fill_dzqh_zbp04(void* tick, void* obj)
+{
+  dzqh_zbp04_md_t* pMarketData = (dzqh_zbp04_md_t*)obj;
+  trader_tick* pTick = (trader_tick*)tick;
+  struct tm now;
+  time_t current = (time_t)pMarketData->UpdateTime;
+  localtime_r(&current, &now);    
+
+  strcpy(pTick->InstrumentID, (char*)pMarketData->InstrumentID);
+  snprintf(pTick->TradingDay, sizeof(pTick->TradingDay), "%04d%02d%02d", now.tm_year+1900, now.tm_mon+1, now.tm_mday);
+  snprintf(pTick->UpdateTime, sizeof(pTick->UpdateTime), "%02d:%02d:%02d", now.tm_hour, now.tm_min, now.tm_sec);
+  pTick->UpdateMillisec = pMarketData->UpdateMillisec;
+  pTick->BidPrice1 = pMarketData->BidPrice1;
+  pTick->BidVolume1 = pMarketData->BidVolume1;
+  pTick->AskPrice1 = pMarketData->AskPrice1;
+  pTick->AskVolume1 = pMarketData->AskVolume1;
+  pTick->UpperLimitPrice = 0;
+  pTick->LowerLimitPrice = 0;
+  pTick->LastPrice = pMarketData->LastPrice;
+  gettimeofday(&pTick->ReceiveTime, NULL);
+  pTick->Reserved = (long)pMarketData->ChangeNo;
+  return 0;
+}
+
+
 int md_package_size_dzqh_zbp05()
 {
   return (int)sizeof(dzqh_zbp05_md_t);
@@ -714,6 +791,10 @@ void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type
     ops->m_md_size = md_package_size_dzxqn_l1();
     ops->m_md_id_pos = md_package_id_dzxqn_l1();
     ops->md_fill = md_package_fill_dzxqn_l1;
+  }else if(9 == type){
+    ops->m_md_size = md_package_size_dzqh_zbp04();
+    ops->m_md_id_pos = md_package_id_dzqh_zbp04();
+    ops->md_fill = md_package_fill_dzqh_zbp04;
   }else{
     exit(-1);
   }
