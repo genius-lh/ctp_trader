@@ -2000,6 +2000,16 @@ int trader_strategy_tick_trigger(trader_strategy* self, trader_tick* tick_data)
   trader_tick* t2 = &self->oT2Tick;
   long tv_diff;
 
+  if((!memcmp("13:00:00", tick_data->UpdateTime, sizeof(tick_data->UpdateTime)-1))
+  || (!memcmp("13:30:00", tick_data->UpdateTime, sizeof(tick_data->UpdateTime)-1))){
+    CMN_INFO("ÏÂÎç¿ªÅÌ\n");
+    if((0 == strcmp(t1->UpdateTime, t2->UpdateTime))
+    && (t1->UpdateMillisec == t2->UpdateMillisec)){  
+      return 1;
+    }
+    return 0;
+  }
+
   if(TRIGGER_TYPE_1 == self->TriggerType){
     if(0 == strcmp(self->T1, tick_data->InstrumentID)){
       return 1;

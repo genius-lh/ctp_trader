@@ -27,6 +27,9 @@ set(MDUSER_PROXY_DZM2_SOURCES
 ${CMAKE_CURRENT_SOURCE_DIR}/TraderMduserProxyM2.cpp
 )
 
+set(MDUSER_PROXY_HXGZ_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/TraderMduserProxyMDReceiver.cpp
+)
 
 add_library(mduserProxyUtil SHARED ${MDUSER_PROXY_UTILS_SOURCES})
 target_include_directories(mduserProxyUtil PUBLIC
@@ -115,6 +118,16 @@ ${EXTERN_API_PATH}/exanic
 target_link_libraries(mduserProxyExanicDaLian mduserProxyUtil mduserUdpStruct exanic pthread rt event hiredis)
 target_link_directories(mduserProxyExanicDaLian PUBLIC
 ${EXTERN_API_PATH}/exanic
+)
+
+add_executable(mduserProxyHxgz ${MDUSER_PROXY_HXGZ_SOURCES})
+target_compile_options(mduserProxyHxgz PUBLIC -std=c++11)
+target_include_directories(mduserProxyHxgz PUBLIC
+${EXTERN_API_PATH}/enyx
+)
+target_link_libraries(mduserProxyHxgz mduserProxyUtil pthread rt event hiredis dma-recv)
+target_link_directories(mduserProxyHxgz PUBLIC
+${EXTERN_API_PATH}/enyx
 )
 
 

@@ -21,6 +21,8 @@ static double trader_strategy_t2_buy_price(trader_strategy* self);
 static double trader_strategy_t1_sell_price(trader_strategy* self, double diff);
 static double trader_strategy_t2_sell_price(trader_strategy* self);
 static double trader_strategy_t1_price_order(trader_strategy* self, char long_short, char open_close);
+static double trader_strategy_t1_buy_set_price(trader_strategy* self);
+static double trader_strategy_t1_sell_set_price(trader_strategy* self);
 
 int trader_strategy_double_to_int(double val)
 {
@@ -140,6 +142,7 @@ int trader_strategy_judge_t2_wait(trader_strategy* self,  trader_order* order_da
 
 int trader_strategy_judge_buy_open(trader_strategy* self)
 {
+  trader_tick* t1 = &self->oT2Tick;
   trader_tick* t2 = &self->oT2Tick;
   double diff;
   double th;
@@ -156,7 +159,12 @@ int trader_strategy_judge_buy_open(trader_strategy* self)
     if(t2->AskVolume1 < self->PermitVol){
       CMN_DEBUG("t2->AskVolume1[%d] < stage->PermitVol[%d]\n", t2->AskVolume1, self->PermitVol);
       return nRet;
-    }   
+    }
+  }
+
+  if((0 == t1->BidVolume1) || (0 == t2->AskVolume1)){
+    CMN_INFO("t1->BidVolume1[%d] || t2->AskVolume1[%d]\n", t1->BidVolume1, t2->AskVolume1);
+    return nRet;    
   }
 
   diff = trader_strategy_buy_price_diff(self);
@@ -177,6 +185,13 @@ int trader_strategy_judge_buy_close(trader_strategy* self)
   double th;
   int nRet = 0;
   
+  trader_tick* t1 = &self->oT2Tick;
+  trader_tick* t2 = &self->oT2Tick;
+  if((0 == t1->AskVolume1) || (0 == t2->BidVolume1)){
+    CMN_INFO("t1->AskVolume1[%d] || t2->BidVolume1[%d]\n", t1->BidVolume1, t2->AskVolume1);
+    return nRet;    
+  }
+  
   diff = trader_strategy_sell_price_diff(self);
   th = self->DTClose;
 
@@ -192,6 +207,7 @@ int trader_strategy_judge_buy_close(trader_strategy* self)
 
 int trader_strategy_judge_sell_open(trader_strategy* self)
 {
+  trader_tick* t1 = &self->oT2Tick;
   trader_tick* t2 = &self->oT2Tick;
   double diff;
   double th;
@@ -210,7 +226,11 @@ int trader_strategy_judge_sell_open(trader_strategy* self)
       return nRet;
     }   
   }
-
+  
+  if((0 == t1->AskVolume1) || (0 == t2->BidVolume1)){
+    CMN_INFO("t1->AskVolume1[%d] || t2->BidVolume1[%d]\n", t1->BidVolume1, t2->AskVolume1);
+    return nRet;    
+  }
 
   diff = trader_strategy_sell_price_diff(self);
   th = self->KTOpen;
@@ -230,6 +250,13 @@ int trader_strategy_judge_sell_close(trader_strategy* self)
   double th;
   int nRet = 0;
   
+  trader_tick* t1 = &self->oT2Tick;
+  trader_tick* t2 = &self->oT2Tick;
+  if((0 == t1->BidVolume1) || (0 == t2->AskVolume1)){
+    CMN_INFO("t1->BidVolume1[%d] || t2->AskVolume1[%d]\n", t1->BidVolume1, t2->AskVolume1);
+    return nRet;    
+  }
+  
   diff = trader_strategy_buy_price_diff(self);
   th = self->KTClose;
 
@@ -244,16 +271,14 @@ int trader_strategy_judge_sell_close(trader_strategy* self)
 
 double trader_strategy_buy_price_diff(trader_strategy* self)
 {
-  trader_tick* t1 = &self->oT1Tick;
-  
-  double t1set = t1->BidPrice1;
+  double t1set = trader_strategy_t1_buy_set_price(self);
   double t2set = trader_strategy_t2_sell_price(self);
 
   //Åä±È
   t1set *= self->T1Weight;
   t2set *= self->T2Weight;
 
-  CMN_INFO("T1SET[%.4lf]T2SET[%.4lf]\n", t1set, t2set);
+  CMN_DEBUG("T1SET[%.4lf]T2SET[%.4lf]\n", t1set, t2set);
 
   if(IS_STG_OPTION(self->STG)){
     return t1set + t2set;
@@ -264,16 +289,14 @@ double trader_strategy_buy_price_diff(trader_strategy* self)
 
 double trader_strategy_sell_price_diff(trader_strategy* self)
 {
-  trader_tick* t1 = &self->oT1Tick;
-
-  double t1set = t1->AskPrice1;
+  double t1set = trader_strategy_t1_sell_set_price(self);
   double t2set = trader_strategy_t2_buy_price(self);
 
   // Åä±È
   t1set *= self->T1Weight;
   t2set *= self->T2Weight;
   
-  CMN_INFO("T1SET[%.4lf]T2SET[%.4lf]\n", t1set, t2set);
+  CMN_DEBUG("T1SET[%.4lf]T2SET[%.4lf]\n", t1set, t2set);
 
   if(IS_STG_OPTION(self->STG)){
     return t1set + t2set;
@@ -471,18 +494,18 @@ double trader_strategy_t2_price_opponent(trader_strategy* self, char buy_sell)
   if(TRADER_POSITION_BUY == cBuySell){
     t2set = t2->AskPrice1 + self->T2Over * self->PriceTick;
     // ÕÇÍ£ÅÐ¶Ï
-    if(t2->UpperLimitPrice > 0){
-      if(t2set > t2->UpperLimitPrice){
-        t2set = t2->UpperLimitPrice;
+    if(t2->AskVolume1 == 0){
+      if(t2set > t2->BidPrice1){
+        t2set = t2->BidPrice1;
       }
     }
 
   }else{
     t2set = t2->BidPrice1 - self->T2Over * self->PriceTick;
     // µøÍ£ÅÐ¶Ï
-    if(t2->LowerLimitPrice > 0){
-      if(t2set < t2->LowerLimitPrice){
-        t2set = t2->LowerLimitPrice;
+    if(t2->BidVolume1 == 0){
+      if(t2set < t2->AskPrice1){
+        t2set = t2->AskPrice1;
       }
     }
   }
@@ -497,6 +520,20 @@ int trader_strategy_check_t1_price(trader_strategy* self, double price)
   if(0 == price){
     CMN_ERROR("price[%lf]\n", price); 
     return -1;
+  }
+  
+  if(0 == t1->AskVolume1){
+    if(price >= t1->BidPrice1){
+      CMN_ERROR("price[%lf] >= BidPrice1[%lf]\n", price, t1->BidPrice1); 
+      return -1;
+    }
+  }
+
+  if(0 == t1->BidVolume1){
+    if(price <= t1->AskPrice1){
+      CMN_ERROR("price[%lf] <= AskPrice1[%lf]\n", price, t1->AskPrice1); 
+      return -1;
+    }
   }
 
   if(t1->LowerLimitPrice > 0){
@@ -523,6 +560,20 @@ int trader_strategy_check_t2_price(trader_strategy* self, double price)
   if(0 == price){
     CMN_ERROR("price[%lf]\n", price); 
     return -1;
+  }
+  
+  if(0 == t2->AskVolume1){
+    if(price >= t2->BidPrice1){
+      CMN_ERROR("price[%lf] >= BidPrice1[%lf]\n", price, t2->BidPrice1); 
+      return -1;
+    }
+  }
+
+  if(0 == t2->BidVolume1){
+    if(price <= t2->AskPrice1){
+      CMN_ERROR("price[%lf] <= AskPrice1[%lf]\n", price, t2->AskPrice1); 
+      return -1;
+    }
   }
 
   if(t2->LowerLimitPrice > 0){
@@ -682,6 +733,27 @@ double trader_strategy_t1_price_order(trader_strategy* self, char long_short, ch
     
   return t1set;
 }
+
+#define IS_STG_COMPETITOR(_stg) (TRADER_STG_SHANGPIN_2 == (_stg))
+
+double trader_strategy_t1_buy_set_price(trader_strategy* self)
+{
+  trader_tick* t1 = &self->oT1Tick;
+  if(IS_STG_COMPETITOR(self->STG)){
+    return t1->AskPrice1;
+  }
+  return t1->BidPrice1;
+}
+
+double trader_strategy_t1_sell_set_price(trader_strategy* self)
+{
+  trader_tick* t1 = &self->oT1Tick;
+  if(IS_STG_COMPETITOR(self->STG)){
+    return t1->BidPrice1;
+  }
+  return t1->AskPrice1;
+}
+
 
 
 

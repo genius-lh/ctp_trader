@@ -110,6 +110,8 @@ typedef struct __attribute__((__packed__)) cffex_l2
     char          Val2437[0x18];
     char          Tag2438[4];
     char          Val2438[0x18];
+    char          Tag243a[4];
+    char          Val243a[0x10];
 }cffex_l2_t;
 
 typedef struct __attribute__((__packed__)) cffex_l2_data

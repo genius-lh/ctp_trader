@@ -131,3 +131,28 @@ hiredis
 sqlite3
 yd
 )
+
+add_executable(traderStrategyYd486 ${TRADER_DAEMON_SOURCES})
+target_compile_definitions(traderStrategyYd486 PUBLIC YD)
+target_link_directories(traderStrategyYd486 PUBLIC
+$ENV{SQLITE3_HOME}/lib
+${EXTERN_API_PATH}/yd486
+)
+target_link_libraries(traderStrategyYd486 
+traderClientAud
+traderStrategy
+traderLogSvr
+traderCmnUtils
+traderCmnCfg
+traderCmnLog
+traderapi
+ydtrader486
+pthread
+resolv
+rt
+dl
+event
+hiredis
+sqlite3
+yd
+)

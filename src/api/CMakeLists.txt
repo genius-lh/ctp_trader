@@ -127,3 +127,14 @@ ${PROJECT_SOURCE_DIR}/log
 ${PROJECT_SOURCE_DIR}/cfg
 ${PROJECT_SOURCE_DIR}/util
 )
+
+add_library(ydtrader486 SHARED ${TRADER_API_YD_SOURCES})
+
+target_compile_options(ydtrader486 PUBLIC -std=c++11)
+
+target_include_directories(ydtrader486 PUBLIC
+${EXTERN_API_PATH}/yd486
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
+)
