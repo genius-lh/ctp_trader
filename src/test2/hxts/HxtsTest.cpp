@@ -297,6 +297,24 @@ void CHxtsTestHandler::OnQryPos(rsp_pos_field_s* pos_field, bool is_last)
 void CHxtsTestHandler::OnQryFund(rsp_fund_field_s* fund_field)
 {
   HXTS_TEST_LOG("%s\n", __FUNCTION__);
+  HXTS_TEST_LOG(
+    "beginBalance=%lf\n"
+    "curBalance=%lf\n"
+    "availableMoney=%lf\n"
+    "frozenMoney=%lf\n"
+    "marginMoney=%lf\n"
+    "feeMoney=%lf\n"
+    "declareFee=%lf\n"
+    "syncMoney=%lf\n"
+    , fund_field->beginBalance
+    , fund_field->curBalance
+    , fund_field->availableMoney
+    , fund_field->frozenMoney
+    , fund_field->marginMoney
+    , fund_field->feeMoney
+    , fund_field->declareFee
+    , fund_field->syncMoney
+  );
 }
 
 

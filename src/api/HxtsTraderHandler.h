@@ -66,6 +66,8 @@ private:
   int   m_MaxOrderRef;             ///< 以前的最大 token 
   int   m_SeatCount;
   int   m_IsLogin;
+  char  m_ExchangeID[15];
+  char  m_OffsetCloseYesterday;
   
 	std::map<unsigned int, void*> mapOrder;
 

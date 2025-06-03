@@ -30,6 +30,16 @@ CHxtsTraderHandler::CHxtsTraderHandler(CHxTraderApi* pApi, void* pArg)
 , m_TraderApi(pApi)
 , m_IsLogin(0)
 {
+  char* envValue = getenv("HXTS_EXCHANGE_ID");
+  if(envValue){
+    strncpy(m_ExchangeID, envValue, sizeof(m_ExchangeID));
+    m_OffsetCloseYesterday = TRADER_POSITION_CLOSE;
+  }else{
+    strncpy(m_ExchangeID, "SHFE", sizeof(m_ExchangeID));
+    m_OffsetCloseYesterday = TRADER_POSITION_CLOSE_YESTERDAY;
+  }
+  
+  CMN_INFO("HXTS_EXCHANGE_ID:%s\n", m_ExchangeID);
 }
 
 CHxtsTraderHandler::~CHxtsTraderHandler()
@@ -351,8 +361,7 @@ void CHxtsTraderHandler::OnQryIns(rsp_instrument_field_s* ins_field, bool is_las
   }
 
   strcpy(traderInstrument.InstrumentID, ins_field->ins);
-  // 目前只支持上期
-  strcpy(traderInstrument.ExchangeID, "SHFE");
+  strcpy(traderInstrument.ExchangeID, GetExchangeId(ins_field->ins));
   traderInstrument.PriceTick = ins_field->price_tick;
   traderInstrument.VolumeMultiple = ins_field->vol_multi;
 
@@ -379,7 +388,7 @@ void CHxtsTraderHandler::InsertOrder(char* inst, char* local_id, char buy_sell, 
   // 开平
   // 平昨特殊处理
   if(TRADER_POSITION_CLOSE == open_close){
-    open_close = TRADER_POSITION_CLOSE_YESTERDAY;
+    open_close = m_OffsetCloseYesterday;
   }
   traderOrder->OffsetFlag = open_close;
   ///投机套保标志
@@ -460,8 +469,7 @@ int CHxtsTraderHandler::GetMaxOrderRef()
 
 const char* CHxtsTraderHandler::GetExchangeId(const char* instrument)
 {
-  // TODO
-  return "SHFE";
+  return m_ExchangeID;
 }
 
 const void* CHxtsTraderHandler::GetOrder(unsigned int orderRef)
