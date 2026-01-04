@@ -81,6 +81,57 @@ extern int md_package_size_efh32_l1();
 extern int md_package_id_efh32_l1();
 extern int md_package_fill_efh32_l1(void* tick, void* obj);
 
+typedef struct __attribute__((__packed__)) efh3_3_fut_lev2
+{
+	unsigned int	m_sequence;				///<会话编号
+	char			m_exchange_id;			///<市场  0 表示中金  1表示上期
+	char			m_channel_id;			///<通道编号
+	char			m_symbol[8];			///<合约
+	char			m_update_time_h;		///<最后更新的时间hh
+	char			m_update_time_m;		///<最后更新的时间mm
+	char			m_update_time_s;		///<最后更新的时间ss
+	unsigned short  m_millisecond;		    ///<最后更新的毫秒数        
+
+	double			m_last_px;				///<最新价
+	unsigned int	m_last_share;			///<最新成交量
+	double			m_total_value;			///<成交金额
+	double			m_total_pos;			///<持仓量
+
+	double			m_bid1_px;				///<买一价
+	unsigned int	m_bid1_share;			///<买一量
+	double			m_bid2_px;				///<买二价
+	unsigned int	m_bid2_share;			///<买二量
+	double			m_bid3_px;				///<买三价
+	unsigned int	m_bid3_share;			///<买三量
+	double			m_bid4_px;				///<买四价
+	unsigned int	m_bid4_share;			///<买四量
+	double			m_bid5_px;				///<买五价
+	unsigned int	m_bid5_share;			///<买五量
+
+	double			m_ask1_px;				///<卖一价
+	unsigned int	m_ask1_share;			///<卖一量
+	double			m_ask2_px;				///<卖二价
+	unsigned int	m_ask2_share;			///<卖二量
+	double			m_ask3_px;				///<卖三价
+	unsigned int	m_ask3_share;			///<卖三量
+	double			m_ask4_px;				///<卖四价
+	unsigned int	m_ask4_share;			///<卖四量
+	double			m_ask5_px;				///<卖五价
+	unsigned int	m_ask5_share;			///<卖五量
+
+	char            m_reserve;  			///<保留字段
+
+	unsigned int	m_bid_volume;			///买报单总量，统计当前买方向所有报单的合约手数之和
+	double			m_bid_amount;			///买报单总金额，买?向所有报单的金额总和
+	unsigned int	m_ask_volume;			///卖报单总量，统计当前卖方向所有报单的合约手数之和
+	double			m_ask_amount;			///卖报单总金额，卖?向所有报单的金额总和 
+}efh3_3_fut_lev2_t;
+
+extern int md_package_size_efh33_l2();
+extern int md_package_id_efh33_l2();
+extern int md_package_fill_efh33_l2(void* tick, void* obj);
+
+
 
 typedef struct __attribute__((__packed__)) cffex_l2
 {
@@ -453,6 +504,41 @@ int md_package_fill_efh32_l1(void* tick, void* obj)
   return 0;
 }
 
+int md_package_size_efh33_l2()
+{
+  return (int)sizeof(efh3_3_fut_lev2_t);
+}
+
+int md_package_id_efh33_l2()
+{
+  return (int)offsetof(efh3_3_fut_lev2_t, m_symbol);
+}
+
+int md_package_fill_efh33_l2(void* tick, void* obj)
+{
+  efh3_3_fut_lev2_t* pMarketData = (efh3_3_fut_lev2_t*)obj;
+  trader_tick* pTick = (trader_tick*)tick;
+  strcpy(pTick->InstrumentID, pMarketData->m_symbol);
+  strcpy(pTick->TradingDay, "20260101");
+  snprintf(pTick->UpdateTime, sizeof(pTick->UpdateTime), "%02d:%02d:%02d",
+    (int)pMarketData->m_update_time_h,
+    (int)pMarketData->m_update_time_m,
+    (int)pMarketData->m_update_time_s
+  );
+  pTick->UpdateMillisec = pMarketData->m_millisecond;
+  pTick->BidPrice1 = pMarketData->m_bid1_px;
+  pTick->BidVolume1 = pMarketData->m_bid1_share;
+  pTick->AskPrice1 = pMarketData->m_ask1_px;
+  pTick->AskVolume1 = pMarketData->m_ask1_share;
+  pTick->UpperLimitPrice = 0;
+  pTick->LowerLimitPrice = 0;
+  pTick->LastPrice = pMarketData->m_last_px;
+  gettimeofday(&pTick->ReceiveTime, NULL);
+  pTick->Reserved = pMarketData->m_sequence;
+  return 0;
+}
+
+
 int md_package_size_efh30_l1()
 {
   return (int)sizeof(efh3_0_fut_lev1_t);
@@ -774,9 +860,9 @@ void trader_mduser_api_ef_vi_ops_init(trader_mduser_api_ef_vi_ops* ops, int type
     ops->m_md_id_pos = md_package_id_efh30_l1();
     ops->md_fill = md_package_fill_efh30_l1;
   }else if(4 == type){
-    ops->m_md_size = md_package_size_xqn_l1();
-    ops->m_md_id_pos = md_package_id_xqn_l1();
-    ops->md_fill = md_package_fill_xqn_l1;
+    ops->m_md_size = md_package_size_efh33_l2();
+    ops->m_md_id_pos = md_package_id_efh33_l2();
+    ops->md_fill = md_package_fill_efh33_l2;
   }else if(5 == type){
     ops->m_md_size = md_package_size_dzqh_zbp05();
     ops->m_md_id_pos = md_package_id_dzqh_zbp05();
