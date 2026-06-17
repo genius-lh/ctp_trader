@@ -156,3 +156,29 @@ hiredis
 sqlite3
 yd
 )
+
+add_executable(traderStrategyHSNano ${TRADER_DAEMON_SOURCES})
+target_compile_definitions(traderStrategyHSNano PUBLIC HSNANO)
+target_link_directories(traderStrategyHSNano PUBLIC
+$ENV{SQLITE3_HOME}/lib
+${EXTERN_API_PATH}/nano
+)
+target_link_libraries(traderStrategyHSNano 
+traderClientAud
+traderStrategy
+traderLogSvr
+traderCmnUtils
+traderCmnCfg
+traderCmnLog
+traderapi
+nanotrader
+hsnanotradeapi
+pthread
+resolv
+rt
+dl
+event
+hiredis
+sqlite3
+)
+

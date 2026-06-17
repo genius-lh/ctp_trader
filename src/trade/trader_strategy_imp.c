@@ -131,8 +131,7 @@ int trader_strategy_judge_t2_wait(trader_strategy* self,  trader_order* order_da
     diffPrice = trader_strategy_double_to_int((order_data->LimitPrice - t2Price) / self->T2PriceTick);
   }
 
-  if(diffPrice < self->T2Wait){
-    
+  if(diffPrice < self->T2Wait){   
     CMN_INFO("sid[%02d]T2Wait[%d][%d]!\n", self->idx, diffPrice, self->T2Wait);
     return 0;
   } 
@@ -163,7 +162,7 @@ int trader_strategy_judge_buy_open(trader_strategy* self)
   }
 
   if((0 == t1->BidVolume1) || (0 == t2->AskVolume1)){
-    CMN_INFO("t1->BidVolume1[%d] || t2->AskVolume1[%d]\n", t1->BidVolume1, t2->AskVolume1);
+    CMN_DEBUG("t1->BidVolume1[%d] || t2->AskVolume1[%d]\n", t1->BidVolume1, t2->AskVolume1);
     return nRet;    
   }
 
@@ -171,9 +170,9 @@ int trader_strategy_judge_buy_open(trader_strategy* self)
   th = self->DTOpen;
 
   nRet = trader_strategy_double_to_int((diff - th) / self->T1Weight / self->PriceTick);
-  CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]DTOpen[%.1lf]nRet[%d]\n", 
-    self->idx, self->T1, self->T2, diff, th, nRet);
   if(nRet <= 0){
+    CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]DTOpen[%.1lf]nRet[%d]\n", 
+      self->idx, self->T1, self->T2, diff, th, nRet);
     return 1;
   }
   return 0 ;
@@ -196,9 +195,9 @@ int trader_strategy_judge_buy_close(trader_strategy* self)
   th = self->DTClose;
 
   nRet = trader_strategy_double_to_int((diff - th) / self->T1Weight / self->PriceTick);
-  CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]DTClose[%.1lf]nRet[%d]\n", 
-    self->idx, self->T1, self->T2, diff, th, nRet);
   if(nRet >= 0){
+    CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]DTClose[%.1lf]nRet[%d]\n", 
+      self->idx, self->T1, self->T2, diff, th, nRet);
     return 1;
   }
   return 0 ;
@@ -228,7 +227,7 @@ int trader_strategy_judge_sell_open(trader_strategy* self)
   }
   
   if((0 == t1->AskVolume1) || (0 == t2->BidVolume1)){
-    CMN_INFO("t1->AskVolume1[%d] || t2->BidVolume1[%d]\n", t1->BidVolume1, t2->AskVolume1);
+    CMN_DEBUG("t1->AskVolume1[%d] || t2->BidVolume1[%d]\n", t1->BidVolume1, t2->AskVolume1);
     return nRet;    
   }
 
@@ -236,9 +235,10 @@ int trader_strategy_judge_sell_open(trader_strategy* self)
   th = self->KTOpen;
 
   nRet = trader_strategy_double_to_int((diff - th) / self->T1Weight / self->PriceTick);
-  CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]KTOPen[%.1lf]nRet[%d]\n", 
-    self->idx, self->T1, self->T2, diff, th, nRet);
+
   if(nRet >= 0){
+    CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]KTOPen[%.1lf]nRet[%d]\n", 
+      self->idx, self->T1, self->T2, diff, th, nRet);
     return 1;
   }
   return 0 ;
@@ -261,9 +261,9 @@ int trader_strategy_judge_sell_close(trader_strategy* self)
   th = self->KTClose;
 
   nRet = trader_strategy_double_to_int((diff - th) / self->T1Weight / self->PriceTick);
-  CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]KTClose[%.1lf]nRet[%d]\n", 
-    self->idx, self->T1, self->T2, diff, th, nRet);
   if(nRet <= 0){
+    CMN_INFO("SID[%02d]T1[%s]T2[%s]DIFF[%.1lf]KTClose[%.1lf]nRet[%d]\n", 
+      self->idx, self->T1, self->T2, diff, th, nRet);
     return 1;
   }
   return 0 ;

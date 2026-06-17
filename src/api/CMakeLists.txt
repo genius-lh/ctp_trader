@@ -138,3 +138,19 @@ ${PROJECT_SOURCE_DIR}/log
 ${PROJECT_SOURCE_DIR}/cfg
 ${PROJECT_SOURCE_DIR}/util
 )
+
+set(TRADER_API_NANO_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/trader_trader_api_nano.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/NanoTraderHandler.cpp
+)
+
+add_library(nanotrader SHARED ${TRADER_API_NANO_SOURCES})
+
+target_compile_options(nanotrader PUBLIC -std=c++11 -W -Wno-unused-parameter)
+
+target_include_directories(nanotrader PUBLIC
+${EXTERN_API_PATH}/nano
+${PROJECT_SOURCE_DIR}/log
+${PROJECT_SOURCE_DIR}/cfg
+${PROJECT_SOURCE_DIR}/util
+)

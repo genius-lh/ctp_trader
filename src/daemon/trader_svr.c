@@ -186,6 +186,11 @@ extern trader_trader_api_method* trader_trader_api_hxts_method_get();
   self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_hxts_method_get());
 #endif
 
+#ifdef HSNANO
+  extern trader_trader_api_method* trader_trader_api_nano_method_get();
+    self->pCtpTraderApi = trader_trader_api_new(pair[1], trader_trader_api_nano_method_get());
+#endif
+
 
   self->pCtpTraderApi->pMethod->xSetFrontAddr(self->pCtpTraderApi, self->TrFrontAdd);
   self->pCtpTraderApi->pMethod->xSetAppID(self->pCtpTraderApi, self->appId);
@@ -859,51 +864,53 @@ int trader_svr_proc_trader2(trader_svr* self, trader_trader_evt* msg)
     }    
     break;
   case TRADERONRSPQRYINVESTORPOSITION:
-    pInvestorPosition->IsSHFE = 0;
-    TAILQ_FOREACH(iter, &self->listTraderContract, next){
-      CMN_DEBUG("pInvestorPosition->InstrumentID[%s]"
-        "iter->contract[%s]"
-        "iter->isSHFE[%d]\n",
-        pInvestorPosition->InstrumentID,
-        iter->contract,
-        iter->isSHFE
-      );
-      if(!strcmp(pInvestorPosition->InstrumentID, iter->contract)){
-        pInvestorPosition->IsSHFE = iter->isSHFE;
-        break;
+    if('\0' != pInvestorPosition->InstrumentID[0]){
+      pInvestorPosition->IsSHFE = 0;
+      TAILQ_FOREACH(iter, &self->listTraderContract, next){
+        CMN_DEBUG("pInvestorPosition->InstrumentID[%s]"
+          "iter->contract[%s]"
+          "iter->isSHFE[%d]\n",
+          pInvestorPosition->InstrumentID,
+          iter->contract,
+          iter->isSHFE
+        );
+        if(!strcmp(pInvestorPosition->InstrumentID, iter->contract)){
+          pInvestorPosition->IsSHFE = iter->isSHFE;
+          break;
+        }
       }
+
+      CMN_INFO("pInvestorPosition->InstrumentID[%s]\n"
+        "pInvestorPosition->PosiDirection[%c]\n"
+        "pInvestorPosition->IsSHFE[%d]\n"
+        "pInvestorPosition->PositionDate[%c]\n"
+        "pInvestorPosition->YdPosition[%d]\n"
+        "pInvestorPosition->TodayPosition[%d]\n"
+        "pInvestorPosition->Position[%d]\n"
+        "pInvestorPosition->LongFrozen[%d]\n",
+        pInvestorPosition->InstrumentID,
+        pInvestorPosition->PosiDirection,
+        pInvestorPosition->IsSHFE,
+        pInvestorPosition->PositionDate,
+        pInvestorPosition->YdPosition,
+        pInvestorPosition->TodayPosition,
+        pInvestorPosition->Position,
+        pInvestorPosition->LongFrozen
+      );
+
+      strcpy(traderPosition.InstrumentID, pInvestorPosition->InstrumentID);
+      traderPosition.PosiDirection = pInvestorPosition->PosiDirection;
+      traderPosition.IsSHFE = pInvestorPosition->IsSHFE;
+      traderPosition.PositionDate = pInvestorPosition->PositionDate;
+      traderPosition.YdPosition = pInvestorPosition->YdPosition;
+      traderPosition.TodayPosition = pInvestorPosition->TodayPosition;
+      traderPosition.Position = pInvestorPosition->Position;
+      traderPosition.LongFrozen = pInvestorPosition->LongFrozen;
+      
+      self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, &traderPosition);
     }
-
-    CMN_INFO("pInvestorPosition->InstrumentID[%s]\n"
-      "pInvestorPosition->PosiDirection[%c]\n"
-      "pInvestorPosition->IsSHFE[%d]\n"
-      "pInvestorPosition->PositionDate[%c]\n"
-      "pInvestorPosition->YdPosition[%d]\n"
-      "pInvestorPosition->TodayPosition[%d]\n"
-      "pInvestorPosition->Position[%d]\n"
-      "pInvestorPosition->LongFrozen[%d]\n",
-      pInvestorPosition->InstrumentID,
-      pInvestorPosition->PosiDirection,
-      pInvestorPosition->IsSHFE,
-      pInvestorPosition->PositionDate,
-      pInvestorPosition->YdPosition,
-      pInvestorPosition->TodayPosition,
-      pInvestorPosition->Position,
-      pInvestorPosition->LongFrozen
-    );
-
-    strcpy(traderPosition.InstrumentID, pInvestorPosition->InstrumentID);
-    traderPosition.PosiDirection = pInvestorPosition->PosiDirection;
-    traderPosition.IsSHFE = pInvestorPosition->IsSHFE;
-    traderPosition.PositionDate = pInvestorPosition->PositionDate;
-    traderPosition.YdPosition = pInvestorPosition->YdPosition;
-    traderPosition.TodayPosition = pInvestorPosition->TodayPosition;
-    traderPosition.Position = pInvestorPosition->Position;
-    traderPosition.LongFrozen = pInvestorPosition->LongFrozen;
-    
-    self->pStrategyEngine->pMethod->xInitInvestorPosition(self->pStrategyEngine, &traderPosition);
-
     if(pMsg->IsLast){
+      
     }
     break;
   case TRADERONRTNORDER:
@@ -1686,6 +1693,23 @@ int trader_svr_api_load_param(trader_svr* self, char* user_id)
       }
         
 #endif
+
+#ifdef HSNANO
+        char sQueryCmd[64];
+        char sResult[64];
+        int nRet = 0;
+        snprintf(sQueryCmd, sizeof(sQueryCmd), "HSNANO_USER_PARAM_%s", self->UserId);
+        nRet = trader_svr_redis_get_param(self, sQueryCmd, sResult, sizeof(sResult));
+        if(!nRet){
+          CMN_DEBUG("%s[%s]\n", sQueryCmd, sResult);
+          self->pCtpTraderApi->pMethod->xSetParam(self->pCtpTraderApi, "USER_PARAM", sResult);
+        }else{
+          CMN_INFO("redis failed![%s]\n", sQueryCmd);
+          return -1;
+        }
+          
+#endif
+
 
 
   

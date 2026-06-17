@@ -28,6 +28,8 @@ add_subdirectory(femas302)
 
 add_subdirectory(yd)
 
-add_subdirectory(hxts)
+#add_subdirectory(hxts)
 
 add_subdirectory(qcv)
+
+add_subdirectory(nano)

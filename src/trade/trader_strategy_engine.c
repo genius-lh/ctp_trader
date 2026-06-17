@@ -592,7 +592,12 @@ void trader_strategy_engine_free(trader_strategy_engine* self)
 void trader_strategy_engine_status_timer_init(trader_strategy_engine* self)
 {
   CMN_INFO("Enter!\n");
-  self->statusFlag = 0;
+  if(self->pendingMicroSec > 100){
+    CMN_INFO("self->pendingMicroSec > 100\n");
+    self->statusFlag = 10;
+  }else{
+    self->statusFlag = 0;
+  }
   self->tickTimerEvent = evtimer_new(self->pBase, trader_strategy_engine_status_timer_timeout_cb, (void*)self);
   return;
 }

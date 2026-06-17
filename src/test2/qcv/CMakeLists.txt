@@ -1,0 +1,5 @@
+add_executable(testQcValue QCInfoSimpleSpi.cpp qcvalueaddproapi_tester.cpp)
+target_compile_options(testQcValue PUBLIC -std=c++11)
+target_include_directories(testQcValue PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/qcvalue)
+target_link_libraries(testQcValue qcvalueaddproapi)
+target_link_directories(testQcValue PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/qcvalue)
