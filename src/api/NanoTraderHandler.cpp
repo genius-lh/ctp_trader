@@ -360,7 +360,7 @@ void CNanoTraderHandler::OnRtnOrder(CHSOrderField* pRtnOrder)
   // 订单状态
   traderOrder.OrderStatus = FromHSOrderStatus(pRtnOrder->OrderStatus);
   ///插入时间
-  FromHSTime(traderOrder.InsertTime, sizeof(traderOrder.InsertTime), pRtnOrder->InsertTime);
+  FromHSTime(traderOrder.InsertTime, sizeof(traderOrder.InsertTime), pRtnOrder->InsertTime / 1000);
 
   trader_trader_api_on_rtn_order(self, &traderOrder);
 }
@@ -644,6 +644,10 @@ inline char CNanoTraderHandler::FromHSOrderStatus(HSOrderStatus order_status)
 
   if(HS_OS_PartsTradedToBeCancel == order_status){
     return TRADER_ORDER_OS_PARTTRADEDNOTQUEUEING;
+  }
+
+  if(HS_OS_ReportedToBeCancel == order_status){
+    return TRADER_ORDER_OS_NOTRADENOTQUEUEING;
   }
 
   if(HS_OS_CanceledWithPartsTraded == order_status){
