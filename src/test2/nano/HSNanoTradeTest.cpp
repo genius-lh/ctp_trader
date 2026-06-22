@@ -376,16 +376,26 @@ void CHSNanoTraderHandler::OnRspQryPosition(CHSRspQryPositionField* pRspQryPosit
   }
 
   if(pRspQryPosition){
-    NANO_LOG("pRspQryPosition->InstrumentID=[%s]\n"
+    NANO_LOG(
+      "pRspQryPosition->InstrumentID=[%s]\n"
       "pRspQryPosition->Direction=[%c]\n"
-      "pRspQryPosition->PositionVolume=[%lf]\n"
       "pRspQryPosition->YdPositionVolume=[%lf]\n"
-      "pRspQryPosition->TodayPositionVolume=[%lf]\n",
-      pRspQryPosition->InstrumentID,
-      pRspQryPosition->Direction,
-      pRspQryPosition->PositionVolume,
-      pRspQryPosition->YdPositionVolume,
-      pRspQryPosition->TodayPositionVolume);
+      "pRspQryPosition->PositionVolume=[%lf]\n"
+      "pRspQryPosition->TodayPositionVolume=[%lf]\n"
+      "pRspQryPosition->AvailablePositionVolume=[%lf]\n"
+      "pRspQryPosition->TodayAvailablePositionVolume=[%lf]\n"
+      "pRspQryPosition->OpenFrozenVolume=[%lf]\n"
+      "pRspQryPosition->TodayPositionVolume=[%lf]\n"
+      , pRspQryPosition->InstrumentID
+      , pRspQryPosition->Direction
+      , pRspQryPosition->YdPositionVolume
+      , pRspQryPosition->PositionVolume
+      , pRspQryPosition->TodayPositionVolume
+      , pRspQryPosition->AvailablePositionVolume
+      , pRspQryPosition->TodayAvailablePositionVolume
+      , pRspQryPosition->OpenFrozenVolume
+      , pRspQryPosition->CloseFrozenVolume
+     );
   }
 }
 

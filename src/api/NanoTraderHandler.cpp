@@ -174,10 +174,14 @@ void CNanoTraderHandler::OnRspQryPosition(CHSRspQryPositionField* pRspQryPositio
   //TODO
   traderPosition.IsSHFE = 0;
   traderPosition.PositionDate = '3';
-  traderPosition.YdPosition = (int)pRspQryPosition->YdPositionVolume;
+  // 当前昨仓
+  traderPosition.YdPosition = (int)pRspQryPosition->PositionVolume;
+  // 当前今仓
   traderPosition.TodayPosition = (int)pRspQryPosition->TodayPositionVolume;
-  traderPosition.Position = (int)pRspQryPosition->PositionVolume;
-  traderPosition.LongFrozen = (int)pRspQryPosition->OpenFrozenVolume;
+  // 冻结的今仓数量
+  traderPosition.Position = (int)(pRspQryPosition->TodayPositionVolume - pRspQryPosition->TodayAvailablePositionVolume);
+  // 冻结的昨仓数量
+  traderPosition.LongFrozen = (int)pRspQryPosition->CloseFrozenVolume;
 
   trader_trader_api_on_rsp_qry_investor_position(self, &traderPosition, pRspInfo->ErrorID, pRspInfo->ErrorMsg, bIsLast);
 }
