@@ -66,9 +66,13 @@ trader_trader_api_method* trader_trader_api_nano_method_get()
 int trader_trader_api_nano_get_trading_day(trader_trader_api* self, char* tradingday)
 {
   trader_trader_api_nano* pImp = (trader_trader_api_nano*)self->pUserApi;
-  CHSExtendTradeApi* pTraderApi = (CHSExtendTradeApi*)pImp->pTraderApi;
+  if(!pImp){
+    CMN_ERROR("pImp is null\n");
+    return -1;
+  }
+  CNanoTraderHandler* pTraderHandler = (CNanoTraderHandler*)pImp->pTraderHandler;
 
-  int nTradingDay = pTraderApi->GetTradingDate();
+  int nTradingDay = pTraderHandler->GetTradingDate();
   snprintf(tradingday, 9, "%d", nTradingDay);
   return 0;
 }

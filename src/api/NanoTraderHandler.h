@@ -39,6 +39,7 @@ public:
   void QryTradingAccount();
 
   long GetMaxOrderRef();
+  int GetTradingDate();
   const char* GetHSExchangeID(const char* inst);
   inline char FromHSOffsetFlag(HSOffsetFlag offset);
   inline char FromHSDirection(HSDirection direction);
@@ -52,6 +53,8 @@ public:
 private:
   void* m_Arg;
   CHSExtendTradeApi* m_TraderApi;
+  ///< 交易日，格式为yyyyMMdd的int型值
+  int   m_TradingDate;
   int m_TraderRequestID;
   long m_MaxOrderRef;
   std::map<long, void*> mapOrder;

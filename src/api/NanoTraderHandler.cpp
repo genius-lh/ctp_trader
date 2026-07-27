@@ -121,6 +121,8 @@ void CNanoTraderHandler::OnRspUserLogin(CHSRspUserLoginField* pRspUserLogin, CHS
     , pRspUserLogin->UserID
   );
 
+  m_TradingDate = pRspUserLogin->TradingDay;
+
   m_MaxOrderRef = atol(pRspUserLogin->MaxOrderRef);
 
   trader_trader_api_on_rsp_user_login(self, pRspInfo->ErrorID, NULL);
@@ -595,6 +597,11 @@ void CNanoTraderHandler::QryTradingAccount()
 long CNanoTraderHandler::GetMaxOrderRef()
 {
   return m_MaxOrderRef;
+}
+
+int CNanoTraderHandler::GetTradingDate()
+{
+  return m_TradingDate;
 }
 
 const char* CNanoTraderHandler::GetHSExchangeID(const char* inst)
